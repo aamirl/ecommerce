@@ -1,2 +1,2 @@
 # ecommerce
-This is the ecommerce repository
+This is the ecommerce service for the Sellyx Platform

@@ -1,0 +1,27 @@
+{
+  "name": "sellyx_service",
+  "version": "1.0.0",
+  "description": "This is the Sellyx service server which will route all incoming requests to the different servers requesthing the services.",
+  "main": "app.js",
+  "dependencies": {
+    "koa": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "hello world"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aamirl/service.git"
+  },
+  "keywords": [
+    "sellyx",
+    "service"
+  ],
+  "author": "Aamir Latif",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aamirl/service/issues"
+  },
+  "homepage": "https://github.com/aamirl/service#readme"
+}

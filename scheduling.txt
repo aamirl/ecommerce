@@ -1,0 +1,38 @@
+scheduling server
+
+	- cache system
+		- maintains which room is used by which seller
+		
+		method 1
+			- 8000:SELLER1 - new server
+			- 8001 : SELLER2 - new server
+
+		method 2 
+			- 8000-8005 serving one room/seller
+
+		method 3 
+			- 8000 serving multiple rooms/sellers 
+
+		createroom returns integer defining the room number that corresponds
+
+
+	METHOD ONE
+
+
+
+		STARTING SERVER
+			- start server on ports(5) - check to make sure the server didn't generate errors
+			- cache open ports
+
+		STARTING A NEW ROOM INSIDE SERVER(S)
+			- generate room key
+			- create room(feed function room_key)
+			- cache sellerid to room key
+
+		enter room
+			- pick server to serve user via port number
+			- return port number and room key
+
+		end room
+			- call end room function with the room key we want to end
+			- remove room key from cache
