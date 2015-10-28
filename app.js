@@ -59,9 +59,14 @@ app.use(function*(next){
 		if(!cached){
 			// check oAuth server and see if user is logged in 
 
-			var get = yield _s_req.koa({
-			 	url :_s_config.oAuth+'/auth/validate?&key=' + this.request.header.key
+			var get = yield _s_req.http({
+				path : 'auth/validate',
+				params : {
+					key : this.request.header.key
+					}
 			 	})
+
+			console.log(get);
 
 			if(get.failure){
 				this.body = { failure : { msg : get.failure.msg , code : 101 } }
@@ -71,9 +76,13 @@ app.use(function*(next){
 			var id = get.success.data.id;
 
 			// now we get the user information from the oAuth server
-			var get = yield _s_req.koa({
-				url :_s_config.oAuth+'/user?&id=' + id
+			var get = yield _s_req.http({
+				path : 'user',
+				params : {
+					id : id
+					}
 				})
+
 
 			if(typeof get == 'string'){
 				this.body = { failure : { msg : 'The user does not exist.' , code : 100 } };

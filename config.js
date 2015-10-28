@@ -1,7 +1,7 @@
 
 module.exports = {
 
-	oAuth : 'http://media.sellyx.com',
+	oAuth : 'https://auth.sellyx.com/',
 	app : {
 		name : 'ecommerce_server',
 		machine : 'SELLYX_ECOMMERCE__MAIN',

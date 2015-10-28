@@ -13,6 +13,9 @@ function DateTime(){
 	}
 
 DateTime.prototype = {
+	epoch : function(){
+		return new Date().getTime();
+		},
 	timeago : function(date){
 		return this.dt(date).fromNow();
 		},

@@ -194,7 +194,7 @@ Products.prototype = {
 							}
 
 						if(product.images){
-							var _images = _s_load.library('images');
+							var _images = _s_load.engine('images');
 							var images = product.images;
 
 							if(template.setup.images) {

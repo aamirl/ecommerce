@@ -16,6 +16,8 @@ Common.prototype = {
 
 		var _controller = _s_load.library(library);
 
+		if(!_controller) _controller = _s_load.engine(library);
+
 		var results = yield _controller.model.get(obj);
 		var self = this;
 

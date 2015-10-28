@@ -234,7 +234,7 @@ validator.extend('isPrice', function(inp, filter){
 		}
 	else{
 		if(filter){
-			return _s_load.library('currency').convert.back(inp);
+			return _s_load.engine('currency').convert.back(inp);
 			}
 		else{
 			return true;
@@ -362,21 +362,52 @@ function Request(req){
 	}
 
 Request.prototype = {
-	koa : function*(obj , raw){
-		var r = yield require('koa-request')(obj);
-		if(raw) return JSON.parse(r);
+	http : function*(obj,raw){
+
+		var r = require('koa-request');
+
+		!obj.headers?obj.headers={}:null;
+		!obj.method?obj.method='GET':null;
+		!obj.form?obj.form={}:null;
+		!obj.url?obj.url=_s_config.oAuth+obj.path:null;
+		if(obj.data) obj.form = obj.data;
+
+		if(obj.params){
+			obj.url += '?';
+			_s_u.each(obj.params, function(v,k){
+				obj.url+="&" + k+'='+v;
+				})
+			}
+
+		obj.time = _s_dt.epoch();
+
+		obj.headers.authorization = 'SYX ' + _s_req.hash(obj);
+		obj.headers['sellyx-time'] = obj.time;
+
+		obj.rejectUnauthorized = false;
+		
+		console.log(obj);
+
+		var j = yield r(obj);
+		if(raw) return JSON.parse(j);
 		try{
-			r= JSON.parse(r).body;
+			j= JSON.parse(j).body;
 			}
 		catch(e){
-			return JSON.parse(r.body);
+			return JSON.parse(j.body);
 			}
 		try{
-			return JSON.parse(r);
+			return JSON.parse(j);
 			}
 		catch(e){}
 		},
-	// koa : require('koa-request'),
+	hash : function(obj){
+		var crypto = require('crypto');
+
+		var str = obj.method + "\n" + obj.time  + "\n" + "/" + obj.path;
+		var token = crypto.createHmac('sha256','Ys$pZzq69I#p4JKC8%3hvo01fKrP$m49tY/s').update(str).digest('hex');
+		return new Buffer(token).toString('base64');
+		},
 	ip : function(){
 		return this.current_ip;
 		},
