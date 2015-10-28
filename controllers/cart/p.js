@@ -1,5 +1,5 @@
 
-var _cart = _s_load.library('cart');
+var _cart = _s_load.engine('cart');
 
 module.exports = {
 	all : function*(){
@@ -72,7 +72,7 @@ module.exports = {
 			})
 		if(data.failure) return data;
 		
-		var options = yield _s_load.library('shipping').calculate.order({
+		var options = yield _s_load.engine('shipping').calculate.order({
 			id : data.seller
 			})
 
@@ -99,7 +99,7 @@ module.exports = {
 			})
 
 		if(data.failure) return data;
-		return yield _s_load.library('promotions').get.coded(data);
+		return yield _s_load.engine('promotions').get.coded(data);
 		},
 	empty : function*(){
 		_cart.empty();

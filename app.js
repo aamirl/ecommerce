@@ -5,16 +5,16 @@ var app = require('koa')();
 GLOBAL._s_fs = require('fs');	
 GLOBAL._s_q = require('q');	
 app.keys = _s_config.app.keys;
-GLOBAL._s_load = require('./libraries/loader')();
-GLOBAL._s_cache = _s_load.library('cache');
+GLOBAL._s_load = require('./libraries/engine/loader')();
+GLOBAL._s_cache = _s_load.engine('cache');
 GLOBAL._s_u = require('underscore');
 GLOBAL._s_util = _s_load.helper('utilities');
-GLOBAL._s_dt = _s_load.library('datetime');
-GLOBAL._s_db = _s_load.library('database');	
-GLOBAL._s_common = _s_load.library('common');	
-GLOBAL._s_sf = _s_load.library('storefront');	
+GLOBAL._s_dt = _s_load.engine('datetime');
+GLOBAL._s_db = _s_load.engine('database');	
+GLOBAL._s_common = _s_load.engine('common');	
+GLOBAL._s_sf = _s_load.engine('storefront');	
 
-// GLOBAL._s_rmq = _s_load.library('rabbit');
+// GLOBAL._s_rmq = _s_load.engine('rabbit');
 var paths = require('./paths');
 
 app.use(require('koa-logger')());
@@ -33,11 +33,11 @@ app.use(function*(next){
 		return;
 		}
 
-	GLOBAL._s_req = _s_load.library('request' , this.request);
-	GLOBAL._s_session = _s_load.library('session' , this.session);
-	GLOBAL._s_countries = _s_load.library('countries');
-	GLOBAL._s_l = _s_load.library('locales');
-	GLOBAL._s_loc = _s_load.library('location' , this.request.ip);	
+	GLOBAL._s_req = _s_load.engine('request' , this.request);
+	GLOBAL._s_session = _s_load.engine('session' , this.session);
+	GLOBAL._s_countries = _s_load.engine('countries');
+	GLOBAL._s_l = _s_load.engine('locales');
+	GLOBAL._s_loc = _s_load.engine('location' , this.request.ip);	
 
 	var cached = undefined;	
 
@@ -82,7 +82,7 @@ app.use(function*(next){
 
 
 			// now we need to check if the user exists in ES
-			var _users = _s_load.library('users');
+			var _users = _s_load.engine('users');
 
 			// let's check and see if the user exists in ES
 			var result = yield _users.get(id);
@@ -112,7 +112,7 @@ app.use(function*(next){
 			// if the user is a seller, let's see if we loaded their seller information in the cache
 			var seller = yield _s_cache.key.get('seller');
 			if(!seller){
-				var r = yield _s_load.library('sellers').get(_s_user.seller.id());
+				var r = yield _s_load.engine('sellers').get(_s_user.seller.id());
 				r.fulfillment = _s_countries.fulfillment.fulfilled('240');
 
 				yield _s_cache.key.set({key : 'seller', value : r });

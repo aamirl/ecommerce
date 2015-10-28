@@ -20,6 +20,14 @@ Loader.prototype = {
 			}
 		return false;
 		},
+	engine: function(input , meta){
+		var file = _s_config.paths.engine + input + '.js';
+		if(fs.existsSync(file)){
+			if(meta) return require(file)(meta)
+			else return require(file)();
+			}
+		return false;
+		},
 	library: function(input , meta){
 		var file = _s_config.paths.libraries + input + '.js';
 		if(fs.existsSync(file)){

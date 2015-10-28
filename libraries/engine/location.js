@@ -64,7 +64,7 @@ Location.prototype = {
 								break;
 							case 'country':
 								// TODO : HANDLE THIS ISSUE WHERE COUNTRY NAME DOESNT EQUAL THE GOOGLE NAME
-								if(!address.country) address.country = yield _s_load.library('countries').reverse(v.long_name)
+								if(!address.country) address.country = yield _s_countries.reverse(v.long_name)
 								break;
 							case 'postal_code':
 								!address.postal?address.postal=v.long_name:null;
@@ -85,7 +85,7 @@ Location.prototype = {
 					var origin = ( !obj.origin ? (self.active.get()).coordinates : obj.origin )
 					var destination = obj.destination;
 					// units of 1 means miles, 2 means km
-					var units = _s_load.library('dimensions').active.get();
+					var units = _s_load.engine('dimensions').active.get();
 
 					var radlat1 = Math.PI * (origin.lat)/180
 				    var radlat2 = Math.PI * (destination.lat)/180

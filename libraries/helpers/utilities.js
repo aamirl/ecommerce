@@ -292,9 +292,9 @@ module.exports = {
             single : function*(obj){
                 var data = (obj.data ? obj.data : obj);
                 
-                var _dimensions = _s_load.library('dimensions');
-                var _currency = _s_load.library('currency');
-                // var _storefront = _s_load.library('storefront');
+                var _dimensions = _s_load.engine('dimensions');
+                var _currency = _s_load.engine('currency');
+                // var _storefront = _s_load.engine('storefront');
                 var countries = yield _s_countries.get();
                 // load options
 
@@ -380,7 +380,7 @@ module.exports = {
                         }
                     else if(k=='images'){
                         if(obj.images && v.length > 0 ){
-                            data[k] = _s_load.library('images').get.set({
+                            data[k] = _s_load.engine('images').get.set({
                                 path : obj.images.path,
                                 images : v
                                 })

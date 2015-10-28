@@ -1,4 +1,4 @@
-var _users = _s_load.library('users');
+var _users = _s_load.engine('users');
 
 
 module.exports = {

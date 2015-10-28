@@ -207,7 +207,7 @@ validator.extend('isDimension',function(inp, filter){
 		}
 	else{
 		if(filter){
-			return _s_load.library('dimensions').convert.back('length',inp);
+			return _s_load.engine('dimensions').convert.back('length',inp);
 			}
 		else{
 			return true;
@@ -220,7 +220,7 @@ validator.extend('isWeight',function(inp, filter){
 		}
 	else{
 		if(filter){
-			return _s_load.library('dimensions').convert.back('weight',inp);
+			return _s_load.engine('dimensions').convert.back('weight',inp);
 			}
 		else{
 			return true;
