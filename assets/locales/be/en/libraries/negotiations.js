@@ -9,8 +9,8 @@ var obj = {
 		3 : 'Negotiation Ended by Customer',
 		100 : 'Negotiation Successful',
 		},
-	offer: {
-			status : {
+	offers : {
+		status : {
 			1 : 'Offer Active',
 			2 : 'Offer Rejected',
 			3 : 'Offer Cancelled',

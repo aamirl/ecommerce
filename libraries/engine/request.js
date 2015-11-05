@@ -93,6 +93,9 @@ validator.extend('isUser',function(){
 validator.extend('isNegotiation',function(){
 	return true;
 	})
+validator.extend('isNegotiationOffer',function(){
+	return true;
+	})
 validator.extend('isSearch',function(){
 	// make sure it's not in search words
 	return true;
@@ -362,7 +365,24 @@ function Request(req){
 	}
 
 Request.prototype = {
-	http : function*(obj,raw){
+	http : function*(obj, raw){
+		var r = require('koa-request');
+
+		var j = yield r(obj);
+		if(raw) return JSON.parse(j);
+		try{
+			j= JSON.parse(j).body;
+			}
+		catch(e){
+			return JSON.parse(j.body);
+			}
+		try{
+			return JSON.parse(j);
+			}
+		catch(e){}
+
+		},	 
+	sellyx : function*(obj,raw){
 
 		var r = require('koa-request');
 
@@ -576,19 +596,19 @@ Request.prototype = {
 					var tangent = _s_req.validate({ validators: t , data : all_data });
 					tangent.failure ? errors.push(i) : send[i] = all_data[i];
 					}
-				else if(i_data.eo2){
-					var u = {data:all_data,validators:{}};
-					u.validators[i] = i_data.eo2[1]
-					var tangent = _s_req.validate(u);
+				// else if(i_data.eo2){
+				// 	var u = {data:all_data,validators:{}};
+				// 	u.validators[i] = i_data.eo2[1]
+				// 	var tangent = _s_req.validate(u);
 					
-					if(tangent.failure){
-						u = {data:all_data,validators:{}};
-						u.validators[i] = i_data.eo2[2]
-						var tangent = _s_req.validate(u);
-						tangent.failure ? errors.push(i) :send[i] = tangent[i];
-						}
-					else{ send[i] = tangent[i] }
-					}
+				// 	if(tangent.failure){
+				// 		u = {data:all_data,validators:{}};
+				// 		u.validators[i] = i_data.eo2[2]
+				// 		var tangent = _s_req.validate(u);
+				// 		tangent.failure ? errors.push(i) :send[i] = tangent[i];
+				// 		}
+				// 	else{ send[i] = tangent[i] }
+				// 	}
 				else if(i_data.dependency){
 
 					if(i_data.dependency[all_data[i]]){
@@ -687,7 +707,7 @@ Request.prototype = {
 						if(i_data.default || i_data.default == 0){
 							send[i] = i_data.default;
 							}
-						else if(all_data[i] == 0){
+						else if(all_data[i] === 0){
 							send[i] = 0;
 							}
 						else if(i_data.b == 'array'){

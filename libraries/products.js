@@ -328,7 +328,7 @@ Products.prototype = {
 						negotiations : { in:[1,2,'1','2'] },
 						details : { v:['isTextarea'] , b:true },
 						images : { v:['isArray'] , b : true },
-						product : { v:['isProduct'] , b:true },
+						product : { v:['isProduct']  },
 						reach : { 
 							dependency : {
 								1 : {
@@ -370,7 +370,7 @@ Products.prototype = {
 									}
 								}
 							},
-						restricted : {v:['isCountries'], filter : 'isCountries' , b:'array'},
+						restricted : {v:['isCountries'], b:'array'},
 						}
 
 					// let's check to see if fulfillment and sellyxship is a thing for this country
@@ -438,16 +438,20 @@ Products.prototype = {
 		// obj will have the filters for the products listing
 
 		// if we want to convert we definitely need to pull back the line information
-		if(obj.include) obj.include += ',line.category';
+		if(typeof obj == 'object' && obj.include) obj.include += ',line.category';
 
 		var results = yield this.model.get(obj);
+		if(!results) return false;
 		var self = this;
-
-		console.log(results);
 
 		if( results.data && results.data.length > 0){
 			
-			if(!obj.convert || obj.convert == 'false') return results;
+			if(!obj.convert || obj.convert == 'false'){
+				if(obj.endpoint){
+					delete obj.endpoint;
+					}
+				return results;
+				}
 			
 			var templates = {};
 
@@ -474,6 +478,7 @@ Products.prototype = {
 			return yield self.helpers.convert.single(results, _s_load.template(results.line.category), obj);
 			}
 
+		if(obj.endpoint) return { failure : {msg: 'No products matched your query.' } , code : 300 }
 		return false;
 		},
 	get new() {
@@ -526,7 +531,7 @@ Products.prototype = {
 					// we want a line id so that we can pull up the line information
 
 					var data = _s_req.validate({
-						images : { v:['isArray'] },
+						images : { v:['isArray'] , b:'array' },
 						line : { v:['isLine'] },
 						origin : { v:['isCountry'] },
 						additional : { v:['isJSON'] , b:true },
@@ -596,6 +601,9 @@ Products.prototype = {
 
 				if(!_s_seller&&!obj.seller) return { failure : { msg : 'This is a change that is allowed for sellers only.' , code:300 } } ;
 
+				if(!obj.category) return { failure : { msg: 'There was no category specified.' , code :300 } }
+
+
 				var c = self.helpers.validation.listing();
 				c.id = { v:['isListing'] };
 
@@ -603,7 +611,7 @@ Products.prototype = {
 				else var data = _s_req.validate(c);
 				if(data.failure) return data;
 
-				var get = yield self.get({id:data.product,convert:false});
+				var get = yield self.get(data.product);
 				if(!get) return { failure : { msg : 'Listing could not be added because the product could not be found.' , code:300 } } ;				
 
 				// now find the listing
@@ -619,13 +627,92 @@ Products.prototype = {
 				get.sellers[listing.index] = data;
 
 				var update = self.model.update(get);
+				delete data.product;
+
+				if(get) return { success : { data : yield self.helpers.convert.listing(data) } }
+				return {  failure : { msg : 'The listing was not updated at this time.', code : 300 }}
+				},
+			product : function*(obj){
+				!obj?obj={}:null;
+
+				if(!_s_seller&&!obj.seller) return { failure : { msg : 'This is a change that is allowed for sellers only.' , code:300 } } ;
+
+				var c = self.helpers.validation.listing();
+				c.id = { v:['isListing'] };
+
+				if(obj && obj.data) var data = _s_req.validate({validators:c, data:obj.data })
+				else var data = _s_req.validate(c);
+				if(data.failure) return data;
+
+				var get = yield self.get(data.product);
+				if(!get) return { failure : { msg : 'Listing could not be added because the product could not be found.' , code:300 } } ;				
+
+				// now find the listing
+				var listing = _s_util.array.find.object(get.sellers, 'id', data.id, true);
+				if(!listing) return { failure : {msg : 'The listing could not be edited because the listing could not be found.' , code :300 } };
+
+				// now we make sure the listing belongs to the seller
+				var seller = (!obj.seller?_s_seller.profile.id():obj.seller);
+				if(listing.object.seller.id != seller) return { failure : { msg : 'This listing does not belong to your company.' , code : 300 } }
+
+				// if everything checks out, we go ahead and update
+				data = _s_util.merge(listing.object, data)
+				get.sellers[listing.index] = data;
+
+				var update = self.model.update(get);
+				delete data.product;
 
 				if(get) return { success : { data : yield self.helpers.convert.listing(data) } }
 				return {  failure : { msg : 'The listing was not updated at this time.', code : 300 }}
 				}
 			}
-		}
+		},
+	get actions(){
+		var self = this;
+		return {
+			status : {
+				listing : function*(obj){
+					!obj?obj={}:null;
 
+					var r = {
+						id : {v:['isListing']},
+						extra : {v:['isProduct']},
+						status : { in:[1,2,'1','2'] }
+						}
+
+					obj.corporate ? r.status = { in:[0,1,2,'0','1','2'] } : null;
+
+					var data = _s_req.validate(r);
+					if(data.failure) return data;
+
+					var v = {
+						id : data.extra,
+						library : 'products',
+						type : 'listing',
+						label : 'listing',
+						seller : obj.seller,
+						deep : {
+							array : 'sellers',
+							property : 'id',
+							value : data.id,
+							status : {
+								allowed : [9],
+								change : data.status
+								}
+							},
+						corporate : (obj.corporate?_s_corporate.profile.master():null),
+						status : {
+							allowed : [1,2]
+							},
+						send : 'object'
+						}
+
+					obj.corporate ? v.status = [0,1,2] : null;
+					return yield _s_common.check(v);
+					}
+				}
+			}
+		} 
 	}
 
 module.exports = function(){

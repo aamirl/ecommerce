@@ -2,19 +2,17 @@ var _orders = _s_load.library('orders');
 
 module.exports = {
 	'get/seller' : function*(){
+		if(!_s_seller) return _s_l.error(101);
+		
 		var c = _orders.helpers.filters();
 		var data = _s_req.validate(c);
 		if(data.failure) return data;
 
 		data.seller = _s_seller.profile.id();
 		data.exclude = 'transactions';
+		data.endpoint = true;
 
-		var results = yield _orders.get(data);
-		if(results && results.data.length > 0) {
-			results.filters = data;
-			return { success : results };
-			}
-		return { failure : { msg : 'No orders matched your query.' , code : 300 } };
+		return yield _orders.get(data);
 		},
 	'get/user' : function*(){
 		var c = _orders.helpers.filters();
@@ -23,12 +21,8 @@ module.exports = {
 
 		data.user = _s_user.profile.id();
 		data.exclude = 'transactions';
+		data.endpoint = true;
 
-		var results = yield _orders.get(data);
-		if(results && results.data.length > 0) {
-			results.filters = data;
-			return { success : results };
-			}
-		return { failure : { msg : 'No orders matched your query.' , code : 300 } };
+		return yield _orders.get(data);
 		}
 	}

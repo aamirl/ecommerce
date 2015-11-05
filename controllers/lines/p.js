@@ -8,14 +8,6 @@ module.exports = {
 		if(data.failure) return data;
 		var results = yield _lines.get(data);
 
-		if(results){
-			if(results.data && results.data.length > 0){
-				results.filters = data;
-				return { success : results };
-				}
-			else if(data.id) return { success : { data : results } }
-			}
-
-		return { failure : {msg:'The line information was not found.' , code : 300}};
+		return yield _lines.get(data);
 		}
 	}

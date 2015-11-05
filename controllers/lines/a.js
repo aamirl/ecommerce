@@ -3,6 +3,7 @@ var _lines = _s_load.library('lines');
 
 module.exports = {
 	'get/seller' : function*(){
+		if(!_s_seller) return _s_l.error(101);
 		// we want to call the auth controller with the seller information
 		// we add the filters we need for this particular inventory call
 
@@ -13,19 +14,17 @@ module.exports = {
 		// next we want to add the seller information
 		// data.seller = 'asdad';
 		data.seller = _s_seller.profile.id();
+		data.endpoint = true;
 
-		var results = yield _lines.get(data);
-		if(results && results.data.length > 0) {
-			results.filters = data;
-			return { success : results };
-			}
-		return { failure : {msg: 'No lines matched your query.', code:300 }};
+		return yield _lines.get(data);
 		},
 	'new' : function*(){
+		if(!_s_seller) return _s_l.error(101);
 		// this is the api endpoint for adding a new product line
 		return yield _lines.new();
 		},
 	'update' : function*(){
+		if(!_s_seller) return _s_l.error(101);
 		// this is the api endpoint for updating the information for an existing manufacturer
 		return yield _lines.update();
 

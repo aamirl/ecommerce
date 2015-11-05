@@ -60,7 +60,53 @@ Interests.prototype = {
 			return results;
 			}
 		return false;
+		},
+	get actions(){
+		var self = this;
+		return {
+			status : function*(obj){
+				!obj?obj={}:null;
+
+				var r = {
+					id : {v:['isLocalListing']},
+					status : { in:[1,2,'1','2'] }
+					}
+
+				obj.corporate ? r.status = { in:[0,1,2,'0','1','2'] } : null;
+
+				var data = _s_req.validate(r);
+				if(data.failure) return data;
+
+				var v = {
+					id : data.id,
+					library : 'products',
+					type : 'listing',
+					label : 'listing',
+					seller : obj.seller,
+					deep : {
+						array : 'sellers',
+						property : 'id',
+						value : data.id,
+						status : {
+							allowed : [9],
+							change : data.status
+							}
+						},
+					corporate : (obj.corporate?_s_corporate.profile.master():null),
+					status : {
+						allowed : [1,2]
+						},
+					send : 'object'
+					}
+
+				obj.corporate ? v.status = [0,1,2] : null;
+				return yield _s_common.check(v);
+				}
+
+			}
+
 		}
+
 	}
 
 

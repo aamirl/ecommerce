@@ -174,7 +174,7 @@ Listings.prototype = {
 		data.questions = [];
 		data.interests = [
 			 {
-			 	interest : Math.floor((Math.random() * 10000000000000000000)),
+			 	interest : Math.floor((Math.random() * 10000000000000)),
 			 	user : {
 			 		id : '5609dac8b8869a99d2d979d6',
 			 		name : 'ammar',
@@ -275,7 +275,7 @@ Listings.prototype = {
 					on : _s_dt.now.datetime()
 					})
 
-				if(obj.user){
+				if(obj.type == 1){
 					return yield _s_common.update(result,'listings',[{ insert : 'interest' , target : {id:'id' , data : obj.user, depth : 'user'} , replace : 'interests' }]);
 					}
 				return yield _s_common.update(result,'listings');
@@ -288,23 +288,22 @@ Listings.prototype = {
 					status : { in:[1,2,3,'1','2','3'] }
 					}
 
-				obj.corporate ? r.status = { in:[0,1,2,3,'0','1','2','3'] } : r.status = { in:[1,2,3,'1','2','3'] }
+				obj.corporate ? r.status = { in:[0,1,2,3,'0','1','2','3'] } : null;
 
-				var data = _s_req.validate({
-					id : {v:['isLocalListing']},
-					status : { in:[1,2,3,'1','2','3'] }
-					});
+				var data = _s_req.validate(r);
 				if(data.failure) return data;
 
 				r = {
 					id : data.id,
 					library : 'listings',
 					label : 'listing',
-					user : obj.user,
 					seller : obj.seller,
+					user : obj.user,
 					corporate : (obj.corporate?_s_corporate.profile.master():null),
-					status : [1,2],
-					activate : data.status,
+					status : {
+						allowed : [1,2],
+						change : data.status
+						},
 					active : [1]
 					}
 

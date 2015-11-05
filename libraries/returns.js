@@ -51,6 +51,20 @@ Returns.prototype = {
 				}
 			return false;
 			},
+		filters : function(){
+			return {
+				q : { v:['isSearch'] , b : true},
+				id : { v:['isReturn'] , b:true },
+				user : { v:['isUser'] , b:true },
+				seller : { v:['isSeller'] , b:true },
+				convert : { in:['true','false'] , default : 'true' },
+				include : { v:['isAlphaOrNumeric'], b:true },
+				exclude : { v:['isAlphaOrNumeric'], b:true },
+				active : { v:['isAlphaOrNumeric'], b:true },
+				x : { v:['isInt'] , b:true , default : 0 },
+				y : { v:['isInt'] , b:true , default : 10 }
+				};
+			},
 		convert : {
 			return : function*(s,type){
 				s.policy = _s_l.convert({ array : s.policy, library : 'returns' });
@@ -64,43 +78,8 @@ Returns.prototype = {
 				}
 			}
 		},
-	get get() {
-		var self = this;
-		return {
-			returns : function*(obj){
-
-				if (obj.seller) {
-					var type = 'seller';
-					}
-				else if(obj.user){
-					var type = 'customer';
-					}
-				else {
-					var type = false;
-					}
-					
-				var results = yield self.model.get.returns(obj);
-				var send = [];
-
-				if(results){
-
-					yield _s_util.each(results, function*(result, ind){
-						
-						var s = result.data;
-						s.id = result.id;
-						
-						send.push(yield self.helpers.convert.return(s,type));
-
-						})
-
-					}
-
-				return send;
-
-
-
-				}
-			}
+	get : function*(obj){
+		return yield _s_common.get(obj, 'returns');
 		}
 	
 	}

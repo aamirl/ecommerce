@@ -2,14 +2,11 @@ var _users = _s_load.engine('users');
 
 
 module.exports = {
-	// this is the api endpoint for information that requires authorization
-	// you can specify what information you want to receive from this in an array format, we will return that information, or if there is no request element we will just return all the information that we can display publicly for a page
-
-	'get' : function*(){
+	get : function*(){
 		// this is the api endpoint for getting the information for the user who is currently using the system
 		return { success : { data : _s_user.profile.all()} };
 		},
-	'new' : function*(){
+	new : function*(){
 		// this is the api endpoint for adding a new user to the system
 		return yield _users.new();
 		},

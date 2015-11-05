@@ -29,7 +29,7 @@ Location.prototype = {
 
 					var r = ((_s_util.object.values(obj)).join(',')).replaceAll(' ', '+');
 					
-					var get = yield _s_req.koa({
+					var get = yield _s_req.http({
 						url : 'https://maps.googleapis.com/maps/api/geocode/json?address='+r+'&key=AIzaSyDZaSz-chRuNJYhBZlLLO5FEwbc0nm96DQ'
 						})
 

@@ -1,8 +1,6 @@
 // Users Library
 
-function Users(){
-
-	}
+function Users(){}
 
 Users.prototype = {
 	model : _s_load.model('users'),
@@ -11,7 +9,8 @@ Users.prototype = {
 		return {
 			cached : function*(result , key){
 				if(result.addresses.length > 0){
-					var c = _s_util.array.find.object(result.addresses,'primary','true',true);
+					var c = result.addresses[0];
+					// var c = _s_util.array.find.object(result.addresses,'primary','true',true);
 					result.country = c.object.country;
 					}
 

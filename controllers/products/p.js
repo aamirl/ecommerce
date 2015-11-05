@@ -7,7 +7,7 @@ module.exports = {
 
 		if(data.failure) return data;
 		var results = yield _products.get(data);
-		
+
 		if(results){
 			if(results.data && results.data.length > 0){
 				results.filters = data;

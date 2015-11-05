@@ -6,16 +6,11 @@ module.exports = {
 		var data = _s_req.validate(_listings.helpers.filters());
 
 		if(data.failure) return data;
-		
 		if(_s_seller) data.seller = _s_seller.profile.id();
 		data.user = _s_user.profile.id();
+		data.endpoint = true;
 
-		var results = yield _listings.get(data);
-		if(results && results.data.length > 0) {
-			results.filters = data;
-			return { success : results };
-			}
-		return { failure : {msg: 'No listings matched your query.', code:300 }};
+		return yield _listings.get(data);
 		},
 	new : function*(){
 		// this is the api endpoint for adding a new listing
@@ -38,30 +33,37 @@ module.exports = {
 		if(_s_seller) r.seller = _s_seller.profile.id()
 		return yield _listings.update(r);
 		},
-	decision : function*(){
+	'decision/status' : function*(){
 		
 		var data = _s_req.validate({
 			id : {v:['isListing']},
-			interest : { v:['isInterests'] },
+			extra : { v:['isAlphaOrNumeric'] },
 			status : { in:['3','4',3,4] }
 			});
 		if(data.failure) return data;
 		
-		var r = yield _s_common.check({
+		var x = {
 			id : data.id,
 			library : 'listings',
-			user : 'interests',
+			user : {
+				id : _s_user.profile.id(),
+				target : true
+				},
 			label : 'listing', 
-			status : [3,4]
-			});
+			status : [1,2]
+			}
 
-		if(r.failure) return r;
-		var p = r.object.object;
+		if(_s_seller) x.seller = { id : _s_seller.profile.id(), target : true }
+		var r = yield _s_common.check(x);
 
-		p.setup.status = parseInt(data.status);
-		r.result.interests[r.object.index] = p;
+
+		var interest = _s_util.array.find.object(r.interests , 'interest' , data.extra , true );
+		if(!interest) return { failure : 'The interest could not be found.' };
 		
-		return yield _s_common.update(r.result , 'listings');
+		interest.object.setup.status = parseInt(data.status);
+		r.interests[interest.index] = interest.object;
+	
+		return yield _s_common.update(r , 'listings');
 		},
 	message : function*(){
 		return yield _listings.actions.message({ type : 2 , user : _s_user.profile.id() , seller : _s_seller?_s_seller.profile.id():null });

@@ -15,6 +15,16 @@ function Locales(){
 
 
 Locales.prototype = {
+	error: function(code){
+		switch(code){
+			case 101 :
+				return { failure : { msg : 'You must be a seller to use this feature.' , code : 101 } }
+				break;
+			default :
+				return { failure : { msg : 'There was an error.' , code : 300 } }
+				break;
+			}
+		},
 	active : {
 		get : function(truthy){
 			return  _s_session.get('active.locale', truthy);
@@ -31,13 +41,19 @@ Locales.prototype = {
 	// 	},
 	info : function(parameter, value, context, type){
 		// var locale = _s_load.locale(library);
-		
-		var locale = (context == undefined || context == false ? _s_load.locale() : _s_load.locale(context));
 
+		if(context && context.indexOf('.') != -1) {
+			var r = context.split('.');
+			context = r[0];
+			type = r[1];
+			}
+
+		var locale = (context == undefined || context == false ? _s_load.locale() : _s_load.locale(context));
+		
 		if(type && locale[type][parameter] &&  locale[type][parameter][value]){
 			return locale[type][parameter][value]
 			}
-		else if(locale[parameter] !== undefined){
+		else if(locale[parameter] &&  !isNaN(Object.keys(locale[parameter])[0])){
 			if(value == undefined) return locale[parameter];
 			else return locale[parameter][value];
 			}

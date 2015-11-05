@@ -28,25 +28,7 @@ Orders.prototype = {
 			}
 		},
 	get : function*(obj){
-		var self = this;
-		var results = yield this.model.get(obj);
-
-		if(results){
-			if(obj.convert && obj.convert != 'false'){
-				if(results.counter){
-					var send = [];
-					// means we are returning total too
-					yield _s_util.each(results.data, function*(o,i){
-						o.data.id = o.id;
-						send.push(yield self.helpers.convert(o.data));
-						})
-					return { counter : results.counter , data : send };
-					}
-				return yield self.helpers.convert(results);
-				}	
-			return results;
-			}
-		return false;
+		return yield _s_common.get(obj, 'orders');
 		},
 	get new() {
 		var self  = this;

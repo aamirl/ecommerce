@@ -9,7 +9,7 @@ Sellers.prototype = {
 	init : function*(data){
 		if(typeof data != 'object'){
 			// let's load the seller from the database
-			var _sellers = _s_load.library('sellers');
+			var _sellers = _s_load.engine('sellers');
 			var result = yield _sellers.get({ id : data , convert : false, objectify : false });
 			if(!result) { this.failure = { msg : 'The user could not be found.' , code : 300 }; }
 			else {
@@ -19,7 +19,7 @@ Sellers.prototype = {
 			}
 		else{ this.data = data; }
 		},
-	library : _s_load.library('sellers'),
+	library : _s_load.engine('sellers'),
 	get privileges() {
 		var self = this;
 		return {
@@ -45,7 +45,8 @@ Sellers.prototype = {
 	get profile(){
 		var self = this;
 		return {
-			all : function(){
+			all : function*(convert){
+				if(convert) return yield _s_util.convert.single({ library:'sellers',data:self.data,label:true })
 				return self.data;
 				},
 			id : function(){

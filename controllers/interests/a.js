@@ -9,12 +9,9 @@ module.exports = {
 		if(data.failure) return data;
 
 		data.user = _s_user.profile.id();
-		var results = yield _interests.get(data);
-		if(results && results.data && results.data.length > 0) {
-			results.filters = data;
-			return { success : results };
-			}
-		return { failure : {msg: 'No interests matched your query.', code:300 }};
+		data.endpoint = true;
+
+		return yield _interests.get(data);
 		},
 	new : function*(){
 		// this is the api endpoint for adding a new interest to an existing listing
@@ -25,6 +22,10 @@ module.exports = {
 		},
 	status : function*(){
 		
+		return yield _interests.actions.status({
+			user : true
+			});
+
 		var data = _s_req.validate({
 			id : {v:['isListing']},
 			status : { in:['2','1',1,2] }

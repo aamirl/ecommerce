@@ -348,8 +348,12 @@ module.exports = {
                         else var converted = '<span><i class="fa fa-fw fa-clock-o s-green"></i> ' +c + ' </span><small class="date-timeago">'+_s_dt.timeago(targ)+'</small>';
                         }
                     else if(new RegExp(csvs).test(k)){
-                        console.log(k);
-                        var converted = targ.join(',');
+                        try{
+                            var converted = targ.join(',');
+                            }
+                        catch(err){
+                            var converted = targ;
+                            }
                         }
                     else if(new RegExp(countries_t).test(k)){
                         var converted = countries[targ].country_name;

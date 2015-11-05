@@ -12,7 +12,7 @@ GLOBAL._s_util = _s_load.helper('utilities');
 GLOBAL._s_dt = _s_load.engine('datetime');
 GLOBAL._s_db = _s_load.engine('database');	
 GLOBAL._s_common = _s_load.engine('common');	
-GLOBAL._s_sf = _s_load.engine('storefront');	
+GLOBAL._s_sf = _s_load.engine('storefront');
 
 // GLOBAL._s_rmq = _s_load.engine('rabbit');
 var paths = require('./paths');
@@ -37,9 +37,13 @@ app.use(function*(next){
 	GLOBAL._s_session = _s_load.engine('session' , this.session);
 	GLOBAL._s_countries = _s_load.engine('countries');
 	GLOBAL._s_l = _s_load.engine('locales');
-	GLOBAL._s_loc = _s_load.engine('location' , this.request.ip);	
+	GLOBAL._s_loc = _s_load.engine('location' , this.request.ip);
+
+	GLOBAL._s_seller = false;
 
 	var cached = undefined;	
+
+	// _s_cache.delete();
 
 
 	// first we see if this path is an auth
@@ -59,7 +63,7 @@ app.use(function*(next){
 		if(!cached){
 			// check oAuth server and see if user is logged in 
 
-			var get = yield _s_req.http({
+			var get = yield _s_req.sellyx({
 				path : 'auth/validate',
 				params : {
 					key : this.request.header.key
@@ -76,7 +80,7 @@ app.use(function*(next){
 			var id = get.success.data.id;
 
 			// now we get the user information from the oAuth server
-			var get = yield _s_req.http({
+			var get = yield _s_req.sellyx({
 				path : 'user',
 				params : {
 					id : id
@@ -121,7 +125,7 @@ app.use(function*(next){
 			// if the user is a seller, let's see if we loaded their seller information in the cache
 			var seller = yield _s_cache.key.get('seller');
 			if(!seller){
-				var r = yield _s_load.engine('sellers').get(_s_user.seller.id());
+				var r = yield _s_load.engine('sellers').get({id:_s_user.seller.id(), exclude:'faq,reviews,financials,totals,policy,fans'});
 				r.fulfillment = _s_countries.fulfillment.fulfilled('240');
 
 				yield _s_cache.key.set({key : 'seller', value : r });

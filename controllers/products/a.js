@@ -4,6 +4,7 @@ var c = _products.helpers.filters();
 
 module.exports = {
 	'get/inventory' : function*(){
+		if(!_s_seller) return _s_l.error(101);
 		// we want to call the auth controller with the seller information
 		// we add the filters we need for this particular inventory call
 
@@ -21,6 +22,7 @@ module.exports = {
 		return { failure : {msg: 'No products matched your query.' } , code : 300 };
 		},
 	'get/seller' : function*(){
+		if(!_s_seller) return _s_l.error(101);
 		// we want to call the auth controller with the seller information
 		// we add the filters we need for this particular inventory call
 
@@ -43,12 +45,24 @@ module.exports = {
 	'new' : function*(){
 		
 		},
-	'new/listing' : function*(){
+	update : function*(){
+
+		return yield _products.update.product();
+
+		},
+	'listing/new' : function*(){
 		return yield _products.new.listing();
 		},
-	'update/listing' : function*(){
+	'listing/update' : function*(){
 		return yield _products.update.listing();
 		},
+	'listing/status' : function*(){
+		if(!_s_seller) return { failure : { msg:'this is not a seller' , code : 300 } };
 
+		return yield _products.actions.status.listing({
+			seller : true
+			});
+
+		}
 
 	}

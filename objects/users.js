@@ -9,7 +9,7 @@ Users.prototype = {
 	init : function*(data){
 		if(typeof data != 'object'){
 			// let's load the user from the database
-			var _users = _s_load.library('users');
+			var _users = _s_load.engine('users');
 			var result = yield _users.get({ id : data , convert : false, objectify : false });
 			if(!result) { this.failure = { msg : 'The user could not be found.' , code : 300 }; }
 			else {
@@ -19,7 +19,7 @@ Users.prototype = {
 			}
 		else{ this.data = data; }
 		},
-	library : _s_load.library('users'),
+	library : _s_load.engine('users'),
 	get privileges() {
 		var self = this;
 		return {
@@ -90,7 +90,7 @@ Users.prototype = {
 				primary : function(){
 					var addresses = self.profile.addresses.all();
 					return addresses[0];
-					return _s_util.array.find.object(addresses, 'primary' , true);
+					// return _s_util.array.find.object(addresses, 'primary' , true);
 					},
 				all : function(){
 					return self.data.addresses;

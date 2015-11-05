@@ -49,6 +49,7 @@ module.exports = {
 			}
 		},
 	get : function*(obj){
+		
 		// if we have just an id we just submit that;
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('products', obj);
 
