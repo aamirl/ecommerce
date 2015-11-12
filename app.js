@@ -62,15 +62,12 @@ app.use(function*(next){
 		var cached = yield _s_cache.get('ec-' + this.request.header.key);
 		if(!cached){
 			// check oAuth server and see if user is logged in 
-
 			var get = yield _s_req.sellyx({
 				path : 'auth/validate',
 				params : {
 					key : this.request.header.key
 					}
 			 	})
-
-			console.log(get);
 
 			if(get.failure){
 				this.body = { failure : { msg : get.failure.msg , code : 101 } }
@@ -87,12 +84,10 @@ app.use(function*(next){
 					}
 				})
 
-
 			if(typeof get == 'string'){
 				this.body = { failure : { msg : 'The user does not exist.' , code : 100 } };
 				return;
 				}
-
 
 			// now we need to check if the user exists in ES
 			var _users = _s_load.engine('users');
@@ -118,8 +113,6 @@ app.use(function*(next){
 
 		GLOBAL._s_cache_key = this.request.header.key;
 		GLOBAL._s_user = yield _s_load.object('users', cached.user);
-
-		// console.log(_s_user.seller.id())
 
 		if(_s_user.seller.id()){
 			// if the user is a seller, let's see if we loaded their seller information in the cache

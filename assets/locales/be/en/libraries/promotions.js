@@ -4,10 +4,8 @@
 var obj = {
 	status : {
 		0 : 'Sellyx Hold - Promotion Inactive',
-		1 : 'Scheduled',
-		2 : 'Ongoing',
-		3 : 'Expired',
-		4 : 'Cancelled'
+		1 : 'Active',
+		2 : 'Inactive'
 		},
 	apply : {
 		1 : 'Inventory Items',

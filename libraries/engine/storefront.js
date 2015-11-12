@@ -19,9 +19,7 @@ Storefront.prototype = {
 				var obj = self.list;
 
 				_s_u.each(parts, function(o,i){
-
 					obj = obj[o].children ? obj[o].children : obj[o]
-
 					})
 				return obj || undefined;
 				},

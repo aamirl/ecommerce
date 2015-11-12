@@ -65,7 +65,7 @@ Listings.prototype = {
 					}
 					
 				var l = {
-					category : { v : ['isCategory']},
+					category : { v : ['isCategory'] , b:true },
 					condition : { v : ['isCondition'] },
 					quantity : { v : ['isInt'] , b:true},
 					price : { v:['isPrice'] },

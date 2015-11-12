@@ -171,7 +171,6 @@ module.exports = {
 
                     _s_u.each(arr , function(o,i){
                         var r = self.object.same(o, test);
-                        console.log(same);
                         same = r;
                         return !r
                         })
@@ -202,7 +201,7 @@ module.exports = {
                     for (var i = 0; i < arr.length; i++) {
                         if (arr[i][key] == value) {
                             if(index){
-                                send.push({ object : arr[i] , index : [i] });
+                                send.push({ object : arr[i] , index : i });
                                 }
                             else{
                                 send.push(arr[i]);
@@ -212,6 +211,16 @@ module.exports = {
                     if(send.length > 0) return send;
                     else return false;
                     }
+                },
+            splicem : function(obj){
+                // multiple splice
+                var valuesArr = obj.array;
+                var removeValFromIndex = obj.remove;
+
+                for (var i = removeValFromIndex.length -1; i >= 0; i--)
+                    valuesArr.splice(removeValFromIndex[i],1);
+
+                return valuesArr;
                 }
             }
         },
@@ -345,7 +354,8 @@ module.exports = {
                     else if(new RegExp(dates).test(k)){
                         var c = (obj.dates && obj.dates.d ? _s_dt.convert.date.output(targ) : _s_dt.convert.datetime.output(targ) );
                         if(obj.dates && obj.dates.r) var converted = c;
-                        else var converted = '<span><i class="fa fa-fw fa-clock-o s-green"></i> ' +c + ' </span><small class="date-timeago">'+_s_dt.timeago(targ)+'</small>';
+                        else var converted = c;
+                        // else var converted = '<span><i class="fa fa-fw fa-clock-o s-green"></i> ' +c + ' </span><small class="date-timeago">'+_s_dt.timeago(targ)+'</small>';
                         }
                     else if(new RegExp(csvs).test(k)){
                         try{

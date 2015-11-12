@@ -59,6 +59,37 @@ module.exports = {
 		// if we have just an id we just submit that;
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('users', obj);
 
+		if(obj.su){
+			var search = {
+				index : 'sellyx',
+				type : 'users,sellers',
+				body : {
+					query : {
+						filtered : {
+							query : {
+								bool : {
+									must : [
+										{
+											match : {
+												'setup.active' : 1
+												}
+											}
+										]
+									}
+								},
+							filter : {
+								ids : {
+									values : obj.su
+									}
+								}
+							}
+						}
+					}
+				}
+
+			return yield _s_db.es.search(search, obj)
+			}
+
 		var search = {
 			index : 'sellyx',
 			type : 'users',
@@ -73,8 +104,7 @@ module.exports = {
 				}
 			};
 
-		obj.sid ? search.body.query.bool.must.push({match:{'setup.seller':obj.sid}}) : null;
-		// obj.approvals ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
+		obj.seller ? search.body.query.bool.must.push({match:{'seller.id':obj.seller}}) : null;
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
 		return yield _s_db.es.search(search, obj);
 		}

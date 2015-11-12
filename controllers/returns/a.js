@@ -1,7 +1,7 @@
 var _returns = _s_load.library('orders');
 
 module.exports = {
-	'get/seller' : function*(){
+	get : function*(){
 		if(!_s_seller) return _s_l.error(101);
 		
 		var c = _returns.helpers.filters();
@@ -22,5 +22,8 @@ module.exports = {
 		data.endpoint = true;
 
 		return  yield _returns.get(data);
+		},
+	new : function*(){
+		return yield _returns.new();
 		}
 	}

@@ -5,8 +5,6 @@ var obj = {
 	status : {
 		1 : 'Active Message Thread',
 		},
-	type : {
-		},
 	msg : {
 		priority : {
 			1 : 'Regular',

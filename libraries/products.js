@@ -179,9 +179,11 @@ Products.prototype = {
 											}
 										}
 
+									product.combos[i].label = 'Combo ' + i;
 									product.combos[i][attr] = {
 										data : val,
-										label : ins
+										label : ins,
+										filter : (attr == 'color' || (template.setup.combo[attr] && (template.setup.combo[attr].defaults || template.setup.combo[attr].range))) ? true : false
 										}
 									template.setup.combo[attr] && template.setup.combo[attr].defaults && template.setup.combo[attr].defaults[val] ? product.combos[i][attr].converted = template.setup.combo[attr].defaults[val] : null;
 									})
@@ -317,7 +319,7 @@ Products.prototype = {
 					y : { v:['isInt'] , b:true , default : 10 }
 					}
 				},
-			validation : {
+			validators : {
 				listing : function(){
 					return {
 						condition : { in:[1,2,3,4,5,6,7,'1','2','3','4','5','6','7'] },
@@ -430,6 +432,121 @@ Products.prototype = {
 								}
 							}
 						}
+					},
+				product : function(obj , blank){
+					// this would be the validators for a product variation
+					return _s_util.merge({
+						name : { v:['isAlphaOrNumeric'] , b:blank },
+						description : { v:['isTextarea'], b:blank },
+						origin : { v:['isCountry'], b:blank },
+						// line : { v:['isLine'], b:blank },
+						attributes : { v:['isJSON'] , b:blank},
+						images : { v:['isArray'] , b:blank},
+						additional : { v:['isJSON'] , b:true },
+						},obj);
+					},
+				dimensions : function(obj){
+					return {
+						s_length : {v:['isDimension']},
+						s_width : {v:['isDimension']},
+						s_height : {v:['isDimension']},
+						s_weight : {v:['isWeight']},
+						};
+					},
+				identifiers : function(){
+					return {
+						upc : {v:['isUPC'], b:true},
+						jan : {v:['isJAN'], b:true},
+						ean : {v:['isEAN'], b:true},
+						isbn : {v:['isISBN'], b:true},
+						issn : {v:['isISSN'], b:true},
+						mpn : {v:['isMPN'], b:true},
+						sku : {v:['isAlphaOrNumeric'], b:true},
+						style : {v:['isAlphaOrNumeric'], b:true},
+						model : {v:['isAlphaOrNumeric'], b:true},
+						other : {v:['isAlphaOrNumeric'], b:true}
+						}
+					},
+				attributes : function(obj){
+					// data will be the template properties
+					var template = obj;
+					// now let's set up attribute data validators
+					var validator = (template.setup.dimensions ? self.helpers.validators.dimensions() : {} );
+					// merge the booleans with the properties to give us all the attributes
+					if(template.booleans) template.properties = _s_util.merge(template.properties, template.booleans);
+		
+					// now iterate over all the properties and add them to validator
+					_s_u.each(template.properties, function(dets,val){
+						// means its an array of items, so lets explode them via filter
+						if(val.indexOf('_ddm_') !== -1){
+							validator[val] = { v:['isArray']  }
+							}
+						else if(dets.validate){
+							switch(dets.validate){
+								case 'year':
+									validator[val] = { v:['isYear'] };
+									break;
+								case 'number':
+									validator[val] = { v:['isInt'] };
+									break;
+								case 'decimal':
+									validator[val] = { v:['isDecimal'] };
+									break;
+								case 'dimension':
+									validator[val] = { v:['isDimension'] };
+									break;
+								}
+							}
+						else{
+							if(val.indexOf('_attr_') !== -1) validator[val] = { in : ['1','2' , 1 , 2] };
+							else validator[val] = { v:['isAlphaOrNumeric'] };
+							}
+						})
+
+					return validator;
+					},
+				combinations : function*(category , custom){
+					// data will be the template properties
+					var template = yield _s_load.template(category);
+					if(!template) return {  failure : { msg : 'There was no template found.' , code : 300 }}
+					custom = (custom && custom == 2 ? true : false);
+					// now let's set up attribute data validators
+					var validator = (!template.setup.dimensions ? _s_util.merge(self.helpers.validators.dimensions(), self.helpers.validators.identifiers()) : self.helpers.validators.identifiers() );
+
+					if(!custom) validator.msrp = {v:['isPrice'] };
+					if(template.setup.identifiers.required){
+						_s_u.each(template.setup.identifiers.required, function(val,ind){
+							validator[val].b = custom;
+							})
+						}
+
+					_s_u.each(template.setup.combo, function(dets,key){
+						// TODO : see if we want to validate the combo information any further
+						if(dets.validate){
+							switch(dets.validate){
+								case 'year':
+									validator[key] = { v:['isYear'] };
+									break;
+								case 'number':
+									validator[key] = { v:['isInt'] };
+									break;
+								case 'decimal':
+									validator[key] = { v:['isDecimal'] };
+									break;
+								case 'dimension':
+									validator[key] = { v:['isDimension'] };
+									break;
+								}
+							}
+						else if(key == 'length' || key == 'waist'){
+							validator[key] = { v:['isInt'] }
+							}
+						else{
+							validator[key] = { v:['isAlphaOrNumeric'] }
+							}
+						})
+
+					return validator;
 					}
 				}
 			}
@@ -485,7 +602,7 @@ Products.prototype = {
 		var self = this; 
 		return {
 			listing : function*(obj){
-				var c = self.helpers.validation.listing();
+				var c = self.helpers.validators.listing();
 
 				if(obj && obj.data) var data = _s_req.validate({validators:c, data:obj.data })
 				else var data = _s_req.validate(c);
@@ -591,6 +708,20 @@ Products.prototype = {
 				if(results) return { success : results.id }
 				return { failure : 'The product line could not be added at this time.' }
 				},
+			combination : function*(obj){
+				// feed in the category for the template
+				// also let us know if it's custom or not
+				var template = _s_load.template(obj.category);
+				if(!template) return { failure : { msg : 'There was an issue loading the template for the combination.' , code : 300 } } ;
+				
+				var t = yield self.helpers.validators.combinations(obj.category,obj.custom);
+				if(t.failure) return t;
+				var data = _s_req.validate(t);
+				if(data.failure) return data;
+
+				data.id = _s_common.helpers.generate.id();
+				return data;
+				}
 			}
 		},
 	get update() {
@@ -600,11 +731,10 @@ Products.prototype = {
 				!obj?obj={}:null;
 
 				if(!_s_seller&&!obj.seller) return { failure : { msg : 'This is a change that is allowed for sellers only.' , code:300 } } ;
-
 				if(!obj.category) return { failure : { msg: 'There was no category specified.' , code :300 } }
 
 
-				var c = self.helpers.validation.listing();
+				var c = self.helpers.validators.listing();
 				c.id = { v:['isListing'] };
 
 				if(obj && obj.data) var data = _s_req.validate({validators:c, data:obj.data })
@@ -635,35 +765,45 @@ Products.prototype = {
 			product : function*(obj){
 				!obj?obj={}:null;
 
-				if(!_s_seller&&!obj.seller) return { failure : { msg : 'This is a change that is allowed for sellers only.' , code:300 } } ;
-
-				var c = self.helpers.validation.listing();
-				c.id = { v:['isListing'] };
-
+				var c = self.helpers.validators.product({id:{ v:['isProduct'] } }, true);
 				if(obj && obj.data) var data = _s_req.validate({validators:c, data:obj.data })
 				else var data = _s_req.validate(c);
 				if(data.failure) return data;
+				if(Object.keys(data).length == 1) return { failure : { msg : 'There was no data submitted to update.' , code : 300 } }
 
-				var get = yield self.get(data.product);
-				if(!get) return { failure : { msg : 'Listing could not be added because the product could not be found.' , code:300 } } ;				
+				var original_product = yield self.get(data.id);
+				if(!original_product) return { failure : { msg : 'There was no product found to update.' , code : 300 } }
 
-				// now find the listing
-				var listing = _s_util.array.find.object(get.sellers, 'id', data.id, true);
-				if(!listing) return { failure : {msg : 'The listing could not be edited because the listing could not be found.' , code :300 } };
+				// let's make sure that the product belongs to the seller trying to edit it
+				if(!obj.corporate && (original_product.setup.seller != obj.seller || original_product.setup.locked == 2)) return { failure : { msg : 'You are unauthorized to make this change.' , code : 300 } }
 
-				// now we make sure the listing belongs to the seller
-				var seller = (!obj.seller?_s_seller.profile.id():obj.seller);
-				if(listing.object.seller.id != seller) return { failure : { msg : 'This listing does not belong to your company.' , code : 300 } }
+				// if(data.line && data.line != original_product.line.id){
+				// 	// let's make sure that the line exists
+				// 	var line = yield _s_load.library('lines').get(data.line);
+				// 	if(!line) return { failure : { msg : 'The line for this product was not found.' , code : 300 } }
+				// 	data.line = line;
+				// 	var template = _s_load.template(data.line.category);
+				// 	}
+				// else{
+				// 	delete data.line;
+					var template = _s_load.template(original_product.line.category);
+					// }
 
-				// if everything checks out, we go ahead and update
-				data = _s_util.merge(listing.object, data)
-				get.sellers[listing.index] = data;
+				// lets get the category and the template from the line
+				if(!template) return { failure : { msg : 'The category for the product was incorrect.' , code : 300 } };
 
-				var update = self.model.update(get);
-				delete data.product;
+				if(data.attributes){
+					data.attributes = _s_req.validate({
+						validators : self.helpers.validators.attributes(template),
+						data : data.attributes
+						})
 
-				if(get) return { success : { data : yield self.helpers.convert.listing(data) } }
-				return {  failure : { msg : 'The listing was not updated at this time.', code : 300 }}
+					if(data.attributes.failure) return data.attributes;
+					}
+
+				// let's merge the new data with the original product
+				data = _s_util.merge(original_product, data);
+				return yield _s_common.update(data, 'products');
 				}
 			}
 		},
@@ -710,6 +850,57 @@ Products.prototype = {
 					obj.corporate ? v.status = [0,1,2] : null;
 					return yield _s_common.check(v);
 					}
+				},
+			summary : function*(obj){
+				var data = {
+					include : 'sellers.id,sellers.seller.id,name,line.name,line.category,line.manufacturer.name,sellers.condition,sellers.combo,combos',
+					endpoint : true,
+					seller : obj.seller,
+					convert : true,
+					admin : true
+					}
+
+				var results = yield self.model.get(data);
+				// iterate over
+
+				if(results.data && results.data.length > 0){
+
+					var send = {
+						categories : {},
+						listings : []
+						}
+
+					_s_u.each(results.data, function(product,index){
+						if(!send.categories[product.data.line.category]) send.categories[product.data.line.category] = _s_sf.categories.name(product.data.line.category);
+						
+						_s_u.each(product.data.sellers, function(listing,ind){
+							if(listing.seller.id != obj.seller) return false;
+							
+							var combo = _s_util.array.find.object(product.data.combos, 'id' , listing.combo);
+
+							if(!combo) return false;
+							var name = product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name + ' - ' + (combo.label||'Unknown Combination') + ' (' + _s_sf.condition(listing.condition) + ')';
+
+							if(obj.combined){
+								send.listings.push({
+									pal : product.id + '-' + listing.id,
+									name : name
+									})
+								}
+							else{
+								send.listings.push({
+									product : product.id,
+									listing : listing.id,
+									name : name
+									})
+								}
+							})
+						})
+
+					return { success : send }
+					}
+
+				return { failure : {msg: 'There was no summary found for this seller.' } , code : 300 };
 				}
 			}
 		} 

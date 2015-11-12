@@ -31,66 +31,10 @@ module.exports = {
 						filter : {
 							bool : {
 								must : [
-									{
-										range : {
-											start : {
-												lt : 'now'
-												}
-											}
-										},
-									{
-										range : {
-											end : {
-												gt : 'now'
-												}
-											}
-										},
-									{
-										terms : {
-											seller : obj.sellers
-											}
-										}
 									],
 								must_not : [
-									{
-										term : {
-											restricted : (obj.country ? obj.country : _countries.active.get())
-											}
-										}
 									],
 								should : [
-									{
-										nested : {
-											path : 'items',
-											query : {
-												bool : {
-													must : [
-														// {
-														// 	terms : {
-														// 		'items.listing' : obj.listings,
-														// 		minimum_should_match : 1
-														// 		}
-														// 	},
-														{
-															terms : {
-																'items.product' : obj.products
-																}
-															}
-														]
-													}
-												}
-											}
-										},
-									{
-										term : {
-											categories : obj.categories
-											}
-										},
-									{
-										term : {
-											apply : 2
-											}
-										}
 									]
 								}
 							}
@@ -99,12 +43,20 @@ module.exports = {
 				}
 			}
 
-		obj.active ? get.body.query.filtered.filter.bool.must.push({term : { 'setup.active' : obj.active } }) : null;
-		obj.redemption ? get.body.query.filtered.filter.bool.must.push({term : { redemption : obj.redemption } }) : null;
+		// obj.products ? get.body.query.filtered.filter.bool.should.push({ nested : {path : 'items', query : {bool : {must : [{terms : {'items.product' : obj.products } } ] } } } }) : null;
+		obj.categories ? get.body.query.filtered.filter.bool.should.push({term : {categories : obj.categories } }) : null;
+		obj.order ? get.body.query.filtered.filter.bool.should.push({term : {apply : 2 } }) : null;
 
-		obj.seller ? search.body.query.bool.must.push({match:{'seller.id':obj.seller}}) : null;
-		obj.user ? search.body.query.bool.must.push({match:{'user.id':obj.user}}) : null;
-		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : obj.active } }) : null;
-		return yield _s_db.es.search(search, obj);
+		obj.active ? get.body.query.filtered.filter.bool.must.push({term : { 'setup.active' : obj.active } }) : null;
+		obj.seller ? get.body.query.filtered.filter.bool.must.push({term : { 'seller' : obj.seller } }) : null;
+		obj.redemption ? get.body.query.filtered.filter.bool.must.push({term : { redemption : obj.redemption } }) : null;
+		obj.start ? get.body.query.filtered.filter.bool.must.push({range : { start : {lt:obj.start} } }) : null;
+		obj.sellers ? get.body.query.filtered.filter.bool.must.push({terms : { 'seller.id' : obj.sellers } }) : null;
+		obj.country ? get.body.query.filtered.filter.bool.must_not.push({terms : { restricted : obj.country } }) : null;
+
+		// obj.seller ? search.body.query.bool.must.push({match:{'seller.id':obj.seller}}) : null;
+		// obj.user ? search.body.query.bool.must.push({match:{'user.id':obj.user}}) : null;
+		// obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : obj.active } }) : null;
+		return yield _s_db.es.search(get, obj);
 		}
 	}

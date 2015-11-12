@@ -961,7 +961,7 @@ module.exports = exports = {
 							'02' : {
 								// LOOK AT THIS ONE MORE
 								name : 'Hoodies/Sweatshirts',
-								table : '0401010102'		
+								table : '04010102'		
 								},
 							'03' : {
 								name : 'Sweaters',
@@ -973,15 +973,15 @@ module.exports = exports = {
 								},
 							'05' : { 
 								name : 'Jeans',
-								table : '0401010105'
+								table : '04010105'
 								},
 							'06' : {
 								name : 'Pants',
-								table : '0401010105'
+								table : '04010105'
 								},
 							'07' : {
 								name : 'Shorts',
-								table : '0401010107'
+								table : '04010107'
 								},
 							'08' : {
 								name : 'Suits/Sportcoats',
@@ -991,19 +991,19 @@ module.exports = exports = {
 										},
 									'02' : {
 										name : 'Suit Coats',
-										table : '0401010108'
+										table : '04010108'
 										},
 									'03' : {
 										name : 'Suit Pants',
-										table : '0401010105'
+										table : '04010105'
 										},
 									'04' : {
 										name : 'Sport Coats / Blazers',
-										table : '0401010108'
+										table : '04010108'
 										},
 									'05' : {
 										name : 'Vests',
-										table : '040101010805'
+										table : '0401010805'
 										}
 									}
 								},
@@ -1012,23 +1012,23 @@ module.exports = exports = {
 								children : {
 									'01' : {
 										name : 'Boxers',
-										table : '04010901'
+										table : '0401010901'
 										},
 									'02' : {
 										name : 'Briefs',
-										table : '04010901'
+										table : '0401010901'
 										},
 									'03' : {
 										name : 'Boxer Briefs',
-										table : '04010901'
+										table : '0401010901'
 										},
 									'04' : {
 										name : 'Trunks',
-										table : '04010901'
+										table : '0401010901'
 										},
 									'05' : {
 										name : 'Undershirts',
-										table : '04010905'
+										table : '0401010905'
 										},
 									}
 								},

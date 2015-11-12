@@ -66,10 +66,13 @@ validator.extend('isWebsite',function(){
 validator.extend('isProduct',function(){
 	return true;
 	})
+validator.extend('isCombination',function(){
+	return true;
+	})
 validator.extend('isTransferRequest',function(){
 	return true;
 	})
-validator.extend('isThread',function(){
+validator.extend('isMessageThread',function(){
 	return true;
 	})
 validator.extend('isOrder',function(){
@@ -167,13 +170,18 @@ validator.extend('isPaLs',function(inp, filter){
 		var send = [];
 		var i=0;
 
-		_s_u.each(items, function(item, ind){
-			var pieces = item.split('-');
-			// TODO : INSERT CHECK HERE TO MAKE SURE THAT PRODUCT AND LISTING PIECES ARE RIGHT
-			var p = pieces.shift();
-			if(filter) send.push({ product : p , listing : pieces.join('-') });
-			i++; 
+		_s_u.each(items, function(item,ind){
+			if(filter) send.push(item);
+			i++;
 			})
+
+		// _s_u.each(items, function(item, ind){
+		// 	var pieces = item.split('-');
+		// 	// TODO : INSERT CHECK HERE TO MAKE SURE THAT PRODUCT AND LISTING PIECES ARE RIGHT
+		// 	var p = pieces.shift();
+		// 	if(filter) send.push({ product : p , listing : pieces.join('-') });
+		// 	i++; 
+		// 	})
 
 		if(i == items.length){
 			if(filter) return send;
@@ -276,6 +284,7 @@ validator.extend('isDate',function(inp, filter){
 	return false;
 	})
 validator.extend('isDateTime',function(inp, filter){
+	
 	if(_s_dt.valid.datetime(inp)){
 		if(filter){
 			return _s_dt.convert.datetime.input(inp);
@@ -351,9 +360,6 @@ function Request(req){
 
 	if (method == 'GET') var params = parser.parse(this.request.req._parsedUrl.query)
 	else if(method == 'POST') var params = this.request.body;
-	
-	// console.log(params);
-
 	// for(var key in params){
 
 	// 	if(key == ''){ delete params[key] }
@@ -459,7 +465,6 @@ Request.prototype = {
 
 		var i = 0, data_total = data.length, errors = [], send = {};
 
-
 		_s_u.each(data, function(i_data,i){
 			// eon
 
@@ -494,9 +499,20 @@ Request.prototype = {
 					var json = false;
 					var filter = false;
 					_s_u.each(i_data.v, function(flag){
-						flag == 'isJSON' ? json = true : null;
-						_s_util.indexOf(autoFilters, flag) !== -1 ? filter = flag : null;
-						validator[flag](all_data[i]) ? count++ : null;
+						if(flag == 'isJSON'){
+							json = true;
+							if(typeof all_data[i] == 'object'){
+								count++;
+								}
+							else{
+								try{ JSON.parse(all_data[i]); count++; }
+								catch(err){}
+								}
+							}
+						else{
+							_s_util.indexOf(autoFilters, flag) !== -1 ? filter = flag : null;
+							validator[flag](all_data[i]) ? count++ : null;
+							}						
 						});
 					if(count == total){
 						if(json){

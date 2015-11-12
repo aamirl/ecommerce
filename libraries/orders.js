@@ -5,12 +5,12 @@ function Orders(){}
 Orders.prototype = {
 	model : _s_load.model('orders'),
 	helpers : {
-		convert : function*(obj){
+		// convert : function*(obj){
 
-			var r = yield _s_common.helpers.convert(obj , 'orders');
+		// 	var r = yield _s_common.helpers.convert(obj , 'orders');
 
-			return r;
-			},
+		// 	return r;
+		// 	},
 		filters : function(){
 			return {
 				q : { v:['isSearch'] , b : true},

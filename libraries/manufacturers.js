@@ -62,12 +62,14 @@ Manufacturers.prototype = {
 
 		if(data.failure) return data;
 
-		var results = yield this.model.update(data);
-		if(results){
-			if(obj.raw) return { success : data }
-			return { success : yield _s_common.helpers.convert(data, 'manufacturers') }
-			}
-		return { failure : { msg : 'The manufacturer could not be updated at this time.' , code:300 } } 
+		return yield _s_common.update(data, 'manufacturers');
+
+		// var results = yield this.model.update(data);
+		// if(results){
+		// 	if(obj.raw) return { success : data }
+		// 	return { success : yield _s_common.helpers.convert(data, 'manufacturers') }
+		// 	}
+		// return { failure : { msg : 'The manufacturer could not be updated at this time.' , code:300 } } 
 		}
 	
 	}

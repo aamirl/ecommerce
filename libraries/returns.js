@@ -65,6 +65,15 @@ Returns.prototype = {
 				y : { v:['isInt'] , b:true , default : 10 }
 				};
 			},
+		validators : function(){
+			return {
+				id : {v:['isOrder']},
+				listing : {v:['isListing']},
+				reason : { in:[1,2,3,4,5,6,7,'1','2','3','4','5','6','7'] },
+				quantity : { v:['isInt'] },
+				details : { v:['isAlphaOrNumeric'] , b:true }
+				}
+			},
 		convert : {
 			return : function*(s,type){
 				s.policy = _s_l.convert({ array : s.policy, library : 'returns' });
@@ -80,6 +89,23 @@ Returns.prototype = {
 		},
 	get : function*(obj){
 		return yield _s_common.get(obj, 'returns');
+		},
+	new : function*(obj){
+		if(obj && obj.data){var data = obj.data; } 
+		else{
+			var data = _s_req.validate(this.helpers.validators());
+			}
+
+		if(data.failure) return data;
+
+		var order = _s_load.library('orders').model.get(data.id);
+		if(!order) return { failure : { msg : 'There was no order found with that id.' , code : 300 } };
+		if(obj.user && obj.user != order.user.id) return { failure : { msg : 'This return cannot be completed because this order is not under your control.' , code : 300} };
+
+		
+
+
+		return yield _s_common.new(data,'returns', true);
 		}
 	
 	}

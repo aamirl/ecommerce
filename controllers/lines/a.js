@@ -8,7 +8,6 @@ module.exports = {
 		// we add the filters we need for this particular inventory call
 
 		var data = _s_req.validate(_lines.helpers.filters());
-
 		if(data.failure) return data;
 		
 		// next we want to add the seller information

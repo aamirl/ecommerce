@@ -258,7 +258,8 @@ Common.prototype = {
 				return { success : { data : yield lib.helpers.convert[obj.type](result,obj[iterator]) } }
 				}
 			else {
-				return { success : { data : yield lib.helpers.convert(result,obj[iterator]) } }
+				if(lib.helpers.convert) return { success : { data : yield lib.helpers.convert(result,obj[iterator]) } }
+				else return { success : { data : yield this.helpers.convert(result,obj.library) } }
 				}
 			}
 		

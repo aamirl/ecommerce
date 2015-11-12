@@ -29,7 +29,8 @@ DateTime.prototype = {
 		var self = this;
 		return {
 			datetime : function(inp){
-				return self.dt(inp, self.standards.dt).isValid();
+				var r = self.dt(inp, self.standards.dt).isValid();
+				return r;
 				},
 			date : function(inp){
 				return self.dt(inp, self.standards.d).isValid();
@@ -55,6 +56,7 @@ DateTime.prototype = {
 				if(tester == 'now') tester = self.now.datetime();
 				else tester = self.convert.datetime.input(tester);
 
+				console.log(tester);
 				// testee = self.convert.datetime.input(testee);
 
 				return self.dt(testee).isBefore(tester);
@@ -62,6 +64,7 @@ DateTime.prototype = {
 			after : function(testee, tester){
 				if(tester == 'now') tester = self.now.datetime();
 				else tester = self.convert.datetime.input(tester);
+
 
 				// testee = self.convert.datetime.input(testee);
 
