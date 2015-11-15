@@ -4,14 +4,14 @@ var maxmind = require('maxmind');
 
 function Location(inp){
 
+	this.data = {};
 	maxmind.init('../ecommerce/geoip/GeoLiteCity.dat');
 	inp = '72.21.92.59';
 	// inp = '212.138.92.10';
 
-	// if(!this.active.get(true)){
+	if(!this.active.get(true)){
 		this.active.set(maxmind.getLocation(inp))
-		// }
-		// console.log(this.active.get())
+		}
 	}
 
 
@@ -118,31 +118,32 @@ Location.prototype = {
 				}
 			}
 		},
-	active : {
-		get : function(truthy){
-			return  _s_session.get('active.location', truthy);
-			},
-		set : function(obj){
-			// let's translate the info into storables 
+	get active() {
+		var self = this;
+		return {
+			get : function(truthy){
+				return self.data.active;
+				},
+			set : function(obj){
+				// let's translate the info into storables 
 
-			var g = {
-				city : obj.city,
-				postal : obj.postalCode,
-				coordinates : {
-					lat : obj.latitude,
-					lon : obj.longitude
-					},
-				region : {
-					name : obj.regionName,
-					code : obj.region
-					},
-				country : {
-					name : obj.countryName,
-					code : obj.countryCode
+				self.data.active = {
+					city : obj.city,
+					postal : obj.postalCode,
+					coordinates : {
+						lat : obj.latitude,
+						lon : obj.longitude
+						},
+					region : {
+						name : obj.regionName,
+						code : obj.region
+						},
+					country : {
+						name : obj.countryName,
+						code : obj.countryCode
+						}
 					}
 				}
-
-			_s_session.set('active.location', g);
 			}
 		}
 	}

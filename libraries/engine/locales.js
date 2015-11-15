@@ -8,9 +8,8 @@
 
 
 function Locales(){
-
+	this.data = {};
 	!this.active.get() ? this.active.set('en') : null;
-	
 	}
 
 
@@ -25,12 +24,15 @@ Locales.prototype = {
 				break;
 			}
 		},
-	active : {
-		get : function(truthy){
-			return  _s_session.get('active.locale', truthy);
-			},
-		set : function(locale){
-			_s_session.set('active.locale', locale);
+	get active() {
+		var self = this;
+		return {
+			get : function(truthy){
+				return self.data.active;
+				},
+			set : function(locale){
+				self.data.active = locale;
+				}
 			}
 		},
 	// l : function(str, arr){

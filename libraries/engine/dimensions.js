@@ -37,6 +37,7 @@ var static_vars = {
 
 function Dimensions(){
 
+	this.data = {};
 	!this.active.get() ? this.active.set(1) : null;
 
 	}
@@ -44,12 +45,15 @@ function Dimensions(){
 
 
 Dimensions.prototype = {
-	active : {
-		get : function(truthy){
-			return  _s_session.get('active.dimensions', truthy);
-			},
-		set : function(standard){
-			_s_session.set('active.dimensions', standard);
+	get active() {
+		var self = this;
+		return {
+			get : function(truthy){
+				return self.data.active;
+				},
+			set : function(standard){
+				self.data.active = standard;
+				}
 			}
 		},
 	get : {

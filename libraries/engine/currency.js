@@ -7,16 +7,20 @@ var currencies = {
 
 
 function Currency(){
+	this.data = {};
 	!this.active.get() ? this.active.set(1) : null;
 	}
 
 Currency.prototype = {
-	active : {
-		get : function(truthy){
-			return  _s_session.get('active.currency', truthy);
-			},
-		set : function(currencyId){
-			_s_session.set('active.currency', currencyId);
+	get active() {
+		var self = this;
+		return {
+			get : function(truthy){
+				return self.data.active;
+				},
+			set : function(currencyId){
+				self.data.active = currencyId
+				}
 			}
 		},
 	format : function(i,n,x){

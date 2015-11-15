@@ -11,6 +11,7 @@ Promotions.prototype = {
 				id : { v:['isLine'] , b:true },
 				redemption : { in:[1,2,'1','2'] , b:true },
 				product : { v: ['isProduct'] , b:true},
+				pal : { v: ['isPaL'] , b:true},
 				products : { v: ['isArray'] , b:true},
 				order : { in:['true','false'] , b:true},
 				start : { v:['isAlphaOrNumeric'] , b:true },

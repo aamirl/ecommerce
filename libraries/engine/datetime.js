@@ -1,5 +1,6 @@
 
 function DateTime(){
+	this.data = {};
 	this.standards = {
 		dt : "dddd, MMMM Do, YYYY, h:mm A",
 		d : "dddd, MMMM Do, YYYY"
@@ -7,12 +8,22 @@ function DateTime(){
 
 	this.dt = require('moment');
 	this.dtz = require('moment-timezone');
-	this.active = 'America/Los_Angeles'
-	// !_s_session.get('timezone', true) ? this.active = 'America/Los_Angeles' : this.active = _s_session.get('timezone');
-
+	
+	if(!this.active.get) this.active.set('America/Los_Angeles');
 	}
 
 DateTime.prototype = {
+	get active() {
+		var self = this;
+		return {
+			get : function(truthy){
+				return self.data.active;
+				},
+			set : function(timezone){
+				self.data.active = timezone;
+				}
+			}
+		},
 	epoch : function(){
 		return new Date().getTime();
 		},
@@ -86,7 +97,7 @@ DateTime.prototype = {
 		return {
 			date : {
 				output : function(date){
-					return self.dtz.tz(date, self.active).format(self.standards.d);
+					return self.dtz.tz(date, self.active.get()).format(self.standards.d);
 					},
 				// convert the input date into UTC for storage
 				input : function(date){
@@ -95,7 +106,7 @@ DateTime.prototype = {
 				},
 			datetime : {
 				output : function(date){
-					return self.dtz.tz(date, self.active).format(self.standards.dt);
+					return self.dtz.tz(date, self.active.get()).format(self.standards.dt);
 					},
 				// convert the input date into UTC for storage
 				input : function(date){

@@ -1,7 +1,7 @@
 
 function Countries(){
-	var self = this;
 	this.list = _s_load.datafile('countries');
+	this.data = {active:{}};
 	
 	var set = this.active.get();
 	if(!set) this.active.set('240');
@@ -11,20 +11,22 @@ function Countries(){
 
 Countries.prototype = {
 	model :  _s_load.model('countries'),
-	active : {
-		set : function(countryId){
-			_s_session.set('active.country' , countryId);
-			},
-		get : function(){
-			return '240';
-			return _s_session.get('active.country')
-			},
-		postal : {
-			set : function(postal){
-				_s_session.set('active.postal' , postal);
+	get active() {
+		var self = this;
+		return {
+			set : function(countryId){
+				self.data.active.country = countryId;
 				},
 			get : function(){
-				return _s_session.get('active.postal');
+				return self.data.active.country;
+				},
+			postal : {
+				set : function(postal){
+					self.data.active.postal = postal;
+					},
+				get : function(){
+					return self.data.active.postal;
+					}
 				}
 			}
 		},

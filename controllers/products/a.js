@@ -44,7 +44,7 @@ module.exports = {
 		},
 	'get/seller/summary' : function*(){
 		if(!_s_seller) return _s_l.error(101);
-		return yield _products.actions.summary({seller:_s_seller.profile.id() , combined : true});
+		return yield _products.actions.summary({seller:_s_seller.profile.id() , combined : true, type : _s_req.post('type')});
 		},
 	new : function*(){
 		if(!_s_seller) return _s_l.error(101);

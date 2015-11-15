@@ -28,6 +28,11 @@ module.exports = {
 			body : {
 				query : {
 					filtered : {
+						query : {
+							bool : {
+								must : []
+								}
+							},
 						filter : {
 							bool : {
 								must : [
@@ -46,7 +51,9 @@ module.exports = {
 		// obj.products ? get.body.query.filtered.filter.bool.should.push({ nested : {path : 'items', query : {bool : {must : [{terms : {'items.product' : obj.products } } ] } } } }) : null;
 		obj.categories ? get.body.query.filtered.filter.bool.should.push({term : {categories : obj.categories } }) : null;
 		obj.order ? get.body.query.filtered.filter.bool.should.push({term : {apply : 2 } }) : null;
-
+		
+		obj.pal ? get.body.query.filtered.filter.bool.must.push({term : { items : obj.pal }}) : null;
+		
 		obj.active ? get.body.query.filtered.filter.bool.must.push({term : { 'setup.active' : obj.active } }) : null;
 		obj.seller ? get.body.query.filtered.filter.bool.must.push({term : { 'seller' : obj.seller } }) : null;
 		obj.redemption ? get.body.query.filtered.filter.bool.must.push({term : { redemption : obj.redemption } }) : null;

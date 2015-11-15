@@ -853,9 +853,10 @@ Products.prototype = {
 				},
 			summary : function*(obj){
 				var data = {
-					include : 'sellers.id,sellers.seller.id,name,line.name,line.category,line.manufacturer.name,sellers.condition,sellers.combo,combos',
+					include : 'sellers.id,sellers.seller.id,name,line.id,line.name,line.category,line.manufacturer.name,sellers.condition,sellers.combo,combos',
 					endpoint : true,
 					seller : obj.seller,
+					type : (obj.type?obj.type:null),
 					convert : true,
 					admin : true
 					}
@@ -865,39 +866,75 @@ Products.prototype = {
 
 				if(results.data && results.data.length > 0){
 
-					var send = {
-						categories : {},
-						listings : []
-						}
-
-					_s_u.each(results.data, function(product,index){
-						if(!send.categories[product.data.line.category]) send.categories[product.data.line.category] = _s_sf.categories.name(product.data.line.category);
+					if(data.type){
+						var send = [];
 						
-						_s_u.each(product.data.sellers, function(listing,ind){
-							if(listing.seller.id != obj.seller) return false;
-							
-							var combo = _s_util.array.find.object(product.data.combos, 'id' , listing.combo);
-
-							if(!combo) return false;
-							var name = product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name + ' - ' + (combo.label||'Unknown Combination') + ' (' + _s_sf.condition(listing.condition) + ')';
-
-							if(obj.combined){
-								send.listings.push({
-									pal : product.id + '-' + listing.id,
-									name : name
-									})
-								}
-							else{
-								send.listings.push({
-									product : product.id,
-									listing : listing.id,
-									name : name
-									})
+						_s_u.each(results.data, function(product,index){
+							switch(data.type){
+								case '2':
+								case 2 : 
+									send.push({
+										line : product.data.line.id,
+										name : product.data.line.manufacturer.name + ' ' + product.data.line.name
+										})
+									break;
+								case '3':
+								case 3 : 
+									send.push({
+										line : product.data.line.id,
+										variation : product.id,
+										name : product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name
+										})
+									break;
+								case '4':
+								case 4 :
+									_s_u.each(product.data.combos, function(combo,i){
+										send.push({
+											line : product.data.line.id,
+											variation : product.id,
+											combination : combo.id,
+											name : product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name + ' - ' + (combo.label || combo.id)
+											})
+										})
+									break;
 								}
 							})
-						})
+						}
+					else{
+						var send = {
+							categories : {},
+							listings : []
+							}
+						
+						_s_u.each(results.data, function(product,index){
+							if(!send.categories[product.data.line.category]) send.categories[product.data.line.category] = _s_sf.categories.name(product.data.line.category);
+							
+							_s_u.each(product.data.sellers, function(listing,ind){
+								if(listing.seller.id != obj.seller) return false;
+								
+								var combo = _s_util.array.find.object(product.data.combos, 'id' , listing.combo);
 
-					return { success : send }
+								if(!combo) return false;
+								var name = product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name + ' - ' + (combo.label||'Unknown Combination') + ' (' + _s_sf.condition(listing.condition) + ')';
+
+								if(obj.combined){
+									send.listings.push({
+										pal : product.id + '-' + listing.id,
+										name : name
+										})
+									}
+								else{
+									send.listings.push({
+										product : product.id,
+										listing : listing.id,
+										name : name
+										})
+									}
+								})
+							})
+						}
+
+					return { success : { data : send } }
 					}
 
 				return { failure : {msg: 'There was no summary found for this seller.' } , code : 300 };
