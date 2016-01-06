@@ -16,7 +16,7 @@ Listings.prototype = {
 					id : { v:['isLocalListing'] , b:true },
 					distance : { in:[5,10,15,20,50,100,150,200,250,"5","10","15","20","50","100","150","200","250"], b:true , default : 250 },
 					categories : { v:['isArray'] , b:true },
-					conditions : { c_in:['1','2','3','4','5','6','7'] , b: true , array:true },
+					conditions : { csv_in:['1','2','3','4','5','6','7'] , b: true },
 					price : { range:[0,100000000] , b:true , array : true },
 					rank : { in:['asc','desc'] , default : 'asc', b:true },
 					type : { in:[1,2,3,4,5,6,7,8,'1','2','3','4','5','6','7','8'] , b:true},
@@ -98,7 +98,8 @@ Listings.prototype = {
 						},
 					title : { v:['isAlphaOrNumeric'] },
 					description : { v:['isTextarea'] , b : true },
-					images : { v:['isArray'] , b:'array'}
+					images : { v:['isArray'] , b:'array'},
+					video : { in:[1,2,'1','2'] , default : 1, b:true }
 					}
 
 				return s;
@@ -131,28 +132,22 @@ Listings.prototype = {
 	new : function*(obj){
 		!obj?obj={}:null;
 
-		if(obj.data){
-			var data = obj.data;
-			}
-		else{
-			var r = this.helpers.validators();
-
-			if(!obj.user && !obj.seller){
-				r.eon = {
-					1 : {
-						user : { v:['isUser'] }
-						},
-					2 : {
-						seller : { v:['isSeller'] },
-						sync : { v:['isPAL'] , b:true }
-						}
+		var r = this.helpers.validators();
+		if(!obj.user && !obj.seller){
+			r.eon = {
+				1 : {
+					user : { v:['isUser'] }
+					},
+				2 : {
+					seller : { v:['isSeller'] },
+					sync : { v:['isPAL'] , b:true }
 					}
 				}
-
-			var data = _s_req.validate(r);
-			if(data.failure) return data;
 			}
 
+		if(obj.data) var data = _s_req.validate({ data : obj.data, validators : r })
+		else var data = _s_req.validate(r);
+		if(data.failure) return data;
 
 		// combine the data from the entrance object with the data
 		data = _s_util.merge(obj,data);

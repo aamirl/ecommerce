@@ -1,0 +1,124 @@
+ELASTICSEARCH 2.0 Mapping
+
+
+PUT /products/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "sellers": {
+                "type" : "nested",
+                "properties" : {
+                    "seller" : {
+                        "type" : "object",
+                        "properties" : {
+                            "coordinates" : {
+                                "type" : "geo_point"
+                                }
+                            }
+                        }
+                    }
+                },
+            "combos": {
+                "type" : "nested"
+                },
+            "reviews": {
+                "type" : "nested"
+                }
+            }
+        }
+    }
+
+PUT /sellers/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "reviews": {
+                "type" : "nested"
+                }
+            }
+        }
+    }
+
+PUT /orders/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "items": {
+                "type" : "nested"
+                }
+            }
+        }
+    }
+
+PUT /promotions/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "seller" : {
+            "type" : "string",
+            "index" : "not_analyzed"
+            },
+            "items": {
+                "type" : "nested",
+                "properties" : {
+                    "listing" : {
+                        "type" : "string",
+                        "index" : "not_analyzed"
+                        },
+                    "product" : {
+                        "type" : "string",
+                        "index" : "not_analyzed"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+PUT /messages/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "users" : {
+                "type":"nested"    
+                },
+            "messages" : {
+                "type":"nested"    
+                }
+            }
+        }
+    }
+
+
+PUT /offers/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "affiliates" : {
+                "type":"nested"    
+                }
+            }
+        }
+    }
+
+PUT /listings/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "interests" : {
+                "type":"nested"    
+                },
+             "questions" : {
+                "type":"nested"    
+                },
+            "location" : {
+                "properties" : {
+                    "coordinates" : {
+                        "type" : "geo_point"
+                        }
+                    }
+                }
+            }
+        }
+    }

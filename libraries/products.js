@@ -120,6 +120,8 @@ Products.prototype = {
 
 							yield _s_util.each(product.combos , function*(combo,i){
 
+								if(!product.combos[i].name) product.combos[i].name = 'Combo ' + combo.id;
+								
 								yield _s_util.each(combo, function*(val,attr){
 
 									if(template.setup.combo[attr]){
@@ -179,7 +181,7 @@ Products.prototype = {
 											}
 										}
 
-									product.combos[i].label = 'Combo ' + i;
+
 									product.combos[i][attr] = {
 										data : val,
 										label : ins,
@@ -191,6 +193,7 @@ Products.prototype = {
 								// product.combos = yield _s_util.convert.multiple({data:product.combos ,label:true, objectify:true, library : false});
 								combos[combo.id] = yield _s_util.convert.single({data:combo,label:true,objectify:true,library:false})
 								})
+							// console.log(combos);
 
 							product.combos = combos;
 							}
@@ -222,15 +225,20 @@ Products.prototype = {
 						if(product.attributes){
 
 							var attributes = product.attributes;
-
 							product.attributes = {
 								properties : {},
 								booleans : {}
 								}
 
-
 							_s_u.each(attributes, function(v,k){
-								if(template.properties[k]){
+								if(template.booleans && template.booleans[k]){
+									if(v==2){
+										product.attributes.booleans[k] = {
+											label : template.booleans[k].label
+											}
+										}
+									}
+								else if(template.properties[k]){
 
 									product.attributes.properties[k] = {
 										data : v,
@@ -252,13 +260,6 @@ Products.prototype = {
 
 									if(converted != v) product.attributes.properties[k].converted = converted;
 
-									}
-								else if(template.booleans && template.booleans[k]){
-									if(v == 2){
-										product.attributes.booleans[k] = {
-											label : template.booleans[k].label
-											}
-										}
 									}
 								else{
 									switch(k){
@@ -284,7 +285,7 @@ Products.prototype = {
 
 									product.attributes.properties[k] = {
 										data : v,
-										converted : ins
+										label : ins
 										};
 									}
 								});
@@ -301,7 +302,7 @@ Products.prototype = {
 					q : { v:['isSearch'] , b : true},
 					id : { v:['isProduct'] , b:true },
 					listing : { v:['isListing'] , b:true },
-					conditions : { c_in:['1','2','3','4','5','6','7'] , b: true , array:true },
+					conditions : { csv_in:['1','2','3','4','5','6','7'] , b: true },
 					custom : { in:[1,2,'1','2']  , b:true },
 					categories : { v:['isArray'] , b:true },
 					lines : { v:['isArray'] , b:true },
@@ -312,7 +313,7 @@ Products.prototype = {
 					negotiable : { in:[1,2,'1','2'] , b:true , array:true },
 					rank : { in:['asc','desc'] , default : 'asc', b:true },
 					rating : { in:['asc','desc'] , default : 'desc' , b:true},
-					convert : { in:['true','false'] , default:'true' },
+					convert : { in:['true','false',true,false] , b:true, default:'true' },
 					include : { v:['isAlphaOrNumeric'], b:true },
 					exclude : { v:['isAlphaOrNumeric'], b:true },
 					x : { v:['isInt'] , b:true , default : 0 },
@@ -320,8 +321,8 @@ Products.prototype = {
 					}
 				},
 			validators : {
-				listing : function(){
-					return {
+				listing : function(obj){
+					var c = {
 						condition : { in:[1,2,3,4,5,6,7,'1','2','3','4','5','6','7'] },
 						no_returns : { in:[1,2,'1','2'] , default : 1, b:true  },
 						show_in : { in:[1,2,3,'1','2','3'] , default : 1, b:true  },
@@ -432,6 +433,8 @@ Products.prototype = {
 								}
 							}
 						}
+
+					return c;
 					},
 				product : function(obj , blank){
 					// this would be the validators for a product variation
@@ -539,12 +542,14 @@ Products.prototype = {
 								}
 							}
 						else if(key == 'length' || key == 'waist'){
-							validator[key] = { v:['isInt'] }
+							validator[key] = { v:['isStringInt'] }
 							}
 						else{
 							validator[key] = { v:['isAlphaOrNumeric'] }
 							}
 						})
+
+					validator.name = { v:['isAlphaOrNumeric'] };
 
 					return validator;
 					}
@@ -562,7 +567,6 @@ Products.prototype = {
 		var self = this;
 
 		if( results.data && results.data.length > 0){
-			
 			if(!obj.convert || obj.convert == 'false'){
 				if(obj.endpoint){
 					delete obj.endpoint;
@@ -641,25 +645,23 @@ Products.prototype = {
 				return data;
 				},
 			product : function*(obj){
+				!obj?obj={}:null;
 				// this is the new product function for the products library
 
-				if(obj && obj.data){ var data = obj.data; }
-				else{
-					// we want a line id so that we can pull up the line information
+				var validators = {
+					images : { v:['isArray'] , b:'array' },
+					line : { v:['isLine'] },
+					origin : { v:['isCountry'] },
+					additional : { v:['isJSON'] , b:true },
+					description : { v:['isTextarea'] },
+					name : { v:['isAlphaOrNumeric'] },
+					combos : { v:['isArray'] },
+					attributes : { v:['isJSON'] },
+					sellers : { v:['isJSON'] }
+					};
 
-					var data = _s_req.validate({
-						images : { v:['isArray'] , b:'array' },
-						line : { v:['isLine'] },
-						origin : { v:['isCountry'] },
-						additional : { v:['isJSON'] , b:true },
-						description : { v:['isTextarea'] },
-						name : { v:['isAlphaOrNumeric'] },
-						combos : { v:['isArray'] },
-						attributes : { v:['isJSON'] },
-						sellers : { v:['isJSON'] }
-						});
-					}
-
+				if(obj.data) var data = _s_req.validate({ data : obj.data, validators : validators })
+				else var data = _s_req.validate(validators);
 				if(data.failure) return data;
 
 				// submit a seller document to create a local object or use _s_seller as the logged in seller
@@ -731,15 +733,18 @@ Products.prototype = {
 				!obj?obj={}:null;
 
 				if(!_s_seller&&!obj.seller) return { failure : { msg : 'This is a change that is allowed for sellers only.' , code:300 } } ;
-				if(!obj.category) return { failure : { msg: 'There was no category specified.' , code :300 } }
+				// if(!obj.category) return { failure : { msg: 'There was no category specified.' , code :300 } }
 
 
 				var c = self.helpers.validators.listing();
 				c.id = { v:['isListing'] };
+				delete c.combo;
 
 				if(obj && obj.data) var data = _s_req.validate({validators:c, data:obj.data })
 				else var data = _s_req.validate(c);
 				if(data.failure) return data;
+
+				// console.log(data)
 
 				var get = yield self.get(data.product);
 				if(!get) return { failure : { msg : 'Listing could not be added because the product could not be found.' , code:300 } } ;				
@@ -756,7 +761,10 @@ Products.prototype = {
 				data = _s_util.merge(listing.object, data)
 				get.sellers[listing.index] = data;
 
-				var update = self.model.update(get);
+				// console.log(data);
+
+				var update = yield self.model.update(get);
+				// console.log(update);
 				delete data.product;
 
 				if(get) return { success : { data : yield self.helpers.convert.listing(data) } }
@@ -769,7 +777,7 @@ Products.prototype = {
 				if(obj && obj.data) var data = _s_req.validate({validators:c, data:obj.data })
 				else var data = _s_req.validate(c);
 				if(data.failure) return data;
-				if(Object.keys(data).length == 1) return { failure : { msg : 'There was no data submitted to update.' , code : 300 } }
+				// if(Object.keys(data).length == 1) return { failure : { msg : 'There was no data submitted to update.' , code : 300 } }
 
 				var original_product = yield self.get(data.id);
 				if(!original_product) return { failure : { msg : 'There was no product found to update.' , code : 300 } }
@@ -803,7 +811,13 @@ Products.prototype = {
 
 				// let's merge the new data with the original product
 				data = _s_util.merge(original_product, data);
-				return yield _s_common.update(data, 'products');
+				var update = yield self.model.update(data);
+				if(!update) return { failure : { msg : 'The product was not updated at this time.' , code : 300 } }
+				
+
+				delete data.sellers;
+
+				return { success : { data : yield self.helpers.convert.single(data, template, {admin:true}) } }
 				}
 			}
 		},
@@ -875,7 +889,8 @@ Products.prototype = {
 								case 2 : 
 									send.push({
 										line : product.data.line.id,
-										name : product.data.line.manufacturer.name + ' ' + product.data.line.name
+										name : product.data.line.manufacturer.name + ' ' + product.data.line.name,
+										category : product.data.line.category
 										})
 									break;
 								case '3':
@@ -883,7 +898,8 @@ Products.prototype = {
 									send.push({
 										line : product.data.line.id,
 										variation : product.id,
-										name : product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name
+										name : product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name,
+										category : product.data.line.category
 										})
 									break;
 								case '4':
@@ -893,7 +909,8 @@ Products.prototype = {
 											line : product.data.line.id,
 											variation : product.id,
 											combination : combo.id,
-											name : product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name + ' - ' + (combo.label || combo.id)
+											name : product.data.line.manufacturer.name + ' ' + product.data.line.name + ' ' + product.data.name + ' - ' + (combo.label || combo.id),
+											category : product.data.line.category
 											})
 										})
 									break;

@@ -4,7 +4,6 @@ module.exports = {
 	'search' : function*(){
 
 		var data = _s_req.validate(_products.helpers.filters());
-
 		if(data.failure) return data;
 		var results = yield _products.get(data);
 

@@ -6,21 +6,21 @@ var _location = _s_load.library('location');
 module.exports = {
 	new : function*(obj, meta){
 		return yield _s_db.es.add({
-			type : 'lines',
+			index : 'lines',
 			body : obj
 			}, meta);
 		},	
 	update : function*(obj){
 		// if we are just submitting the id, we are simply updating the information here
 		if(obj.doc){
-			obj.type = 'lines';
+			obj.index = 'lines';
 			return yield _s_db.es.update(doc);
 			}
 		
 		var doc = {
 			id : obj.id,
 			doc : obj,
-			type : 'lines',
+			index : 'lines',
 			}
 
 		var id = obj.id;
@@ -35,8 +35,7 @@ module.exports = {
 			obj.id = id;
 
 			yield _s_db.es.update({
-				index : 'sellyx',
-				type : 'products',
+				index : 'products',
 				body : {
 					query :{
 						match : {
@@ -61,8 +60,7 @@ module.exports = {
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('lines', obj);
 
 		var search = {
-			index : 'sellyx',
-			type : 'lines',
+			index : 'lines',
 			body : {
 				query : {
 					bool : {
@@ -76,7 +74,16 @@ module.exports = {
 
 		obj.custom ? search.body.query.bool.must.push({match:{ 'custom' : obj.custom }}) : null;
 		obj.category ? search.body.query.bool.must.push({ match : { category : obj.category } }) : null;
-		obj.q ? search.body.query.bool.must.push({ fuzzy_like_this : { like_text : obj.q , fields : [ 'name', 'description', 'manufacturer.name' ] } }) : null;
+		
+		if(obj.q){
+			search.body.query.bool.must.push({ 
+				multi_match : { 
+					query : obj.q , 
+					fields : [ 'name^3', 'description', 'manufacturer.name' ],
+					fuzziness : 2.0
+				}})
+			}
+
 		obj.seller ? search.body.query.bool.must.push({match:{'setup.seller':obj.seller}}) : null;
 		// obj.approvals ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;

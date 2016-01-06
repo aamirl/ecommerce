@@ -26,24 +26,20 @@ Lines.prototype = {
 		return yield _s_common.get(obj, 'lines');
 		},
 	new : function*(obj){
+		!obj?obj={}:null;
 		// this is the new function for the line library
 		// we can validate informtion here and then based on the flag add other things if needed
-
-		if(obj && obj.data){
-			var data = obj.data;
-			}
-		else{
-			var data = _s_req.validate({
-				name : { v : ['isAlphaOrNumeric'] },
-				custom : { in:[1,2,'1','2'] },
-				description : { v : ['isTextarea'] },
-				category : { v:['isCategory'] },
-				manufacturer : { v:['isManufacturer'] }
-				});
-	
-			if(data.failure) return data;
+		var validators = {
+			name : { v : ['isAlphaOrNumeric'] },
+			custom : { in:[1,2,'1','2'] },
+			description : { v : ['isTextarea'] },
+			category : { v:['isCategory'] },
+			manufacturer : { v:['isManufacturer'] }
 			}
 
+		if(obj.data) var data = _s_req.validate({ data : obj.data, validators : validators })
+		else var data = _s_req.validate(validators);
+		if(data.failure) return data;
 
 		// now we want to load the manufacturer data 
 		var manufacturer_result = yield _s_load.library('manufacturers').get(data.manufacturer);

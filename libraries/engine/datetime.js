@@ -8,8 +8,10 @@ function DateTime(){
 
 	this.dt = require('moment');
 	this.dtz = require('moment-timezone');
-	
-	if(!this.active.get) this.active.set('America/Los_Angeles');
+
+	var set = _s_req.headers('timezone');
+	if( set && (this.dtz.tz.names()).indexOf(set) ){ this.active.set(set); }
+	else{ this.active.set('America/Los_Angeles'); }
 	}
 
 DateTime.prototype = {

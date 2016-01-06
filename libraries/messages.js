@@ -29,26 +29,26 @@ Messages.prototype = {
 		return yield _s_common.get(obj, 'messages');
 		},
 	upsert : function*(obj){
-		if(obj && obj.data) var data = obj.data;
-		else{
-			var data = _s_req.validate({
-				eon : {
-					1 : {
-						recipients : {v:['isArray']}
-						},
-					2 : {
-						id : { v:['isMessageThread'] }
-						}
+		!obj?obj={}:null;
+
+		var validators = {
+			eon : {
+				1 : {
+					recipients : {v:['isArray']}
 					},
-				subject : {v:['isAlphaOrNumeric'] , b:true},
-				message : {v:['isTextarea']},
-				priority : {in:["1","2",'3',"4",1,2,3,4], b:true, default : 1},
-				as : {in:["1","2",1,2] , b:true, default : 1},
-				});
+				2 : {
+					id : { v:['isMessageThread'] }
+					}
+				},
+			subject : {v:['isAlphaOrNumeric'] , b:true},
+			message : {v:['isTextarea']},
+			priority : {in:["1","2",'3',"4",1,2,3,4], b:true, default : 1},
+			as : {in:["1","2",1,2] , b:true, default : 1},
 			}
 
+		if(obj.data) var data = _s_req.validate({ data : obj.data, validators : validators })
+		else var data = _s_req.validate(validators);
 		if(data.failure) return data;
-
 
 		if(data.id){
 			// get the message thread
@@ -60,7 +60,7 @@ Messages.prototype = {
 			if(!r) return { failure : { msg : 'You cannot add a message to this message thread.' , code : 300 } };
 
 			result.messages.push(this.actions.new.message(data, r.index));
-			return yield _s_common.update(result.data,'messages');
+			return yield _s_common.update(result,'messages');
 			}
 
 
@@ -121,10 +121,10 @@ Messages.prototype = {
 			var c = {
 				marked : [],
 				added : _s_dt.now.datetime(),
-				name : (d.type == 'users' ? d.data.name.display : d.data.name),
+				name : (d.index == 'users' ? d.data.name.display : d.data.name),
 				active : 1,
 				id : d.id,
-				type : (d.type=='users'?1:2)
+				type : (d.index=='users'?1:2)
 				}
 
 			if(d.type == 'users'){

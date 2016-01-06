@@ -22,7 +22,7 @@ Products.prototype = {
 		else{ this.data = data; }
 
 		},
-	library :  yield _s_load.library('products'),
+	library : _s_load.library('products'),
 	document : function(){
 		return data;
 		},

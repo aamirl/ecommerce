@@ -9,6 +9,10 @@
 
 function Locales(){
 	this.data = {};
+	var set = _s_req.headers('language');
+	if( set && set == 'en' ){ this.active.set(set); }
+	else{ this.active.set('en'); }
+
 	!this.active.get() ? this.active.set('en') : null;
 	}
 

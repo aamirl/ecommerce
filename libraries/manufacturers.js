@@ -25,21 +25,20 @@ Manufacturers.prototype = {
 		return yield _s_common.get(obj, 'manufacturers');
 		},
 	new : function*(obj){
+		!obj?obj={}:null;
 		// this is the new function for the manufacturer library
 		// we can validate informtion here and then based on the flag add other things if needed
 
-		if(obj && obj.data){
-			var data = obj.data;
-			}
-		else{
-			var data = _s_req.validate({
-				name : { v : ['isAlphaOrNumeric'] },
-				country : { v:['isCountry'] },
-				category : { v:['isCategory'] }
-				});
+		var validators = {
+			name : { v : ['isAlphaOrNumeric'] },
+			country : { v:['isCountry'] },
+			category : { v:['isCategory'] }
 			}
 
+		if(obj.data) var data = _s_req.validate({ data : obj.data, validators : validators })
+		else var data = _s_req.validate(validators);
 		if(data.failure) return data;
+		
 		return yield _s_common.new(data,'manufacturers', true);
 		},
 	update : function*(obj){

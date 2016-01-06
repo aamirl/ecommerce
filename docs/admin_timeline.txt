@@ -1,0 +1,46 @@
+admin timeline
+	
+	01/11
+		seller registration
+		seller update account	
+		messages
+	01/18
+		user update account
+		add product
+		manage inventory
+	01/25
+		manage orders (seller and customer)
+		returns
+	02/01
+		financials
+		promotions
+	02/08
+		negotiations
+		wrap-up
+
+splash 
+	01/04
+
+
+
+mobile timeline
+	01/11
+		simple search
+
+backend 
+	01/11
+
+
+website
+	01/04
+
+oAuth
+	01/04
+		login
+		registration
+		forgot password
+
+account manager
+	01/04
+		change user info
+		logout

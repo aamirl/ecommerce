@@ -1,0 +1,52 @@
+listings
+
+	- local
+	- anyone can make them
+	- they are not charged through sellyx
+		- pickup the product
+
+		negatives for charging listingd
+			- most listings are meant to be exchanged in cash
+			- people don't want to pay 3% credit card processing fees
+			- these won't be delivered, they have to be picked up so people don't want to pay for something before they actually have it
+
+	INTEREST BUTTON
+		- 
+
+products
+	- international and domestic
+	- only sellers can make them
+	- they are charged through sellyx, payment processing is done here
+
+	BUY BUTTON
+
+
+twilio - integrate phone verification udring registration and if changes are are made during profile update
+
+-----------------
+validate (precharge small amount to make sure card is valid)
+charge
+refund
+transfer
+	
+
+	first api call would be to charge the account
+	second api call would be to load the other account
+
+
+
+
+web interface
+
+
+WE LEFT OFF AT CREATING A NEW MANAGED ACCOUNT IN STRIPE FOR A SELLER OR SOMEONE ELSE WHO WANTS TO PROCESS PAYMENTS AND HAVE BANK TRANSFERS DONE TO THEIR ACCOUNTS
+
+------------------
+listing 
+	 video true parameter
+
+product
+	
+
+Listing manager
+	- start video stream button

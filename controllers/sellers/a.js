@@ -15,7 +15,31 @@ module.exports = {
 		return { success : { data : result.faq } };
 		},
 	new : function*(){
-		return yield _sellers.new();
+		if(_s_seller) return { failure : { msg : 'This function is only allowed for users who are not already part of a company.' , code : 300 } }
+
+		// add seller to es
+		var new_seller = yield _sellers.new();
+		if(new_seller.failure) return r;
+		else new_seller = new_seller.success.data;
+
+		GLOBAL._s_seller = yield _s_load.object('sellers',new_seller); 
+		if(_s_seller.failure) return { failure : _s_seller.failure }
+
+		// now update user in es with seller info
+		var _user = _s_load.engine('users');
+		var result = yield _user.get(_s_user.profile.id());
+		if(!result) return { failure : { msg : 'Could not find user.' , code : 300 } }
+
+		result.seller = _s_seller.helpers.data.document();
+
+		var update = yield _s_common.update(result,'users',false, true);
+		if(!update) return { failure : { msg : "The seller profile was made but we were unable to add this information to your profile. Please contact Sellyx for more details" , code:300 } };
+
+		// finally update user cache
+		yield _s_load.engine('users').helpers.cached(result , _s_cache_key);
+		yield _sellers.helpers.cached(_s_seller.profile.id(), _s_cache_key);
+				
+		return { success : { msg : _s_seller.profile.id() , code : 300 } }
 		},
 	'update/basic' : function*(){
 		if(!_s_seller) return _s_l.error(101);
@@ -49,19 +73,20 @@ module.exports = {
 		
 		var data = _s_req.validate({
 			index : { v:['isInt'] , default : 0 },
+			label : { v:['isAlphaOrNumeric'] , b:true },
 			street1 : { v:['isAlphaOrNumeric'] },
 			street2 : { v:['isAlphaOrNumeric'] , b:true },
 			city : { v:['isAlphaOrNumeric'] },
 			state : { v:['isAlphaOrNumeric'] , b : true },
 			postal : { v:['isAlphaOrNumeric'] },
 			country : { v:['isCountry'] },
-			primary : { in : ['true','false',true,false] }
+			// primary : { in : ['true','false',true,false] }
 			})
 		
 		if(data.failure) return data;
 		!data.label?data.label = data.street1 : null;
 
-		// first we are going to bring up this user's address book
+		// first we are going to bring up this seller's address book
 		var addresses = _s_seller.profile.addresses.all();
 		if(!addresses) return { failure : { msg : 'You seem to have been logged out.' , code : 300 } }
 
@@ -137,21 +162,7 @@ module.exports = {
 	'update/faq' : function*(){
 		if(!_s_seller) return _s_l.error(101);
 		
-		var data = _s_req.validate({
-			eon : {
-				1 : {
-					q : { v:['isAlphaOrNumeric'] },
-					a : { v:['isTextarea'] }
-					},
-				2 : {
-					id : { v:['isAlphaOrNumeric'] },
-					a : { v:['isTextarea'] }
-					},
-				3 : {
-					id : { v:['isAlphaOrNumeric'] }
-					}
-				}
-			});
+		var data = _s_req.validate(_sellers.helpers.validators.faq());
 
 		if(data.failure) return data;
 

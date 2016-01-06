@@ -3,11 +3,10 @@
 
 module.exports = {
 	update : function*(obj){
-		console.log('dada');
 		var doc = {
 			id : obj.id,
 			doc : (obj.doc?obj.doc:obj),
-			type : 'listings',
+			index : 'listings',
 			merge : true
 			}
 		delete obj.id;
@@ -15,7 +14,7 @@ module.exports = {
 		},
 	new : function*(obj, meta){
 		return yield _s_db.es.add({
-			type : 'listings',
+			index : 'listings',
 			body : obj
 			}, meta);
 		},
@@ -24,8 +23,7 @@ module.exports = {
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('listings', obj);
 
 		var get = {
-			index : 'sellyx',
-			type : 'listings',
+			index : 'listings',
 			body : {
 				query : {
 					bool : {

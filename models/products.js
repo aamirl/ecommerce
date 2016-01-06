@@ -4,7 +4,7 @@
 module.exports = {
 	new : function*(obj, meta){
 		return yield _s_db.es.add({
-			type : 'products',
+			index : 'products',
 			body : obj
 			}, meta);
 		},	
@@ -14,7 +14,7 @@ module.exports = {
 		var doc = {
 			id : obj.id,
 			data : obj,
-			type : 'products',
+			index : 'products',
 			}
 
 		// var id = obj.id;
@@ -29,7 +29,7 @@ module.exports = {
 
 			// yield _s_db.es.update({
 			// 	index : 'sellyx',
-			// 	type : 'products',
+			// 	index : 'products',
 			// 	body : {
 			// 		query :{
 			// 			match : {
@@ -55,8 +55,7 @@ module.exports = {
 
 		var search = {
 			total : true,
-			index : 'sellyx',
-			type : 'products',
+			index : 'products',
 			body : {
 				from : obj.x,
 				size : obj.y,
@@ -136,26 +135,26 @@ module.exports = {
 							nested_path : 'sellers'
 							}
 					},
-					{
-						'setup.rating' : { 
-							order : obj.rating,
-							}
-						}
+					// {
+					// 	'setup.rating' : { 
+					// 		order : obj.rating,
+					// 		}
+					// 	}
 					]
 				}
 			}
 
-		_s_u.each(obj, function(dets, type){
+		_s_u.each(obj, function(dets, index){
 			var filter = false;
 			var query = false;
 
-			switch(type){
+			switch(index){
 				case 'q':
-					query = {
-						fuzzy_like_this : {
-							fields: [ 'name', 'description', 'line.manufacturer.name' , 'line.name' , 'line.description' ],
-							like_text : dets,
-							fuzziness : 0.3
+					query = { 
+						multi_match : { 
+							query : dets , 
+							fields: [ 'name^3', 'description', 'line.manufacturer.name' , 'line.name' , 'line.description' ],
+							fuzziness : 2.0
 							}
 						}
 					break;

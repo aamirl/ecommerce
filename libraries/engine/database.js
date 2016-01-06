@@ -10,61 +10,58 @@
 
 var esearch = require('elasticsearch').Client({
 	host : 'http://localhost:9200/',
-	log : 'trace'
+	// log : 'trace'
 	})
 
-// var esearch = require('elasticsearch').Client({
-// 	host : '54.153.60.85:80/elasticsearch',
-// 	log : 'trace'
-// 	})
-
-function Database(){
-
-	}
-
+function Database(){ }
 
 Database.prototype = {
-	escape : function(input){
-		return mysql.escape(input);
-		},
-	query : function(sql){
-		var deferred = _s_q.defer();
-		mysql.query(sql, deferred.makeNodeResolver());
-		return deferred.promise.then(function(row){
-			return row[0];
-			})
-		},
+	get sql() {
+		var self = this;
+		return {
+			escape : function(input){
+				return mysql.escape(input);
+				},
+			query : function(sql){
+				var deferred = _s_q.defer();
+				mysql.query(sql, deferred.makeNodeResolver());
+				return deferred.promise.then(function(row){
+					return row[0];
+					})
+				},
 
-	execute : function(sql, params){
-		
-		},
-	add : function(obj){
-		
-		obj.data.added = _s_dt.now.datetime();
-		obj.data.by = _s_user.profile.id();
+			execute : function(sql, params){
+				
+				},
+			add : function(obj){
+				
+				obj.data.added = _s_dt.now.datetime();
+				obj.data.by = _s_user.profile.id();
 
-		var deferred = _s_q.defer();
-		mysql.query("INSERT INTO `" + obj.table + "` SET ?" , obj.data , deferred.makeNodeResolver());
+				var deferred = _s_q.defer();
+				mysql.query("INSERT INTO `" + obj.table + "` SET ?" , obj.data , deferred.makeNodeResolver());
 
-		return deferred.promise.then(function(data){
-			return data[0];
-			})
-		},
-	update : function(obj){
-		var deferred = _s_q.defer();
-		var sql = "UPDATE " + obj.table + " SET ? WHERE ";
-		var len = Object.keys(obj.conditions).length;
-		var counter = 0;
-		_s_u.each(obj.conditions, function(value, key){
-			sql += key + ' = "' + value + '"';
-			counter++;
-			counter != len ? sql += ' AND ' : null;
-			})
+				return deferred.promise.then(function(data){
+					return data[0];
+					})
+				},
+			update : function(obj){
+				var deferred = _s_q.defer();
+				var sql = "UPDATE " + obj.table + " SET ? WHERE ";
+				var len = Object.keys(obj.conditions).length;
+				var counter = 0;
+				_s_u.each(obj.conditions, function(value, key){
+					sql += key + ' = "' + value + '"';
+					counter++;
+					counter != len ? sql += ' AND ' : null;
+					})
 
-		mysql.query(sql, obj.data, deferred.makeNodeResolver());
-		return deferred.promise.then(function(data){
-			return data[0];
-			})
+				mysql.query(sql, obj.data, deferred.makeNodeResolver());
+				return deferred.promise.then(function(data){
+					return data[0];
+					})
+				}
+			}
 		},
 	get es() {
 		var self = this;
@@ -80,7 +77,8 @@ Database.prototype = {
 							id : doc._id,
 							data : doc._source,
 							version : doc._version,
-							type : doc._type
+							type : doc._type,
+							index : doc._index
 							}
 						doc.sort?r.sort=doc.sort:null;
 						send.push(r)
@@ -104,7 +102,7 @@ Database.prototype = {
 				// 	by : _s_user.profile.id(),
 				// 	}
 
-				if(!obj.index) obj.index = 'sellyx';
+				if(!obj.type) obj.type = 'base';
 				if(obj.body.id){
 					obj.id = obj.body.id;
 					delete obj.body.id;
@@ -122,6 +120,8 @@ Database.prototype = {
 						}
 					}
 
+				// console.log(obj);
+
 				var deferred = _s_q.defer();
 				
 				esearch.create(obj, deferred.makeNodeResolver());
@@ -131,7 +131,9 @@ Database.prototype = {
 						}
 
 					return false;
-					})
+					} , function(err){
+						console.log(err);
+						})
 				},
 			update : function*(obj, meta){
 				// first we see if there is a query, and if there is, we run a update by query
@@ -156,8 +158,8 @@ Database.prototype = {
 
 				if(obj.id && obj.data){
 					var update = {
-						index : 'sellyx',
-						type : obj.type,
+						index : obj.index,
+						type : (obj.type?obj.type:'base'),
 						id : obj.id,
 						body : {
 							script : 'ctx._source = merge',
@@ -171,8 +173,8 @@ Database.prototype = {
 				else if(!obj.body){
 					var script = '';
 					var update = {
-						index : 'sellyx',
-						type : obj.type,
+						index : obj.index,
+						type : (obj.type?obj.type:'base'),
 						id : obj.id,
 						body : {
 							params : {
@@ -277,12 +279,12 @@ Database.prototype = {
 					// if it is not an instance of an object it means we are simply passing in the type of object we wanna retrieve with the id, and we can get the id from meta
 					
 					obj = {
-						index : 'sellyx',
-						type : obj,
+						index : obj,
+						type : (obj.type?obj.type:'base'),
 						id : (meta instanceof Object ? meta.id : meta)
 						}
 					}
-				else if(!obj.index) obj.index = 'sellyx';
+				else if(!obj.type) obj.itype = 'base';
 
 
 				if(meta && meta instanceof Object){
@@ -321,7 +323,7 @@ Database.prototype = {
 					}
 				},
 			count : function*(obj, meta){
-				if(!obj.index) obj.index = 'sellyx';
+				if(!obj.type) obj.type = 'base';
 
 				var deferred = _s_q.defer();
 				esearch.count(obj, deferred.makeNodeResolver());
@@ -341,11 +343,13 @@ Database.prototype = {
 				if(meta){
 					if(meta.exclude){
 						!obj.body._source ? obj.body._source = {} : null;
-						obj.body._source.exclude = (meta.exclude).split(',');
+						if(typeof meta.exclude != 'string') obj._source_exclude = meta.exclude.join(',');
+						else obj._source_exclude = meta.exclude;
 						}
 					if(meta.include){
 						!obj.body._source ? obj.body._source = {} : null;
-						obj.body._source.include = (meta.include).split(',');
+						if(typeof meta.include != 'string') obj._source_include = meta.include.join(',');
+						else obj._source_include = meta.include;
 						}
 					if(meta.x || meta.x == 0){
 						obj.body.from = meta.x;
@@ -372,6 +376,8 @@ Database.prototype = {
 					obj.body.size = 100;
 					obj.body.from = 0;
 					}
+
+				if(!obj.type) obj.type = 'base';
 					
 				var deferred = _s_q.defer();
 				

@@ -1,17 +1,33 @@
-
-var currencies = {
-	1 : {name:'US Dollars', abbr : 'USD', sign : '$', rate : 1.00},
-	2 : {name:'Pounds', abbr : 'GBP', sign : '£', rate : 0.67},
-	3 : {name:'Rupees', abbr : 'Rs', sign : '₹', rate : 62.17},
-	};
-
-
 function Currency(){
 	this.data = {};
-	!this.active.get() ? this.active.set(1) : null;
 	}
 
 Currency.prototype = {
+	init : function*(){
+		// get the cached currencies
+		var currencies = yield _s_cache.get('currencies');
+		if(!currencies){
+			var c = _s_load.datafile('currencies');
+			var get = yield _s_req.http({
+				url : 'https://openexchangerates.org/api/latest.json?app_id=611363b371cc4a34833286b6cfb961c1'
+				})
+			if(get.rates){
+				_s_u.each(c, function(v,k){
+					c[k].rate = get.rates[k]
+					})
+
+				_s_cache.set('currencies', c);
+				this.data.currencies = c;
+				}
+			}
+		else{
+			this.data.currencies = currencies;
+			}
+
+		var set = _s_req.headers('currency');
+		if( set && this.data.currencies[set] ){ this.active.set(set); }
+		else{ this.active.set('USD'); }
+		},
 	get active() {
 		var self = this;
 		return {
@@ -24,37 +40,28 @@ Currency.prototype = {
 			}
 		},
 	format : function(i,n,x){
-	// format : function(n, c, d, t){
-		// var c = isNaN(c = Math.abs(c)) ? 2 : c, 
-		// d = d == undefined ? "." : d, 
-		// t = t == undefined ? "," : t, 
-		// s = n < 0 ? "-" : "", 
-		// i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + "", 
-		// j = (j = i.length) > 3 ? j % 3 : 0;
-		// return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
-
-
-		/**
-		 * Number.prototype.format(n, x)
-		 * 
-		 * @param integer n: length of decimal
-		 * @param integer x: length of sections
-		 */
-
-		 var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
+		var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
     	return i.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
 		},
 	get convert() {
 		var self = this;
 		return {
+			fromto : function(price, from, to){
+				from = self.data.currencies[from];
+				to = self.data.currencies[to];
+
+				if(!from || !to) return 0.00;
+	            var stand = parseFloat(price / from.rate);
+	            return stand * to.rate;
+				},
 			front : function(price, no_name){
-				var c = currencies[self.active.get()];
+				var c = self.data.currencies[self.active.get()];
 				
-	            if(no_name == undefined || no_name == false) return c.sign + self.format(price * c.rate, 2,3);
+	            if(no_name == undefined || no_name == false) return (c.sign?c.sign:c.abbr+' ') + self.format(price * c.rate, 2,3);
 	            else return self.format(price * c.rate, 2,3);
 				},
 			back : function(amt){
-	            var c = currencies[self.active.get()];
+	            var c = self.data.currencies[self.active.get()];
 	            return parseFloat((parseFloat(amt) * c.rate).toFixed(2));
 				},
 			array : {
@@ -87,7 +94,11 @@ Currency.prototype = {
 
 
 
-module.exports = function(){
-  	if(!(this instanceof Currency)) { return new Currency(); }
+module.exports = function*(){
+  	if(!(this instanceof Currency)) { 
+  		var c = new Currency(); 
+  		yield c.init()
+  		return c; 
+  		}
 	}
 

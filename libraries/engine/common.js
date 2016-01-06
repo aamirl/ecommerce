@@ -2,9 +2,7 @@
 
 // Common Library
 
-function Common(){
-
-	}
+function Common(){ }
 
 Common.prototype = {
 	get helpers() {
@@ -35,13 +33,13 @@ Common.prototype = {
 	get : function*(obj , library){
 
 		var _controller = _s_load.library(library);
-
 		if(!_controller) _controller = _s_load.engine(library);
 
 		var results = yield _controller.model.get(obj);
 		var self = this;
 
 		if(results){
+
 
 			if(obj.convert && obj.convert != 'false'){
 
@@ -82,9 +80,16 @@ Common.prototype = {
 					delete obj.deep_convert;
 					}
 
-				if(typeof _controller.helpers.convert == 'function') return yield _controller.helpers.convert(results.data)
-				else return yield self.helpers.convert(results.data , library);
-				}	
+				if(obj.endpoint){
+					if(typeof _controller.helpers.convert == 'function') return { success : { data : yield _controller.helpers.convert(results) }}
+					else return { success : { data : yield self.helpers.convert(results , library) } };
+					}
+
+				if(typeof _controller.helpers.convert == 'function') return yield _controller.helpers.convert(results)
+				else return yield self.helpers.convert(results , library);
+				}
+			
+			if(obj.endpoint) return { success : { data : results } }
 			return results;
 			}
 
@@ -94,26 +99,32 @@ Common.prototype = {
 
 		return false;
 		},
-	new : function*(data, library, convert){
+	new : function*(data, library, convert, raw_not_id){
 		var self = this;
 		var _controller = _s_load.library(library);
+		if(!_controller) _controller = _s_load.engine(library);
 
 		var results = yield _controller.model.new(data);
 		if(results) {
 			data.id = results.id;
 
-			if(!convert) return { success : { id : results.id  } }
+			if(!convert){
+				return { success : (raw_not_id?{data:data}:{ id : results.id  }) }
+				}
 			if(typeof _controller.helpers.convert == 'function') return { success : { data : yield _controller.helpers.convert(data) } }
 			else return { success : {  data : yield self.helpers.convert(data , library) } }
 			}
 		return { failure : { msg : 'The '+library.substring(0,library.length-1)+' was not added at this time.' , code : 300 } }
 		},
-	update : function*(data, library, type){
-		var self = this;
-		var _controller = _s_load.library(library);
+	update : function*(data, library, type, raw){
+		var id = data.id;
 
-		// var results = _controller.model.update(data);
+		var _controller = _s_load.library(library);
+		if(!_controller) _controller = _s_load.engine(library);
+
 		var results = yield _controller.model.update(data);
+
+		data.id = id;
 		if(results) {
 
 			if(type && type.constructor == Array){
@@ -129,8 +140,9 @@ Common.prototype = {
 					})
 				}
 
+			if(raw) return data;
 			if(typeof _controller.helpers.convert == 'function') return { success : { data : yield _controller.helpers.convert(data , type) } }
-			else return { success : {  data : yield self.helpers.convert(data , library) } }
+			else return { success : {  data : yield this.helpers.convert(data , library) } }
 			}
 		return { failure : { msg : 'The '+library.substring(0,library.length-1)+' was not updated at this time.' , code : 300 } }
 		},
@@ -161,7 +173,7 @@ Common.prototype = {
 				if(!object) return { failure : {msg:'The '+obj.label+' could not be found.' , code : 300 }  };
 				}
 
-			if(obj.deep && object.object[iterator]){
+			if(obj.deep && obj.deep[iterator] && object.object[iterator]){
 				var t = object.object[iterator].id;
 				}
 			else{
@@ -193,17 +205,17 @@ Common.prototype = {
 			}
 
 		if(obj.deep && obj.deep.additional_checks){
-			var errors = [];
+			var error = false;
 			_s_u.each(obj.deep.additional_checks , function(v,k){
 
 				if(object.object[k] != v){
-					errors.push(k);
+					error = k;
 					return false;
 					}
 
 				})
 
-			if(errors.length > 0) return { failure : { msg : 'Unauthorized change.' , code : 300 } };
+			if(error) return { failure : { msg : 'Unauthorized change; Error resulted from ' + error , code : 300 } };
 			}
 
 

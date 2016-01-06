@@ -167,8 +167,6 @@ module.exports = {
                     var testee = (test?test:obj.test);
                     var same = false;
 
-                    console.log(obj);
-
                     _s_u.each(arr , function(o,i){
                         var r = self.object.same(o, test);
                         same = r;
@@ -196,11 +194,14 @@ module.exports = {
                         }
                     return false;
                     },
-                objects : function(arr, key, value, index){
+                objects : function(arr, key, value, index, indexes_only){
                     var send = [];
                     for (var i = 0; i < arr.length; i++) {
                         if (arr[i][key] == value) {
-                            if(index){
+                            if(indexes_only){
+                                send.push(i);
+                                }
+                            else if(index){
                                 send.push({ object : arr[i] , index : i });
                                 }
                             else{
@@ -302,9 +303,8 @@ module.exports = {
                 var data = (obj.data ? obj.data : obj);
                 
                 var _dimensions = _s_load.engine('dimensions');
-                var _currency = _s_load.engine('currency');
                 // var _storefront = _s_load.engine('storefront');
-                var countries = yield _s_countries.get();
+                var countries = _s_countries.get();
                 // load options
 
                 var label = (obj.label ? obj.label : false);
@@ -333,11 +333,11 @@ module.exports = {
                     var targ = (v instanceof Object && v.data ? v.data : v);
 
                     if(k=='totals'){
-                        k = _currency.convert.array.front({data:v});
+                        k = _s_currency.convert.array.front({data:v});
                         return;
                         }
                     if(new RegExp(amounts).test(k)){
-                        var converted =  _currency.convert.front(targ, false);
+                        var converted =  _s_currency.convert.front(targ, false);
                         }
                     else if(k == 'address'){
                         if(v.constructor == Array){

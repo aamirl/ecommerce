@@ -4,7 +4,7 @@
 module.exports = {
 	new : function*(obj, meta){
 		return yield _s_db.es.add({
-			type : 'manufacturers',
+			index : 'manufacturers',
 			body : obj
 			}, meta);
 		},
@@ -12,7 +12,7 @@ module.exports = {
 		var doc = {
 			id : obj.id,
 			doc : (obj.doc?obj.doc:obj),
-			type : 'manufacturers',
+			index : 'manufacturers',
 			merge : true
 			}
 		delete obj.id;
@@ -26,8 +26,7 @@ module.exports = {
 
 		
 		var search = {
-			index : 'sellyx',
-			type : 'manufacturers',
+			index : 'manufacturers',
 			body : {
 				query : {
 					bool : {
@@ -40,7 +39,16 @@ module.exports = {
 			};
 
 		obj.category ? search.body.query.bool.must.push({ match : { category : obj.category } }) : null;
-		obj.q ? search.body.query.bool.must.push({ fuzzy_like_this : { like_text : obj.q , fields : [ 'name' ] } }) : null;
+
+		if(obj.q){
+			search.body.query.bool.must.push({ 
+				multi_match : { 
+					query : obj.q , 
+					fields : [ 'name' ],
+					fuzziness : 2.0
+				}})
+			}
+			
 		obj.seller ? search.body.query.bool.must.push({match:{'setup.by':obj.seller}}) : null;
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : obj.active } }) : null;
 		return yield _s_db.es.search(search, obj);

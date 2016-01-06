@@ -86,10 +86,10 @@ Loader.prototype = {
 		},
 	template : function(category){
 		var file = _s_config.paths.locales + 'en/products/t' + _s_sf.categories.table(category) + '.js';
-		// console.log(file);
-		if(fs.existsSync(file)){
+		
+		if(fs.existsSync(file)){	
 			
-			var file = require(file);
+			file = _s_util.clone.deep(require(file));
 			
 			if(file.booleans && _s_u.isArray(file.booleans)){
 				var all_booleans = require(_s_config.paths.locales + 'en/products/booleans.js');

@@ -28,6 +28,12 @@ validator.extend('isInt', function(str, filter){
     	}
 	return false
 	})
+validator.extend('isStringInt', function(str, filter){
+    if(/^(?:-?(?:0|[1-9][0-9]*))$/.test(str)){
+    	return str.toString();
+    	}
+	return false
+	})
 validator.extend('isFloat', function(str, filter){
     if(/^(?:-?(?:[0-9]+))?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/.test(str)){
     	return parseFloat(str);
@@ -245,7 +251,7 @@ validator.extend('isPrice', function(inp, filter){
 		}
 	else{
 		if(filter){
-			return _s_load.engine('currency').convert.back(inp);
+			return _s_currency.convert.back(inp);
 			}
 		else{
 			return true;
@@ -360,17 +366,12 @@ function Request(req){
 
 	if (method == 'GET') var params = parser.parse(this.request.req._parsedUrl.query)
 	else if(method == 'POST') var params = this.request.body;
-	// for(var key in params){
-
-	// 	if(key == ''){ delete params[key] }
-	// 	else if(typeof params[key] == 'object'){ return; }
-	// 	else{ params[key] = validator.trim(params[key]); }
-	// 	}
-
 	this[method + '_PARAMS'] = params;
+	// console.log(params);
 	}
 
 Request.prototype = {
+	
 	http : function*(obj, raw){
 		var r = require('koa-request');
 
@@ -411,8 +412,6 @@ Request.prototype = {
 		obj.headers['sellyx-time'] = obj.time;
 
 		obj.rejectUnauthorized = false;
-		
-		console.log(obj);
 
 		var j = yield r(obj);
 		if(raw) return JSON.parse(j);
@@ -445,75 +444,59 @@ Request.prototype = {
 		if(param == undefined) return this.POST_PARAMS;
 		else return (this.POST_PARAMS[param] || false)
 		},
-	validate : function(obj){
-		if (obj.validators) var data = obj.validators
-		else var data = obj;
-		
-		if(obj.get !== undefined) {
-			var all_data = this.get();
-			}
-		else if(obj.data !== undefined){
+	headers : function(param){
+		if(param == undefined) return this.request.headers;
+		return (this.request.headers[param]||false);
+		},
+	validate : function(obj , tang){
+		var data = (obj.validators?obj.validators:obj);
+	
+		if(obj.get) { var all_data = this.get(); }
+		else if(obj.data){
 			try{ var all_data = JSON.parse(obj.data); } 
 			catch(err){ var all_data = obj.data; }
 			}
-		else {
-			var all_data = this.post();
-			}
+		else { var all_data = this.post(); }
 
-		var abnorms = ['',0,undefined,'undefined',null,'null','0.00',0.00,'0'];
-		var autoFilters = ['isPrice','isTextarea','isDecimal','isDimension','isArray','isWeight','isDate','isDateTime','isInt','isFloat'];
-
-		var i = 0, data_total = data.length, errors = [], send = {};
+		var i = 0, data_total = data.length, errors = {}, send = {}, abnorms = ['',0,undefined,'undefined',null,'null','0.00',0.00,'0'] , autoFilters = ['isPrice','isTextarea','isDecimal','isDimension','isArray','isWeight','isDate','isDateTime','isInt','isFloat'], send_tangent=(obj.tangent?obj.tangent:false);
 
 		_s_u.each(data, function(i_data,i){
-			// eon
-
+			
 			if(i == 'eon'){
 				var eon_counter = 0;
 				var done = false;
 				do{
 					eon_counter++;
 					if(i_data[eon_counter]){
-						var tangent = _s_req.validate({ validators : i_data[eon_counter] , data: all_data });
+						var tangent = _s_req.validate({ validators : i_data[eon_counter] , data: all_data , tangent : true });
 						if(!tangent.failure) {
 							send = _s_util.merge(send,tangent);
 							done = true;
 							} 
 						}
-					else{
-						errors.push('eon');
-						}
+					else errors['eon'] = tangent.failure;
 					}
-				while(!done && errors.length == 0);
-				}
-			// this is backend generated variables that can be used to regroup data
-			else if(i_data.backend){
-				var tangent = _s_req.validate({ validators : i_data.validators, data : i_data.data });
-				tangent.failure ? errors = errors.concat(tangent.failure) : send[i] = tangent;
+				while(!done && !errors['eon']);
 				}
 			else if(all_data[i] && _s_util.indexOf(abnorms, all_data[i]) === -1){
 
 				if(i_data.v){
-					var total  = i_data.v.length;
-					var count = 0;
-					var json = false;
-					var filter = false;
+					var total  = i_data.v.length , count = 0 , json = false , filter = false, sub_errors = []
 					_s_u.each(i_data.v, function(flag){
 						if(flag == 'isJSON'){
 							json = true;
-							if(typeof all_data[i] == 'object'){
-								count++;
-								}
+							if(typeof all_data[i] == 'object'){ count++; }
 							else{
 								try{ JSON.parse(all_data[i]); count++; }
-								catch(err){}
+								catch(err){ errors[i] = { msg : 'This was not properly formatted JSON.' , data : all_data[i] } }
 								}
 							}
 						else{
 							_s_util.indexOf(autoFilters, flag) !== -1 ? filter = flag : null;
-							validator[flag](all_data[i]) ? count++ : null;
+							validator[flag](all_data[i]) ? count++ : sub_errors.push(flag)
 							}						
 						});
+
 					if(count == total){
 						if(json){
 							try{ var s = JSON.parse(all_data[i]); }
@@ -532,17 +515,41 @@ Request.prototype = {
 							}
 						send[i] = s;
 						}
-					else{
-						errors.push(i);
-						}
+					else errors[i] = {msg: 'There were errors with your submission; it did not meet the requirements necessary.' , data : all_data[i] , failed : sub_errors }
 					}
-				else if(i_data.t){
-					switch(i_data.t){
-						case 'pw':
-							(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{7,16}$/).test(all_data[i]) ? send[i] = all_data[i] : errors.push(i);
-							break;
+				else if(i_data.aoo){
+					// means array of objects
+
+					if(all_data[i].constructor != Array){ errors[i] = { msg:'This must be submitted as an array.',  data : all_data[i] } }
+					else{
+						var m_send = [];
+						if(all_data[i].length == 0){
+							if(!i_data.b) errors[i] = { msg : 'This cannot be an empty array.' , data: all_data[i] }
+							if(i_data.default) send[i] = i_data.default;
+							}
+						else{
+							_s_u.each(all_data[i], function(obj,ind){
+								if(typeof obj != 'object'){
+									!errors[i] ? errors[i] = {} : null;
+									errors[i][ind] = { msg : 'The item in this array at the index ' + ind + ' was not a valid JSON object.' , data : obj }
+									return;
+									}
+
+								// we validate each object separately with the data
+								var tangent = _s_req.validate({ validators : i_data.data , data: obj , tangent : true });
+								
+								if(tangent.failure){
+									!errors[i] ? errors[i] = {} : null;
+									errors[i][ind] = { msg : 'The object at index '+ind+' was not submitted with the proper key/value pairs.' , data : tangent.failure }
+									}
+								else{
+									m_send.push(tangent);
+									}
+								})
+							
+							if(!errors[i]) send[i] = m_send;
+							}
 						}
-					// other type validators here
 					}
 				else if(i_data.in){
 					if((i_data.in).indexOf(all_data[i]) !== -1){
@@ -550,198 +557,100 @@ Request.prototype = {
 						}
 					else{
 						if(i_data.default || i_data.default == 0) send[i] = i_data.default
-						else errors.push(i);
+						else errors[i] = { msg : 'The submitted data was not in the range of accepted values for this property.' , data : all_data[i] , accepted : i_data.in } ;
 						}
 					}
-				else if(i_data.c_in){
+				else if(i_data.csv_in){
 					var parts = (all_data[i].constructor == Array ? all_data[i] : all_data[i].split(',') );
-					var tester = new RegExp((i_data.c_in).join('|'));
+					var tester = new RegExp((i_data.csv_in).join('|'));
 
 					_s_u.each(parts, function(part, ind){
-
 						if(!tester.test(part)) parts.splice(ind,1);
 						})
 
 
-					if(parts.length > 0){
-						if(i_data.array){
-							send[i] = parts;
-							}
-						else{
-							send[i] = parts.join(',');
-							}
-						}
+					if(parts.length > 0) send[i] = (i_data.csv?parts.join(','):parts);
 					else{
 						if(i_data.default || i_data.default == 0) send[i] = i_data.default
-						else errors.push(i);
+						else errors[i] = { msg : 'The submitted data was not in the range of accepted values for this property.' , data : all_data[i] , accepted : i_data.csv_in } ;
 						}
 
 					}
-				else if (i_data.json){
+				else if(i_data.json){
 					try{ var s = JSON.parse(all_data[i]); }
 					catch(err){ var s = all_data[i] }
 
+					if(typeof s != 'object') errors[i] = { msg : 'This was not properly formatted JSON.' , data : all_data[i] }
+
 					var tangent = _s_req.validate({
 						validators : i_data.data,
-						data : s
+						data : s, 
+						tangent : true 
 						})
 
-					tangent.failure ? errors = errors.concat(tangent.failure) : send[i] = tangent;
+					tangent.failure ? errors[i] = tangent.failure : send[i] = tangent;
 					}
-				else if (i_data.range){
+				else if(i_data.range){
 					var parts = all_data[i].split(',');
 
-					if(parts.length == 2 && parts[0] >= i_data.range[0] && parts[1] <= i_data.range[1] ){
-						if(i_data.array){
-							send[i] = parts;
-							}
-						else{
-							send[i] = parts.join(',');
-							}
-						}
+					if(parts.length == 2 && parts[0] >= i_data.range[0] && parts[1] <= i_data.range[1] ) send[i] = (i_data.csv?parts.join(','):parts);
 					else{
 						if(i_data.default || i_data.default == 0) send[i] = i_data.default
-						else errors.push(i);
+						else errors[i] = { msg : 'The submitted data was not in the range of accepted values for this property.' , data : all_data[i] , accepted : i_data.range } ;
 						}
 
-					}	
-				else if(i_data.eo){
-					var t = {};
-					t[i] = i_data.self;
-
-					var tangent = _s_req.validate({ validators: t , data : all_data });
-					tangent.failure ? errors.push(i) : send[i] = all_data[i];
 					}
-				// else if(i_data.eo2){
-				// 	var u = {data:all_data,validators:{}};
-				// 	u.validators[i] = i_data.eo2[1]
-				// 	var tangent = _s_req.validate(u);
-					
-				// 	if(tangent.failure){
-				// 		u = {data:all_data,validators:{}};
-				// 		u.validators[i] = i_data.eo2[2]
-				// 		var tangent = _s_req.validate(u);
-				// 		tangent.failure ? errors.push(i) :send[i] = tangent[i];
-				// 		}
-				// 	else{ send[i] = tangent[i] }
-				// 	}
 				else if(i_data.dependency){
-
 					if(i_data.dependency[all_data[i]]){
 						if(i_data.dependency[all_data[i]] != 'none'){
-							var tangent = _s_req.validate({validators : i_data.dependency[all_data[i]], data : all_data});
-							if(tangent.failure){ errors = errors.concat(tangent.failure) }
+							var tangent = _s_req.validate({validators : i_data.dependency[all_data[i]], data : all_data , tangent : true });
+							if(tangent.failure){  errors[i] = tangent.failure }
 							else {
 								send = _s_util.merge(send, tangent);
 								send[i] = all_data[i];
 								}
 							}
-						else{
-							send[i] = all_data[i];
-							}
+						else send[i] = all_data[i];
 						}
-					else{
-						errors.push(i);
-						}
-					}
-				else if(i_data.child){
-					// this means that the data is json, and should be parsed first
-					try{ var d = JSON.parse(all_data[i]) } catch(err){ errors.push(i) }
-
-					var tangent = _s_req.validate({
-						validators : i_data.child,
-						data : d
-						})
-					tangent.failure ? errors = errors.concat(tangent.failure) : send[i] = tangent;
-					}
-				else if(i_data.extra){
-					// this means that the expected value is supposed to be a json object and the json object will have an extra field and a value
-					try {
-						all_data[i] = JSON.parse(all_data[i]);
-						}
-					catch(err){
-						errors.push(i)
-						return;
-						}
-
-					if(all_data[i].value && i_data.extra.values[all_data[i].value]){
-						if(i_data.extra.values[all_data[i].value] == 'none'){ send[i] = { value : all_data[i].value } }
-						else {
-							var tangent = _s_req.validate({ validators : { extra : i_data.extra.values[all_data[i].value] } , data : all_data[i] })
-							tangent.failure ? errors.push(i) : send[i] = { value : all_data[i].value , extra : tangent.extra }
-							}
-						}
-					else{
-						errors.push(i);
-						}
-
+					else errors[i] = { msg : 'The submitted data is not an allowed value for this property.' , data : all_data[i] , accepted : Object.keys(i_data.dependency) } ;
 					}
 				}
 			else{
-				// this is if we arent providing a value, we want to set the value to the default and then check the rest of the information for dependencies that will be basedo n the b value of the validation. a default value MUST be provided here or else the request wont work
 				if(i_data.dependency){
 					if(i_data.dependency.b){
-						var tangent = _s_req.validate({validators : i_data.dependency.b.data, data : all_data});
-						if(tangent.failure){
-							errors = errors.concat(tangent.failure);
-							}
+						var tangent = _s_req.validate({validators : i_data.dependency.b.data, data : all_data, tangent : true });
+						if(tangent.failure) errors[i] = tangent.failure;
 						else{
 							send = _s_util.merge(send, tangent);
 							send[i] = i_data.dependency.b.default;
 							}
 						}
-					else{
-						errors.push(i);
-						}
-					}
-				else if(i_data.eo){
-					var tangent = _s_req.validate({validators : i_data.eo, data : all_data});
-					if(tangent.failure){
-						errors.push(i);
-						}
-					else{
-						send = _s_util.merge(send, tangent);
-						}
+					else errors[i] = { msg : 'This was not submitted at all.' }
 					}
 				// we are putting this here just in case we have an array and it has a 0 field in it
 				else if(i_data.in){
-					if((i_data.in).indexOf(all_data[i]) !== -1){
-						send[i] = all_data[i]
-						}
-					else if(i_data.default || i_data.default == 0){
-						send[i] = i_data.default
-						}
-					else if(i_data.b){
-						return;
-						}
-					else{
-						errors.push(i);
-						}
+					if((i_data.in).indexOf(all_data[i]) !== -1){send[i] = all_data[i] }
+					else if(i_data.default || i_data.default == 0){send[i] = i_data.default }
+					else if(i_data.b){ return; }
+					else errors[i] = { msg : 'This was not submitted at all.' }
 					}
 				else{
 					if(i_data.b){
-						if(i_data.default || i_data.default == 0){
-							send[i] = i_data.default;
-							}
-						else if(all_data[i] === 0){
-							send[i] = 0;
-							}
-						else if(i_data.b == 'array'){
-							send[i] = [];
-							}
+						if(i_data.default || i_data.default == 0){send[i] = i_data.default; }
+						else if(all_data[i] === 0){send[i] = 0; }
+						else if(i_data.b == 'array'){send[i] = []; }
 						}
-					else if(i_data.default || i_data.default == 0){
-						send[i] = i_data.default;
-						}
-					else{
-						errors.push(i);
-						}
+					else if(i_data.default || i_data.default == 0){send[i] = i_data.default; }
+					else errors[i] = { msg : 'This was not submitted at all.' }
 					}
 				}
 			})
 
-		if(errors.length == 0) return send;
-		else return {failure : errors};
+		if(Object.keys(errors).length == 0) return send;
+		else  {
+			if(send_tangent) return {failure:errors};
+			else return {failure : {msg : 'There were validation errors in the data you submitted', data :errors, code : 400} }
+			}
 		}
 	}
 

@@ -4,7 +4,7 @@
 module.exports = {
 	new : function*(obj, meta){
 		return yield _s_db.es.add({
-			type : 'returns',
+			index : 'returns',
 			body : obj
 			}, meta);
 		},
@@ -12,7 +12,7 @@ module.exports = {
 		var doc = {
 			id : obj.id,
 			doc : (obj.doc?obj.doc:obj),
-			type : 'returns',
+			index : 'returns',
 			merge : true
 			}
 		delete obj.id;
@@ -23,8 +23,7 @@ module.exports = {
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('returns', obj);
 
 		var search = {
-			index : 'sellyx',
-			type : 'returns',
+			index : 'returns',
 			body : {
 				query : {
 					bool : {

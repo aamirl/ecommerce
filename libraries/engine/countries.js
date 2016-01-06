@@ -3,8 +3,14 @@ function Countries(){
 	this.list = _s_load.datafile('countries');
 	this.data = {active:{}};
 	
-	var set = this.active.get();
-	if(!set) this.active.set('240');
+	var set = _s_req.headers('country');
+	if( set && (this.list[set]) ){ this.active.set(set); }
+	else{ this.active.set('240'); }
+	
+	var set2 = _s_req.headers('postal');
+	if( set2 ){ this.active.postal.set(set2); }
+	else{ this.active.postal.set('90401'); }
+
 	}
 
 
@@ -55,7 +61,7 @@ Countries.prototype = {
 		},
 	fulfillment : {
 		fulfilled : function(countryId){
-			var allowed = ['240'];
+			var allowed = ['240','102',240,102];
 
 			if(_s_util.indexOf(allowed, countryId) !== -1) return true;
 			return false;
@@ -69,6 +75,7 @@ Countries.prototype = {
 					street2 : 'Suite 235',
 					city : 'Westlake Village',
 					state : 'California',
+					country : '240',
 					postal : '91362'
 					},
 				102 : {
@@ -78,6 +85,7 @@ Countries.prototype = {
 					street2 : 'Old Madras Road, 3/4/5 Floors',
 					city : 'Bangalore',
 					state : '',
+					country : '102',
 					postal : '560016'
 					}
 				}

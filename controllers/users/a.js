@@ -37,7 +37,7 @@ module.exports = {
 			state : { v:['isAlphaOrNumeric'] , b : true },
 			postal : { v:['isAlphaOrNumeric'] },
 			country : { v:['isCountry'] },
-			primary : { in : ['true','false'] }
+			// primary : { in : ['true','false'] }
 			})
 		if(data.failure) return data;
 

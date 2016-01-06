@@ -1,6 +1,9 @@
 var _orders = _s_load.library('orders');
 
 module.exports = {
+	new : function*(){
+		
+		},
 	'get/seller' : function*(){
 		if(!_s_seller) return _s_l.error(101);
 		

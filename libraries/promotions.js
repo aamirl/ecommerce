@@ -108,14 +108,12 @@ Promotions.prototype = {
 		return yield _s_common.get(obj, 'promotions');
 		},
 	new : function*(obj){
+		!obj?obj={}:null;
 		// this is the new function for the promotion library
 		// we can validate informtion here and then based on the flag add other things if needed
 
-		if(obj && obj.data){var data = obj.data; } 
-		else{
-			var data = _s_req.validate(this.helpers.validators());
-			}
-
+		if(obj.data) var data = _s_req.validate({ data : obj.data, validators : this.helpers.validators() })
+		else var data = _s_req.validate(this.helpers.validators());
 		if(data.failure) return data;
 
 		if(data.start){

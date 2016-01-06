@@ -34,6 +34,8 @@ Orders.prototype = {
 		var self  = this;
 		return {
 			order : function*(obj){
+				!obj?obj={}:null;
+				
 				// this is the new function for the order library
 				// we can validate informtion here and then based on the flag add other things if needed
 
@@ -72,8 +74,7 @@ Orders.prototype = {
 					}
 
 
-				if(obj && obj.data){ var data = _s_req.validate({validators : c, data : obj.data}) }
-				else{ var data = _s_req.validate(c) }
+				var data = ( obj.data ? _s_req.validate({ validators : c, data : obj.data }) : _s_req.validate(c) );
 				if(data.failure) return data; 
 
 				// first we add a user to the document
@@ -183,8 +184,7 @@ Orders.prototype = {
 						}
 					}
 
-				if(obj && obj.data){ var data = _s_req.validate({validators : c, data : obj.data}) }
-				else{ var data = _s_req.validate(c) }
+				var data = ( obj.data ? _s_req.validate({ validators : c, data : obj.data }) : _s_req.validate(c) );
 				if(data.failure) return data; 
 
 				// we want to verify this listing exists for this product first

@@ -1,55 +1,112 @@
 
-function Cart(){!_s_session.get('cart', true) ? this.empty() : null; }
+function Cart(){
+	if(!_s_cache.key.get('cart', true)) this.empty()
+	}
 
 Cart.prototype = {
-	empty : function(){
-		_s_session.set('cart', {
-			orders : {},
-			promotions : {
-				additional : [],
-				order : {}
-				},
-			totals : {}
-			});
+	empty : function*(){
+		try {
+			yield _s_cache.key.set('cart',
+				{
+					orders : {},
+					promotions : {
+						additional : [],
+						order : {}
+						},
+					totals : {}
+					}
+				);
+			return true;
+			}
+		catch(err){
+			return false;
+			}
+		},
+	calculate : function*(cart){
+		if(!cart) return false;
+		var totals = {};
+		var error = false;
+		var _taxes = _s_load.engine('taxes');
+		
+		yield _s_util.each(cart.orders, function*(order_details, order_seller){
+			// for each of the orders we send back item totals, item subtotals, shipping calculations, and then the grand total
+
+			// if shipping total hasn't been set, we return errors;
+			if(!order_details.shipping || !order_details.shipping.total){ error = 'Order for ' + order_details.name + ' does not have shipping calculated yet.'; return false; }
+
+			!totals[order_seller] ? totals[order_seller] = {  items : {} , totals : { items : { data : 0, converted : 0 }, shipping : {data:order_details.shipping.total, converted : _s_currency.convert.front(order_details.shipping.total)} } } : null;
+
+			yield _s_util.each(order_details.items, function*(product_details, product_id){
+
+				!totals[order_seller].items[product_id] ? totals[order_seller].items[product_id] = {} : null;
+
+				var item = yield _s_load.library('products').get({id:product_id,include:'sellers'});
+				if(!item){ error =  'Product ' + product_id + 'does not exist.' ; return false ; }
+
+				yield _s_util.each(product_details.listings, function*(listing_details, listing_id){
+
+
+					var r = _s_util.array.find.object(item.sellers, 'id', listing_id);
+					if(!r){ error = 'Listing ' + listing_id + ' for ' + product_id + ' does not exist.'; return false; }
+
+					var di = (_s_countries.active.get() == r.seller.country ?1:2);
+
+					var item_price = r.pricing['sale'+di] ? r.pricing['sale'+di] : r.pricing['standard'+di];
+					var item_subtotal = parseFloat(item_price * listing_details.quantity);
+					
+					totals[order_seller].totals.items.data += item_subtotal;
+					totals[order_seller].items[product_id][listing_id] = { 
+						item : {
+							data : item_price,
+							converted : _s_currency.convert.front(item_price, false)
+							},
+						item_subtotal : {
+							data : item_subtotal,
+							converted : _s_currency.convert.front(item_subtotal, false)
+							}
+						}
+					})
+				})
+		
+			totals[order_seller].totals.items.converted = _s_currency.convert.front(totals[order_seller].totals.items.data, false);
+
+			})
+		
+		if(error) return { failure : { msg : error, code : 300 } };
+		if(Object.keys(totals).length == 0) return false;
+		return totals;
 		},
 	get helpers() {
 		var self = this;
 		return {
 			validate : function*(obj){
-
-				var _o_product = yield _s_load.object('products' , obj.product);
-				if(_o_product.failure) return { failure : { msg : 'This item is not a valid item and listing.' , code : 300 } };
+				var item = yield _s_load.library('products').get(obj.product);
+				// var _o_product = yield _s_load.object('products' , obj.product);
+				if(!item) return { failure : { msg : 'This item is not a valid item and listing.' , code : 300 } };
 
 
 				var listing = _s_util.array.find.object(item.sellers, 'id', obj.listing);
 				if(item.setup.active == 1 && listing && listing.quantity > 0 && listing.setup.active == 1) {
-					
-					// now we can add this to the cart under the proper context
-	        		if(listing.fulfillment == 2 && listing.seller.country == _s_countries.active.get()){
-	        			var id = 'sellyx-1';
-	        			var name = 'Sellyx Domestic';
-	        			}
-	        		else if((listing.fulfillment == 2 || listing.sellyxship == 2) && listing.seller.country != _s_countries.active.get()){
-	        			var id = 'sellyx-2';
-	        			var name = 'Sellyx International';
-	        			}
 
-					return { 
-						listing : listing , 
-						item : item ,
-						seller : {
-							actual : {
-								id : listing.seller.id,
-								name : listing.seller.name
-								},
-							shipping : {
-								id : (id?id:listing.seller.id),
-								name : (name?name:listing.seller.name)
-								}
-							}
-						};
+					if(obj.quantity && listing.quantity < obj.quantity) return { failure : { msg : 'The seller does not have enough quantity.' , code :300 } }
+					return {
+						listing : listing,
+						item : item,
+						}
+
 					}
 				return { failure : { msg : 'This listing is not active or not available.' , code : 300 } };
+				},
+			seller : function*(obj){
+				var orders = yield self.get.orders();
+				var seller = false;
+				_s_u.each(orders, function(v,k){
+					if(v.items[obj.product] && v.items[obj.product].listings[obj.listing]){
+						seller = k;
+						return false;
+						}
+					})
+				return seller;
 				},
 			separate : function*(inp){
 				var cart = (inp.cart?inp.cart:_s_util.clone.deep(self.get.all()))
@@ -313,11 +370,53 @@ Cart.prototype = {
 				}
 			}
 		},
+	get totals() { 
+		var self = this;
+		return {
+			total : function*(){
+				return yield _s_cache.key.get('cart.totals.grand',true);
+				}
+			}
+		},
 	get get() { 
 		var self = this;
 		return {
-			count : function(){
-				var orders = self.get.orders();
+			all : function*(info){
+				var r = yield _s_cache.key.get('cart');
+				if(!info) return r;
+				// we want to send the entire cart info back with product listings and details and whatnot
+
+				var _products = _s_load.library('products');
+				var error = false;
+
+				yield _s_util.each(r.orders, function*(dets, seller){
+					yield _s_util.each(dets.items, function*(product_dets, product_id){
+						var item = yield _products.get({id:product_id, include : 'line,name,sellers,combos,images,performance',convert:true});
+						if(!item){ error = 'The product with the product id '+ product_id + ' was not found.'; return false; }
+
+						yield _s_util.each(product_dets.listings, function*(listing_details, listing_id){
+							var b = _s_util.array.find.object(item.sellers, 'id', listing_id);
+							if(!b){ error = 'The product with the product id '+product_id+' could not find listing ' + listing_id + '.'; return false;  }
+							//let's associate the combos here too
+							var combo = item.combos[b.combo];
+							if(!combo){ error = 'The product with the product id '+product_id+' could not find a combination for listing ' + listing_id + '.'; return false;  }
+
+							b.combo = combo;
+							r.orders[seller].items[product_id].listings[listing_id].listing = b;
+							})
+
+						delete item.sellers;
+						delete item.combos;
+						r.orders[seller].items[product_id].item = item;
+
+						})
+					})
+
+				if(error) return { failure : { msg : error, code : 300 } };
+				return r;
+				},
+			count : function*(){
+				var orders = yield self.get.orders();
 				var total = 0;
 
 				if(Object.keys(orders).length > 0){
@@ -327,30 +426,23 @@ Cart.prototype = {
 							})
 						})
 					}
-				if(total == 0) return ''
+				if(total == 0) return false;
 				else return total;
 				},
-			all : function(){
-				return _s_session.get('cart');
+			orders: function*(){
+				return yield _s_cache.key.get('cart.orders');
 				},
-			total : function(){
-				if(_s_session.get('cart.totals.grand',true)) return _s_session.get('cart.totals.grand')
-				return false;
-				},
-			orders: function(){
-				return _s_session.get('cart.orders');
-				},
-			order: function(sellerid){
-				var orders = self.get.orders();
+			order: function*(sellerid){
+				var orders = yield self.get.orders();
 				if(orders[sellerid]) return orders[sellerid]
 				else return false;
 				},
-			promotions : function(){
-				return _s_session.get('cart.promotions');
+			promotions : function*(){
+				return yield _s_cache.key.get('cart.promotions');
 				},
 			shipping : {
-				options : function(seller){
-					return _s_session.get('cart.orders.' + seller + '.shipping.options' , true);
+				options : function*(seller){
+					return yield _s_cache.key.get('cart.orders.' + seller + '.shipping.options');
 					}
 				}
 			}
@@ -389,31 +481,27 @@ Cart.prototype = {
 	get items() {
 		var self = this;
 		return {
-			delete : function(obj){
-
-				try{
-	        		_s_session.delete('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing)
-	        		var get = _s_session.get('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings');
-
-	        		if(Object.keys(get).length == 0){
-	        			_s_session.delete('cart.orders.' + obj.seller + '.items.' + obj.product);
-		        		var get = _s_session.get('cart.orders.' + obj.seller + '.items');
-		        		if(Object.keys(get).length == 0){
-		        			_s_session.delete('cart.orders.' + obj.seller);
-		        			}
-
-	        			}
-	        		return { success : 'Item deleted.' };
-	        		}
-	        	catch(err){
-	        		return { failure : 'Item could not be deleted at this time.' }
-	        		}
-
-				},
 			add : function*(obj){
 				try { 
 		            var v = yield self.helpers.validate(obj);
-		            if(v.failure) return validate;
+		            if(v.failure) return v;
+
+	            	if(v.listing.fulfillment == 2 && v.listing.seller.country == _s_countries.active.get()){
+	        			var id = 'sellyx-1';
+	        			var name = 'Sellyx Domestic';
+	        			}
+	        		else if((v.listing.fulfillment == 2 || v.listing.sellyxship == 2) && v.listing.seller.country != _s_countries.active.get()){
+	        			var id = 'sellyx-2';
+	        			var name = 'Sellyx International';
+	        			}
+	        		else{
+	        			if((v.listing.seller.country == _s_countries.active.get() && v.listing.reach == 2) || (v.listing.seller.country != _s_countries.active.get() && v.listing.reach == 1)) return { failure : { msg : 'You are not allowed to order this product from your current country.' , code : 300 } };
+
+	        			var id = v.listing.seller.id;
+	        			var name = v.listing.seller.name;
+	        			}
+
+	        		if(obj.quantity == 0) return yield self.items.delete(obj);
 
 	        		var r = {
 	        			quantity : (obj.quantity?obj.quantity:1),
@@ -426,96 +514,149 @@ Cart.prototype = {
 	        			r.price = obj.price;
 	        			}
 
-	        		if(!_s_session.get('cart.orders.' + id + '.items' , true)){
+	        		var c = yield _s_cache.key.get('cart.orders.' + id + '.items' , true);
+	        		if(!c){
 	        			if(id == 'sellyx-1' || id == 'sellyx-2'){
-	        			 	_s_session.set('cart.orders.' + id + '.name' , name);
+	        			 	yield _s_cache.key.set('cart.orders.' + id + '.name' , name);
 	        				}
 	        			else{
-	        				_s_session.set('cart.orders.' + id , _s_util.merge({items : {}}, listing.seller));
+	        				// get seller address
+	        				var _s_o_seller = yield _s_load.object('sellers', v.listing.seller.id);
+	        				if(_s_o_seller.failure) return { failure : { msg : 'The seller does not exist.' , code :300 } };
+
+	        				yield _s_cache.key.set('cart.orders.' + id , {
+	        					id : v.listing.seller.id,
+	        					name : v.listing.seller.name,
+	        					items : {},
+	        					address : _s_o_seller.profile.addresses.primary(),
+	        					});
 	        				}
 	        			}
 
-	        		_s_session.set('cart.orders.' + id + '.items.' + obj.product + '.listings.' + obj.listing , r);
+	        		yield _s_cache.key.set('cart.orders.' + id + '.items.' + obj.product + '.listings.' + obj.listing , r);
         			
 	        		// if we had calculated shipping totals for this seller previously, we now need to delete those for recalculation purposes
-
-	    			_s_session.delete('cart.orders.' + id + '.shipping');
-	
-	        		return { success : { msg : 'Added to cart!' , code : 300 } };
-	    			}
+	    			yield _s_cache.key.delete('cart.orders.' + id + '.shipping');
+	    			return true;
+					}
 	    		catch(err){
-	    			return { failure : { msg : 'There was an error in adding the item to the cart.' , code: 300 } }
+	    			console.log(err);
+	    			return false;
 	    			}
+
+				},
+			delete : function*(obj){
+				try{
+					var seller = yield self.helpers.seller(obj);
+					if(!seller) return false;
+					var get = yield _s_cache.key.get('cart.orders.' + seller);
+					if(!get) return false;
+
+					if(Object.keys(get.items).length == 1){
+						yield _s_cache.key.delete('cart.orders.'+seller);
+						}
+					else if(Object.keys(get.items[obj.product].listings).length == 1){
+						yield _s_cache.key.delete('cart.orders.'+seller+'.items.'+obj.product);
+						}
+					else{
+		        		yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing)
+						}
+
+	        		return true;
+	        		}
+	        	catch(err){
+	        		console.log(err);
+	        		return false;
+	        		}
 
 				},
 			update : {
 				quantity : function*(obj){
 	            	var validate = yield self.helpers.validate(obj);
-	            	if(validate.failure) return validate
+	            	if(validate.failure) return validate;
 
-	            	
+	            	var seller = yield self.helpers.seller(obj);
+					if(!seller) return false;
+
             		// check to see its not negotiated
-            		if(_s_session.get('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing + '.negotiated')) return { failure : 'You cannot update the quantity of a negotiated item.' };
+            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.negotiated');
+            		if(get) return { failure : {msg: 'You cannot update the quantity of a negotiated item.' , code :300 } };
 
-            		if(obj.quantity >= 1){
-            			_s_session.set('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing + '.quantity' , obj.quantity);
+            		if(obj.quantity && obj.quantity >= 1){
+            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.quantity' , obj.quantity);
 
-            			// if shipping had been calculated, we need to recalculate, so unset the shipping for this item;
-
-            			_s_session.delete('cart.orders.' + obj.seller + '.shipping');
-
-	            		return { success : 'Quantity updated.' };
+            			// if shipping had been calculated, we need to recalculate, so unset the shipping for this item
+            			yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+            			return true;
             			}
             		else{
-            			return self.items.delete(obj);
+            			return yield self.items.delete(obj);
             			}
 					},
 				waive : function*(obj){
 	            	var validate = yield self.helpers.validate(obj);
-	            	if(validate.failure) return validate
+	            	if(validate.failure) return validate;
+
+	            	var seller = yield self.helpers.seller(obj);
+					if(!seller) return false;
 	            	
+            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing);
+            		if(!get) return { failure : {msg : 'That is not a valid cart item.' , code : 300}};
+            		
             		// check to see its not negotiated
-            		if(_s_session.get('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing + '.negotiated')) return { failure : 'You cannot waive or change the price of a negotiated item.' };
-            		// make sure that no_returns == 1
-            		if(_s_session.get('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing + '.details.no_returns') == 2) return { failure : 'This seller does not allow returns or return pricing on this item.' };
+            		if(get.negotiated) return { failure : {msg: 'You cannot waive or change the price of a negotiated item.' } , code : 300 } ;
+            		if(validate.listing.no_returns && validate.listing.no_returns == 2) return { failure : { msg : 'This seller does not allow returns or return pricing on this item.' , code : 300 } };
 
             		if(obj.type == 2){
 	            		// get return policy of seller
-	            		var results = yield _s_seller.get.seller({id:validate.listing.seller.id, include : 'policy'});
-	            		if(!results) return { failure : 'The seller was not found!' };
+	            		var results = yield _s_load.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
+	            		if(!results) return { failure : {msg : 'The seller was not found!' , code : 300 } };
 
-
-	            		if(results.data.policy && results.data.policy[(_countries.active.get()==validate.listing.seller.country)?1:2].allowed == 2){
-	            			_s_session.set('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived' , true);
-	            			_s_session.delete('cart.orders.' + obj.seller + '.shipping');
-	            			return { success : true}
+	            		
+	            		if(results.policy && results.policy[(_s_countries.active.get() == validate.listing.seller.country)?1:2].allowed == 2){
+	            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived' , true);
+	            			yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+	            			return true;
 	            			}
 	            		else{
-	            			return { failure : 'The seller has since changed their policy to not allow returns. We apologize for this inconvenience.' , refresh : true };
+	            			return { failure : {msg : 'The seller has since changed their policy to not allow returns. We apologize for this inconvenience.' , refresh : true , code : 300 } } ;
 	            			}
 	            		}
 	            	else{
-	            		_s_session.delete('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived');
-	            		_s_session.delete('cart.orders.' + obj.seller + '.shipping');
-	            		return { success : true}
+	            		yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived');
+	            		yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+	            		return true;
 	            		}
 					},
 				notes : function*(obj){
 	            	var validate = yield self.helpers.validate(obj);
-	            	if(validate.failure) return validate	        
+	            	if(validate.failure) return validate;        
 
-        			_s_session.set('cart.orders.' + obj.seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes' , obj.notes);
-            		return { success : 'Notes updated.' };
+	            	var seller = yield self.helpers.seller(obj);
+					if(!seller) return false;
+
+					if(!obj.notes){
+						yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes');
+						}
+					else{
+						yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes', obj.notes);
+
+						}
+            		return true;
 					},
 				shipping : {
 
-					options : function(obj){
+					options : function*(obj){
 
-						_s_session.set('cart.orders.' + obj.seller + '.shipping.options' , obj.options);
-
+	        			yield _s_cache.key.set('cart.orders.' + obj.seller + '.shipping' , {options:obj.options});
 						},
-					save : function(obj){
-						var options = _s_session.get('cart.orders.' + obj.seller + '.shipping.options')
+					// retrieve : function*(obj){
+					// 	return yield _s_cache.key.get('cart.orders.' + obj.seller + )
+					// 	},
+					save : function*(obj){
+						var options = yield _s_cache.key.get('cart.orders.' + obj.seller + '.shipping.options');
+						console.log(options);
+						if(!options) return false;
 						
 						switch(obj.seller){
 							case 'sellyx-1':
@@ -533,7 +674,6 @@ Cart.prototype = {
 														total += Object.keys(serv.custom).length;
 														}
 													})
-													
 												break;
 											case 'l2d':
 											case 'l2c':
@@ -542,10 +682,8 @@ Cart.prototype = {
 											case 'l3':
 												total++;
 												break;
-
 											}
 										}
-
 									})
 
 								break;
@@ -558,7 +696,7 @@ Cart.prototype = {
 						var go = {};
 						var subtotal = 0;
 
-						_s_u.each(obj.send, function(selection, id){
+						yield _s_util.each(obj.send, function*(selection, id){
 							
 							if(id == 'custom'){
 								var b = Object.keys(selection);
@@ -566,7 +704,8 @@ Cart.prototype = {
 								selection = selection[b[0]];
 								}
 							
-							var check = _s_session.get('cart.orders.' + obj.seller + '.shipping.options.' + id  )[selection];
+							var check = yield _s_cache.key.get('cart.orders.' + obj.seller + '.shipping.options.' + id  );
+							check = (check.rates ? check.rates[selection] : check[selection]);
 							if(check) {
 								go[id] = check;
 								subtotal += parseFloat(go[id].rate);
@@ -575,26 +714,17 @@ Cart.prototype = {
 							
 							})
 
-						// if they all check out, then we can officially set the selected options for each item
-						if(count == total) {
-							_s_session.set('cart.orders.' + obj.seller + '.shipping.selected' , go);
-							_s_session.set('cart.orders.' + obj.seller + '.shipping.total' , subtotal);
-							return { success : 'Shipping Options Confirmed!' };
-							}
-						else {
-							return { failure : 'The shipping options you selected could not be applied for some reason. Please try again.' };
-							}
-						// return obj.send;
+						if(count != total) return false;
+
+						yield _s_cache.key.set('cart.orders.' + obj.seller + '.shipping.selected' , go);
+						yield _s_cache.key.set('cart.orders.' + obj.seller + '.shipping.total' , subtotal);
+						return true;
 						}
-
-
 					}
 				}
 			}
 		}
 	}
-
-
 
 module.exports = function(){if(!(this instanceof Cart)) { return new Cart(); } }
 

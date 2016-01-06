@@ -5,8 +5,7 @@ module.exports = {
 	
 	get : function*(obj){
 		var get = {
-			index : 'sellyx',
-			type : 'listings',
+			index : 'listings',
 			body : {
 				query : {
 					bool : {

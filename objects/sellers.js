@@ -1,7 +1,7 @@
 // Sellers Object
 
 module.exports = function*(data){
-  	if(!(this instanceof Sellers)) { var r = new Sellers(data); yield r.init(data); return r; }
+	if(!(this instanceof Sellers)) { var r = new Sellers(data); yield r.init(data); return r; }
 	}
 
 function Sellers(){}
@@ -9,9 +9,8 @@ Sellers.prototype = {
 	init : function*(data){
 		if(typeof data != 'object'){
 			// let's load the seller from the database
-			var _sellers = _s_load.engine('sellers');
-			var result = yield _sellers.get({ id : data , convert : false, objectify : false });
-			if(!result) { this.failure = { msg : 'The user could not be found.' , code : 300 }; }
+			var result = yield _s_load.engine('sellers').get({ id : data , convert : false, objectify : false });
+			if(!result) { this.failure = { msg : 'The seller could not be found.' , code : 300 }; }
 			else {
 				result.id = data;
 				this.data = result;

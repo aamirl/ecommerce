@@ -6,7 +6,7 @@ module.exports = {
 		var doc = {
 			id : obj.id,
 			doc : (obj.doc?obj.doc:obj),
-			type : 'negotiations',
+			index : 'negotiations',
 			merge : true
 			}
 		delete obj.id;
@@ -18,7 +18,7 @@ module.exports = {
 			negotiation : function*(obj, meta){
 				
 				return yield _s_db.es.add({
-					type : 'negotiations',
+					index : 'negotiations',
 					body : obj
 					}, meta);
 
@@ -30,8 +30,7 @@ module.exports = {
 		existing : function*(obj){
 			// this is to check if there exists an existing negotiaton between the user and the seller/listing
 			var get = {
-				index : 'sellyx',
-				type : 'negotiations',
+				index : 'negotiations',
 				body : {
 					query : {
 						bool : {
@@ -55,8 +54,7 @@ module.exports = {
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('negotiations', obj);
 		
 		var get = {
-			index : 'sellyx',
-			type : 'negotiations',
+			index : 'negotiations',
 			body : {
 				query : {
 					bool : {

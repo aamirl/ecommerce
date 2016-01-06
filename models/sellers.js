@@ -5,21 +5,21 @@ module.exports = {
 
 	new : function*(obj, meta){
 		return yield _s_db.es.add({
-			type : 'sellers',
+			index : 'sellers',
 			body : obj
 			}, meta);
 		},
 	update : function*(obj){
 		// if we are just submitting the id, we are simply updating the information here
 		if(obj.doc){
-			obj.type = 'sellers';
+			obj.index = 'sellers';
 			return yield _s_db.es.update(doc);
 			}
 		
 		var doc = {
 			id : obj.id,
 			doc : obj,
-			type : 'sellers',
+			index : 'sellers',
 			}
 
 		var id = obj.id;
@@ -34,8 +34,7 @@ module.exports = {
 			obj.id = id;
 
 			yield _s_db.es.update({
-				index : 'sellyx',
-				type : 'products,lines,users',
+				index : 'products,lines,users',
 				body : {
 					query :{
 						match : {
@@ -59,8 +58,7 @@ module.exports = {
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('sellers', obj);
 
 		var search = {
-			index : 'sellyx',
-			type : 'sellers',
+			index : 'sellers',
 			body : {
 				query : {
 					bool : {

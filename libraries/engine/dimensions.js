@@ -1,6 +1,6 @@
 
 var static_vars = {
-	1: { 
+	'US': { 
 		length : {
 			divisor : 2.54,
 			unit : {
@@ -16,7 +16,7 @@ var static_vars = {
 				}
 			}
 		},
-	2: { 
+	'MT': { 
 		length : {
 			divisor : 1,
 			unit : {
@@ -38,7 +38,9 @@ var static_vars = {
 function Dimensions(){
 
 	this.data = {};
-	!this.active.get() ? this.active.set(1) : null;
+	var set = _s_req.headers('standard');
+	if( set && (set=='US'||set=='MT') ){ this.active.set(set); }
+	else{ this.active.set('MT'); }
 
 	}
 
