@@ -53,58 +53,31 @@ Interests.prototype = {
 							send.push(yield _listings.helpers.convert(o.data));
 							}
 						})
+
+					if(obj.endpoint){
+						delete obj.endpoint;
+						delete obj.deep_convert;
+						return {success:{ counter : results.counter, data : send, filters : obj }};
+						}
+
 					return { counter : results.counter , data : send };
 					}
+
+				if(obj.endpoint){
+					if(typeof _controller.helpers.convert == 'function') return { success : { data : yield _controller.helpers.convert(results) }}
+					else return { success : { data : yield self.helpers.convert(results , library) } };
+					}
+
 				return yield _listings.helpers.convert(results);
 				}	
+			if(obj.endpoint) return { success : { data : results } }
 			return results;
 			}
-		return false;
-		},
-	get actions(){
-		var self = this;
-		return {
-			status : function*(obj){
-				!obj?obj={}:null;
-
-				var r = {
-					id : {v:['isLocalListing']},
-					status : { in:[1,2,'1','2'] }
-					}
-
-				obj.corporate ? r.status = { in:[0,1,2,'0','1','2'] } : null;
-
-				var data = _s_req.validate(r);
-				if(data.failure) return data;
-
-				var v = {
-					id : data.id,
-					library : 'products',
-					type : 'listing',
-					label : 'listing',
-					seller : obj.seller,
-					deep : {
-						array : 'sellers',
-						property : 'id',
-						value : data.id,
-						status : {
-							allowed : [9],
-							change : data.status
-							}
-						},
-					corporate : (obj.corporate?_s_corporate.profile.master():null),
-					status : {
-						allowed : [1,2]
-						},
-					send : 'object'
-					}
-
-				obj.corporate ? v.status = [0,1,2] : null;
-				return yield _s_common.check(v);
-				}
-
+			
+		if(obj.endpoint){
+			return { failure : { msg : 'No objects matched your query.' , code : 300 } };
 			}
-
+		return false;
 		}
 
 	}

@@ -1,84 +1,53 @@
 
+
+
 function Cart(){
-	if(!_s_cache.key.get('cart', true)) this.empty()
+	if(!_s_cache.key.get('cart', true)) this.empty();
+
+	this.default_cart = {
+		orders : {},
+		promotions : {
+			additional : [],
+			order : {}
+			},
+		totals : {},
+		address : {}
+		}
+
 	}
 
 Cart.prototype = {
-	empty : function*(){
-		try {
-			yield _s_cache.key.set('cart',
-				{
-					orders : {},
-					promotions : {
-						additional : [],
-						order : {}
-						},
-					totals : {}
-					}
-				);
-			return true;
-			}
-		catch(err){
-			return false;
-			}
-		},
-	calculate : function*(cart){
-		if(!cart) return false;
-		var totals = {};
-		var error = false;
-		var _taxes = _s_load.engine('taxes');
-		
-		yield _s_util.each(cart.orders, function*(order_details, order_seller){
-			// for each of the orders we send back item totals, item subtotals, shipping calculations, and then the grand total
-
-			// if shipping total hasn't been set, we return errors;
-			if(!order_details.shipping || !order_details.shipping.total){ error = 'Order for ' + order_details.name + ' does not have shipping calculated yet.'; return false; }
-
-			!totals[order_seller] ? totals[order_seller] = {  items : {} , totals : { items : { data : 0, converted : 0 }, shipping : {data:order_details.shipping.total, converted : _s_currency.convert.front(order_details.shipping.total)} } } : null;
-
-			yield _s_util.each(order_details.items, function*(product_details, product_id){
-
-				!totals[order_seller].items[product_id] ? totals[order_seller].items[product_id] = {} : null;
-
-				var item = yield _s_load.library('products').get({id:product_id,include:'sellers'});
-				if(!item){ error =  'Product ' + product_id + 'does not exist.' ; return false ; }
-
-				yield _s_util.each(product_details.listings, function*(listing_details, listing_id){
-
-
-					var r = _s_util.array.find.object(item.sellers, 'id', listing_id);
-					if(!r){ error = 'Listing ' + listing_id + ' for ' + product_id + ' does not exist.'; return false; }
-
-					var di = (_s_countries.active.get() == r.seller.country ?1:2);
-
-					var item_price = r.pricing['sale'+di] ? r.pricing['sale'+di] : r.pricing['standard'+di];
-					var item_subtotal = parseFloat(item_price * listing_details.quantity);
-					
-					totals[order_seller].totals.items.data += item_subtotal;
-					totals[order_seller].items[product_id][listing_id] = { 
-						item : {
-							data : item_price,
-							converted : _s_currency.convert.front(item_price, false)
-							},
-						item_subtotal : {
-							data : item_subtotal,
-							converted : _s_currency.convert.front(item_subtotal, false)
-							}
-						}
-					})
-				})
-		
-			totals[order_seller].totals.items.converted = _s_currency.convert.front(totals[order_seller].totals.items.data, false);
-
-			})
-		
-		if(error) return { failure : { msg : error, code : 300 } };
-		if(Object.keys(totals).length == 0) return false;
-		return totals;
-		},
 	get helpers() {
 		var self = this;
 		return {
+			validators : {
+				cart : function(){
+					return {
+						json : true,
+						default : _s_util.clone.deep(self.default_cart),
+						data : {
+							orders : {v:['isJSON'] , default : {}},
+							promotions : {
+								json : true,
+								default : {
+									additional : [],
+									order : {}
+									},
+								data : {
+									additional : {v:['isArray'] , b:true, default : []},
+									order : {v:['isJSON'] , b:true, default : {}}
+									}
+								},
+							totals : {
+								v:['isJSON'],
+								b:true,
+								default : {}
+								},
+							address : _s_common.helpers.validators.address()
+							}
+						}
+					}
+				},
 			validate : function*(obj){
 				var item = yield _s_load.library('products').get(obj.product);
 				// var _o_product = yield _s_load.object('products' , obj.product);
@@ -98,7 +67,7 @@ Cart.prototype = {
 				return { failure : { msg : 'This listing is not active or not available.' , code : 300 } };
 				},
 			seller : function*(obj){
-				var orders = yield self.get.orders();
+				var orders = yield self.get.orders(obj);
 				var seller = false;
 				_s_u.each(orders, function(v,k){
 					if(v.items[obj.product] && v.items[obj.product].listings[obj.listing]){
@@ -108,315 +77,173 @@ Cart.prototype = {
 					})
 				return seller;
 				},
-			separate : function*(inp){
-				var cart = (inp.cart?inp.cart:_s_util.clone.deep(self.get.all()))
-				if(!cart.totals.grand) return { failure : 'The cart is invalid.' };
-				
-				var _products = _s_load.library('products');
+			}
+		},
+	empty : function*(no_session){
+		var r = _s_util.clone.deep(this.default_cart);
 
-				// let's process the order and separate everything, figure out who is stripe and who is paypal and who is neither here
-				var gift = inp.gift;
-				var active = _countries.active.get();
+		if(no_session) return r;
 
-				inp.address.country = active;
-				inp.address.postal = _countries.active.postal.get();
+		try {
+			yield _s_cache.key.set('cart', r);
+			return true
+			}
+		catch(err){
+			return false
+			}
+		},
+	calculate : function*(){
+		var cart = yield this.get.all();
+		var totals = {grand:0};
+		var totals_cache = {grand:0};
+		var error = false;
+		var _taxes = _s_load.engine('taxes');
 
-				var fulfillment = _countries.fulfillment.fulfilled(active);
-				var separated = {};
-				var grouped = {};
-				var sellers = {};
-				var used_affiliate_offers = {};
-				var used_customer_offers = {};
-				var quantity_updates = {};
-				var error = false;
-
-				yield _s_util.each(cart.orders, function*(dets,s1){
-					yield _s_util.each(dets.items, function*(item_dets, item_id){
-						yield _s_util.each(item_dets.listings, function*(l_dets, l_Id){
-
-							var sId = l_dets.details.seller.id;
-							var selected = dets.shipping.selected;
-							var country = l_dets.details.seller.country.id;
-
-							l_dets.details.seller.country = l_dets.details.seller.country.id;
-
-							if(!separated[sId]){
-								//load the seller information
-								var s = yield _s_seller.model.get.seller({id:sId,active:1})
-								if(!s || !s.financials.profile){ error = true; return }
-
-								sellers[sId] = s;
-								grouped[sId] = {};
-								separated[sId] = {
-									id : 'SO'+Math.floor(Math.random() * 1000000000)+'-'+_s_user.profile.id(),
-									seller : l_dets.details.seller,
-									user : _s_user.helpers.data.document(),
-									offers : {},
-									items : [],
-									address : inp.address,
-									gift : gift,
-									totals : {
-										seller : 0,
-										customer : 0,
-										sellyx : 0
-										},
-									setup : {
-										active : 1,
-										status : 1,
-										added : _s_dt.now.datetime()
-										},
-									transactions : {
-										history : [],
-										setup : {
-											active : 1,
-											status : 2,
-											}
-										}
-									}
-
-								if(cart.promotions.order[sId]){
-									separated[sId].promotions = cart.promotions.order[sId];
-
-									//subtract order promotion totals from the seller and customer totals from the beginning
-									_s_u.each(cart.promotions.order[sId], function(disc, prom){
-										separated[sId].totals.seller -= parseFloat(disc);
-										separated[sId].totals.customer -= parseFloat(disc);
-										})
-									}
-								if(cart.offers){
-									if(cart.offers.affiliate&&cart.offers.affiliate[sId] && cart.offers.affiliate[sId].total){
-										separated[sId].offers.affiliate = {
-											id : cart.offers.affiliate[sId].offer.id,
-											total : cart.offers.affiliate[sId].total
-											}
-										
-										used_affiliate_offers[cart.offers.affiliate[sId].offer.id] = cart.offers.affiliate[sId].counter;
-										separated[sId].totals.seller -= parseFloat(cart.offers.affiliate[sId].total);
-										separated[sId].totals.customer -= parseFloat(cart.offers.affiliate[sId].total);									
-										}
-									if(cart.offers.customer&&cart.offers.customer[sId] && cart.offers.customer[sId].total){
-										separated[sId].offers.customer = {
-											id : cart.offers.customer[sId].offer.id,
-											total : cart.offers.customer[sId].total
-											}
-										
-										used_customer_offers[cart.offers.customer[sId].offer.id] = cart.offers.customer[sId].code;
-										separated[sId].totals.seller -= parseFloat(cart.offers.customer[sId].total);
-										separated[sId].totals.customer -= parseFloat(cart.offers.customer[sId].total);									
-										}
-									}
-								}
-
-							var obj = {
-								item : {
-									id : item_id,
-									name : _products.helpers.name({ data : item_dets.item , listing : l_Id , break: true })
-									},
-								listing : l_Id,
-								process_time : l_dets.details.process_time.id,
-								quantity : l_dets.quantity,
-								totals : l_dets.totals,
-								promotions : l_dets.promotions,
-								gifts : l_dets.gifts
-								};
-
-
-							!quantity_updates[item_id]?quantity_updates[item_id]={}:null;
-							quantity_updates[item_id][l_Id] = l_dets.quantity;
-
-							l_dets.notes ? obj.notes = l_dets.notes : null;
-							l_dets.waived ? obj.waived = true : null;
-							l_dets.details.no_returns == 2 ? obj.no_returns = true : null;
-
-							// add item subtotal to the order totals
-							separated[sId].totals.seller += parseFloat(l_dets.totals.subtotal);
-							separated[sId].totals.customer += parseFloat(l_dets.totals.subtotal);
-
-							// based on the shipping and the s1, we figure out what the shipping costs are
-							obj.shipping = {
-								responsibility : s1
-								}
-
-							var g = false;
-
-							switch(s1){
-								case 'sellyx-1':
-									var t = selected.grouped;
-									obj.shipping.service = selected.grouped;
-									g = 'sellyx';
-									obj.status = 1
-									break;
-								case 'sellyx-2':
-									// we are going to be saving this shipping as SERVICES
-
-									!grouped[sId][s1] ? grouped[sId][s1] = {} : null;
-
-									if(fulfillment){
-										obj.status = 12;
-										var t = selected['l2c.' + l_dets.details.country.id];
-										obj.shipping.services = {
-											l2 : {
-												service : t,
-												},
-											l3 : {
-												service : selected.l3,
-												}
-											}
-										if(!grouped[sId][s1].l2){
-											grouped[sId][s1].l2 = true;
-											separated[sId].totals.sellyx += parseFloat(t.rate + selected.l3.rate);
-											separated[sId].totals.customer += parseFloat(t.rate + selected.l3.rate);
-											}
-										}
-									else{
-										obj.status = 13;
-										var t = selected['l2d.' + l_dets.details.country.id]
-										obj.shipping.services = {
-											l2 : {
-												service : t
-												}
-											}
-										if(!grouped[sId][s1].l2){
-											grouped[sId][s1].l2 = true;
-											separated[sId].totals.sellyx += parseFloat(t.rate);
-											separated[sId].totals.customer += parseFloat(t.rate);
-											}							
-										}
-
-									if(selected['l1.' + sId + '.custom.' + l_Id]){
-										var t = selected['l1.' + sId + '.custom.' + l_Id];
-										obj.shipping.services.l1 = {
-											service : t,
-											type : 'custom',
-											}
-
-										obj.status = 2;
-
-										// add shipping cost to money for seller
-										separated[sId].totals.seller += parseFloat(t.rate);
-										separated[sId].totals.customer += parseFloat(t.rate);
-										}
-									else if(selected['l1.' + sId + '.grouped']){
-										var t = selected['l1.' + sId + '.grouped'];
-										obj.shipping.services.l1 = {
-											service : t
-											}
-
-										obj.status = 3;
-
-										if(!grouped[sId][s1].l1){
-											grouped[sId][s1].l1 = true;
-											separated[sId].totals.sellyx += parseFloat(t.rate);
-											separated[sId].totals.customer += parseFloat(t.rate);
-											}
-										}
-									break;
-								default:
-									// we check to see if the seller has waived their policy
-									var di = (country == active ? 1 : 2);
-									if(sellers[sId].policy[di].allowed == 2 && (di == 1 || (di == 2 && (!sellers[sId].policy[di].restricted || _s_util.indexOf(sellers[sId].policy[di].restricted , active) == -1 )))) separated[sId].policy = sellers[sId].policy[di];
-
-									if(selected['custom.' + l_Id]) {
-										obj.status = 4;
-
-										var t = selected['custom.' + l_Id];
-										obj.shipping.type = 'custom';
-										separated[sId].totals.seller += parseFloat(t.rate);
-										separated[sId].totals.customer += parseFloat(t.rate);
-										}
-									else {
-										obj.status = 5;
-
-										var t = selected.grouped;
-										g = 'seller';
-										}
-									obj.shipping.service = t;
-									break;
-								}
-
-							if(g){
-								// add the shipping cost to money for Sellyx
-								if(!grouped[sId][s1]){
-									grouped[sId][s1] = true;
-									separated[sId].totals[g] += parseFloat(t.rate);
-									separated[sId].totals.customer += parseFloat(t.rate);
-									}
-								}
-
-							separated[sId].items.push(obj);
-							})
-						if(error) return false;
-						})
-					if(error) return false;
-					})
+		if(Object.keys(cart.orders).length == 0) return { failure : { msg : 'There are no orders in the cart to be processed.' , code :300 } }
 		
-				if(error) return { failure : true };
-				return {orders : separated , affiliate_offers : used_affiliate_offers , customer_offers : used_customer_offers , quantities : quantity_updates};
-				}
+		yield _s_util.each(cart.orders, function*(order_details, order_seller){
+			// for each of the orders we send back item totals, item subtotals, shipping calculations, and then the grand total
+
+			// if shipping total hasn't been set, we return errors;
+			if(!order_details.shipping || !order_details.shipping.total){ error = 'Order for ' + order_details.name + ' does not have shipping calculated yet.'; return false; }
+
+			!totals[order_seller] ? totals[order_seller] = {  items : {} , totals : { items : { data : 0, converted : 0 }, shipping : {data:order_details.shipping.total, converted : _s_currency.convert.front(order_details.shipping.total)} } } : null;
+			!totals_cache[order_seller] ? totals_cache[order_seller] = {  items : {} , totals : { items : 0, shipping : order_details.shipping.total } } : null;
+
+			totals.grand += order_details.shipping.total;
+			totals_cache.grand += order_details.shipping.total;
+
+			yield _s_util.each(order_details.items, function*(product_details, product_id){
+
+				if(!totals[order_seller].items[product_id]) {
+					totals[order_seller].items[product_id] = {};
+					totals_cache[order_seller].items[product_id] = {};
+					}
+
+				var item = yield _s_load.library('products').get({id:product_id,include:'sellers'});
+				if(!item){ error =  'Product ' + product_id + 'does not exist.' ; return false ; }
+
+				yield _s_util.each(product_details.listings, function*(listing_details, listing_id){
+
+
+					var r = _s_util.array.find.object(item.sellers, 'id', listing_id);
+					if(!r){ error = 'Listing ' + listing_id + ' for ' + product_id + ' does not exist.'; return false; }
+
+					var di = (_s_countries.active.get() == r.seller.country ?1:2);
+
+					var item_price = r.pricing['sale'+di] ? r.pricing['sale'+di] : r.pricing['standard'+di];
+					var item_subtotal = parseFloat(item_price * listing_details.quantity);
+					
+					totals[order_seller].totals.items.data += item_subtotal;
+					totals_cache[order_seller].totals.items += item_subtotal;
+					
+					totals[order_seller].items[product_id][listing_id] = { 
+						item : {
+							data : item_price,
+							converted : _s_currency.convert.front(item_price, false)
+							},
+						item_subtotal : {
+							data : item_subtotal,
+							converted : _s_currency.convert.front(item_subtotal, false)
+							}
+						}
+
+					totals_cache[order_seller].items[product_id][listing_id] = { 
+						item :  item_price,
+						item_subtotal : item_subtotal
+						}
+					})
+				})
+		
+			totals.grand += totals[order_seller].totals.items.data;
+			totals_cache.grand += totals[order_seller].totals.items.data;
+			totals[order_seller].totals.items.converted = _s_currency.convert.front(totals[order_seller].totals.items.data, false);
+			})
+		
+		if(error) return { failure : { msg : error, code : 300 } };
+		if(Object.keys(totals).length == 0) return false;
+
+		totals_cache.grand = totals.grand;
+		totals.grand = {
+			data : totals.grand,
+			converted : _s_currency.convert.front(totals.grand,false)
 			}
-		},
-	get paypal() {
-		var self = this;
-		return {
-			set : function(inp){
-				_s_session.set('cart.paypal',inp);
-				},
-			get : function(){
-				if(_s_session.get('cart.paypal',true)) return _s_session.get('cart.paypal');
-				return false;
-				},
-			delete : function(){
-				_s_session.delete('cart.paypal');
-				}
-			}
-		},
+
+		// we set the grand total here
+		yield _s_cache.key.set('cart.totals' , totals_cache);
+
+		// we don't let the user change the country so we hardcode it in cache
+		yield _s_cache.key.set('cart.address' , {
+			country : _s_countries.active.get(),
+			postal : _s_countries.active.postal.get()
+			})
+
+		return totals;
+		},	
 	get totals() { 
 		var self = this;
 		return {
 			total : function*(){
-				return yield _s_cache.key.get('cart.totals.grand',true);
+				return yield _s_cache.key.get('cart.totals.grand');
 				}
 			}
 		},
 	get get() { 
 		var self = this;
 		return {
-			all : function*(info){
-				var r = yield _s_cache.key.get('cart');
-				if(!info) return r;
-				// we want to send the entire cart info back with product listings and details and whatnot
+			all : function*(obj){
+				!obj?obj={}:null;
+				try{
+					if(obj.cart){
+						var r = obj.cart;
+						}
+					else {
+						var r = yield _s_cache.key.get('cart');
+						if(!r){
+							yield self.empty();
+							return false;
+							}
+						}
 
-				var _products = _s_load.library('products');
-				var error = false;
+					if(obj.details && obj.details == false) return r;
+					// this means we want to send the entire cart info back with product listings and details and whatnot
 
-				yield _s_util.each(r.orders, function*(dets, seller){
-					yield _s_util.each(dets.items, function*(product_dets, product_id){
-						var item = yield _products.get({id:product_id, include : 'line,name,sellers,combos,images,performance',convert:true});
-						if(!item){ error = 'The product with the product id '+ product_id + ' was not found.'; return false; }
+					var _products = _s_load.library('products');
+					var error = false;
 
-						yield _s_util.each(product_dets.listings, function*(listing_details, listing_id){
-							var b = _s_util.array.find.object(item.sellers, 'id', listing_id);
-							if(!b){ error = 'The product with the product id '+product_id+' could not find listing ' + listing_id + '.'; return false;  }
-							//let's associate the combos here too
-							var combo = item.combos[b.combo];
-							if(!combo){ error = 'The product with the product id '+product_id+' could not find a combination for listing ' + listing_id + '.'; return false;  }
+					yield _s_util.each(r.orders, function*(dets, seller){
+						yield _s_util.each(dets.items, function*(product_dets, product_id){
+							var item = yield _products.get({id:product_id, include : 'line,name,sellers,combos,images,performance',convert:true});
+							if(!item){ error = 'The product with the product id '+ product_id + ' was not found.'; return false; }
 
-							b.combo = combo;
-							r.orders[seller].items[product_id].listings[listing_id].listing = b;
+							yield _s_util.each(product_dets.listings, function*(listing_details, listing_id){
+								var b = _s_util.array.find.object(item.sellers, 'id', listing_id);
+								if(!b){ error = 'The product with the product id '+product_id+' could not find listing ' + listing_id + '.'; return false;  }
+								//let's associate the combos here too
+								var combo = item.combos[b.combo];
+								if(!combo){ error = 'The product with the product id '+product_id+' could not find a combination for listing ' + listing_id + '.'; return false;  }
+
+								b.combo = combo;
+								r.orders[seller].items[product_id].listings[listing_id].listing = b;
+								})
+
+							delete item.sellers;
+							delete item.combos;
+							r.orders[seller].items[product_id].item = item;
+
 							})
-
-						delete item.sellers;
-						delete item.combos;
-						r.orders[seller].items[product_id].item = item;
-
 						})
-					})
 
-				if(error) return { failure : { msg : error, code : 300 } };
-				return r;
+					if(error) return { failure : { msg : error, code : 300 } };
+					return r;
+					}
+				catch(err){
+
+					}
 				},
-			count : function*(){
-				var orders = yield self.get.orders();
+			count : function*(obj){
+				
+				var orders = yield self.get.orders(obj);
 				var total = 0;
 
 				if(Object.keys(orders).length > 0){
@@ -426,16 +253,18 @@ Cart.prototype = {
 							})
 						})
 					}
+
 				if(total == 0) return false;
 				else return total;
 				},
-			orders: function*(){
+			orders: function*(obj){
+				if(obj && obj.cart) return obj.cart.orders;
 				return yield _s_cache.key.get('cart.orders');
 				},
-			order: function*(sellerid){
-				var orders = yield self.get.orders();
-				if(orders[sellerid]) return orders[sellerid]
-				else return false;
+			order: function*(obj){
+				var orders = yield self.get.orders(obj);
+				if(orders[obj.seller]) return orders[obj.seller]
+				return false;
 				},
 			promotions : function*(){
 				return yield _s_cache.key.get('cart.promotions');
@@ -514,6 +343,32 @@ Cart.prototype = {
 	        			r.price = obj.price;
 	        			}
 
+	        		// sessionless stuff here
+	        		if(obj.cart){
+	        			if(!obj.cart.orders[id]){
+	        				if(id == 'sellyx-1'||id=='sellyx-2'){
+	        					obj.cart.orders[id].name = name
+	        					}
+	        				else{
+	        					var _s_o_seller = yield _s_load.object('sellers', v.listing.seller.id);
+	        					if(_s_o_seller.failure) return { failure : { msg : 'The seller does not exist.' , code :300 } };
+	        					}
+
+	        				obj.cart.orders[id] = {
+	        					id : v.listing.seller.id,
+	        					name : v.listing.seller.name,
+	        					items : {},
+	        					address : _s_o_seller.profile.addresses.primary()
+	        					}
+	        				}
+
+	        			!obj.cart.orders[id].items[obj.product] ? obj.cart.orders[id].items[obj.product] = { listings : {} } : null;
+	        			obj.cart.orders[id].items[obj.product].listings[obj.listing] = r;
+	        			delete obj.cart.orders[id].shipping;
+
+	        			return obj.cart;
+	        			}
+
 	        		var c = yield _s_cache.key.get('cart.orders.' + id + '.items' , true);
 	        		if(!c){
 	        			if(id == 'sellyx-1' || id == 'sellyx-2'){
@@ -549,6 +404,22 @@ Cart.prototype = {
 				try{
 					var seller = yield self.helpers.seller(obj);
 					if(!seller) return false;
+
+					if(obj.cart){
+						if(Object.keys(obj.cart.items).length == 1){
+							delete obj.cart.orders[seller];
+							}
+						else if(Object.keys(obj.cart.items[obj.product].listings).length == 1){
+							delete obj.cart.orders[seller].items[obj.product];
+							}
+						else{
+							delete obj.cart.orders[seller].items[obj.product].listings[obj.listing];
+							}
+
+						return obj.cart;
+						}
+
+
 					var get = yield _s_cache.key.get('cart.orders.' + seller);
 					if(!get) return false;
 
@@ -572,90 +443,135 @@ Cart.prototype = {
 				},
 			update : {
 				quantity : function*(obj){
-	            	var validate = yield self.helpers.validate(obj);
-	            	if(validate.failure) return validate;
+					try{
+		            	var validate = yield self.helpers.validate(obj);
+		            	if(validate.failure) return validate;
 
-	            	var seller = yield self.helpers.seller(obj);
-					if(!seller) return false;
+		            	var seller = yield self.helpers.seller(obj);
+						if(!seller) return false;
 
-            		// check to see its not negotiated
-            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.negotiated');
-            		if(get) return { failure : {msg: 'You cannot update the quantity of a negotiated item.' , code :300 } };
+						if(obj.cart){
+							if(obj.cart.orders[seller].items[obj.product].listings[obj.listing].negotiated)
+								return { failure : { msg : 'You cannot update the quantity of a negotiated item.' , code : 300 } }
+							if(obj.quantity && obj.quantity >= 1){
+								obj.cart.orders[seller].items[obj.product].listings[obj.listing].quantity = obj.quantity;
+								delete obj.cart.orders[seller].shipping
+								return obj.cart;
+								}
+							else{
+								return yield self.items.delete(obj);
+								}
+							}
 
-            		if(obj.quantity && obj.quantity >= 1){
-            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.quantity' , obj.quantity);
+	            		// check to see its not negotiated
+	            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.negotiated');
+	            		if(get) return { failure : {msg: 'You cannot update the quantity of a negotiated item.' , code :300 } };
 
-            			// if shipping had been calculated, we need to recalculate, so unset the shipping for this item
-            			yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
-            			return true;
-            			}
-            		else{
-            			return yield self.items.delete(obj);
-            			}
-					},
-				waive : function*(obj){
-	            	var validate = yield self.helpers.validate(obj);
-	            	if(validate.failure) return validate;
+	            		if(obj.quantity && obj.quantity >= 1){
+	            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.quantity' , obj.quantity);
 
-	            	var seller = yield self.helpers.seller(obj);
-					if(!seller) return false;
-	            	
-            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing);
-            		if(!get) return { failure : {msg : 'That is not a valid cart item.' , code : 300}};
-            		
-            		// check to see its not negotiated
-            		if(get.negotiated) return { failure : {msg: 'You cannot waive or change the price of a negotiated item.' } , code : 300 } ;
-            		if(validate.listing.no_returns && validate.listing.no_returns == 2) return { failure : { msg : 'This seller does not allow returns or return pricing on this item.' , code : 300 } };
-
-            		if(obj.type == 2){
-	            		// get return policy of seller
-	            		var results = yield _s_load.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
-	            		if(!results) return { failure : {msg : 'The seller was not found!' , code : 300 } };
-
-	            		
-	            		if(results.policy && results.policy[(_s_countries.active.get() == validate.listing.seller.country)?1:2].allowed == 2){
-	            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived' , true);
+	            			// if shipping had been calculated, we need to recalculate, so unset the shipping for this item
 	            			yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
 	            			return true;
 	            			}
 	            		else{
-	            			return { failure : {msg : 'The seller has since changed their policy to not allow returns. We apologize for this inconvenience.' , refresh : true , code : 300 } } ;
+	            			return yield self.items.delete(obj);
 	            			}
 	            		}
-	            	else{
-	            		yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived');
-	            		yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
-	            		return true;
-	            		}
+	            	catch(err){return false; }
 					},
 				notes : function*(obj){
-	            	var validate = yield self.helpers.validate(obj);
-	            	if(validate.failure) return validate;        
+					try{
+		            	var validate = yield self.helpers.validate(obj);
+		            	if(validate.failure) return validate;        
 
-	            	var seller = yield self.helpers.seller(obj);
-					if(!seller) return false;
+		            	var seller = yield self.helpers.seller(obj);
+						if(!seller) return false;
 
-					if(!obj.notes){
-						yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes');
-						}
-					else{
-						yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes', obj.notes);
+						if(obj.cart){
+							if(!obj.notes) delete obj.cart.orders[seller].items[obj.product].listings[obj.listing].notes
+							else obj.cart.orders[seller].items[obj.product].listings[obj.listing].notes = obj.notes
+							return obj.cart;
+							}
 
-						}
-            		return true;
+						if(!obj.notes) yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes');
+						else yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes', obj.notes);
+
+	            		return true;
+	            		}
+	            	catch(err){return false }
 					},
+				waive : function*(obj){
+					try {
+		            	var validate = yield self.helpers.validate(obj);
+		            	if(validate.failure) return validate;
+
+		            	var seller = yield self.helpers.seller(obj);
+						if(!seller) return false;
+
+	            		if(validate.listing.no_returns && validate.listing.no_returns == 2) return { failure : { msg : 'This seller does not allow returns or return pricing on this item.' , code : 300 } };
+						
+						if(obj.cart){
+							if(obj.cart.orders[seller].items[obj.product].listings[obj.listing].negotiated) return { failure : {msg: 'You cannot waive or change the price of a negotiated item.' } , code : 300 } ;
+							if(obj.waive){
+								var results = yield _s_load.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
+			            		if(!results) return { failure : {msg : 'The seller was not found!' , code : 300 } };
+
+			            		
+			            		if(results.policy && results.policy[(_s_countries.active.get() == validate.listing.seller.country)?1:2].allowed == 2){
+			            			obj.cart.orders[seller].items[obj.product].listings[obj.listing].waived = true;
+			            			delete obj.cart.orders[seller].shipping;
+			            			}
+			            		else{
+			            			return { failure : {msg : 'The seller has since changed their policy to not allow returns. We apologize for this inconvenience.' , refresh : true , code : 300 } } ;
+			            			}
+								}
+							else{
+								delete obj.cart.orders[seller].items[obj.product].listings[obj.listing].waived;
+								delete obj.cart.orders[seller].shipping;
+								}
+
+							return obj.cart;
+							}
+		            	
+	            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing);
+	            		if(!get) return { failure : {msg : 'That is not a valid cart item.' , code : 300}};
+	            		
+	            		// check to see its not negotiated
+	            		if(get.negotiated) return { failure : {msg: 'You cannot waive or change the price of a negotiated item.' } , code : 300 } ;
+	            		if(obj.waive){
+		            		// get return policy of seller
+		            		var results = yield _s_load.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
+		            		if(!results) return { failure : {msg : 'The seller was not found!' , code : 300 } };
+
+		            		
+		            		if(results.policy && results.policy[(_s_countries.active.get() == validate.listing.seller.country)?1:2].allowed == 2){
+		            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived' , true);
+		            			yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+		            			return true;
+		            			}
+		            		else{
+		            			return { failure : {msg : 'The seller has since changed their policy to not allow returns. We apologize for this inconvenience.' , refresh : true , code : 300 } } ;
+		            			}
+		            		}
+		            	else{
+		            		yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived');
+		            		yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+		            		return true;
+		            		}
+		            	}
+		            catch(err){
+		            	console.log(err);
+		            	return false;
+		            	}
+					},
+				
 				shipping : {
-
 					options : function*(obj){
-
 	        			yield _s_cache.key.set('cart.orders.' + obj.seller + '.shipping' , {options:obj.options});
 						},
-					// retrieve : function*(obj){
-					// 	return yield _s_cache.key.get('cart.orders.' + obj.seller + )
-					// 	},
 					save : function*(obj){
 						var options = yield _s_cache.key.get('cart.orders.' + obj.seller + '.shipping.options');
-						console.log(options);
 						if(!options) return false;
 						
 						switch(obj.seller){
@@ -696,7 +612,7 @@ Cart.prototype = {
 						var go = {};
 						var subtotal = 0;
 
-						yield _s_util.each(obj.send, function*(selection, id){
+						yield _s_util.each(obj.selected, function*(selection, id){
 							
 							if(id == 'custom'){
 								var b = Object.keys(selection);
@@ -705,6 +621,7 @@ Cart.prototype = {
 								}
 							
 							var check = yield _s_cache.key.get('cart.orders.' + obj.seller + '.shipping.options.' + id  );
+							console.log(check);
 							check = (check.rates ? check.rates[selection] : check[selection]);
 							if(check) {
 								go[id] = check;
@@ -713,6 +630,7 @@ Cart.prototype = {
 								}
 							
 							})
+
 
 						if(count != total) return false;
 
@@ -723,6 +641,261 @@ Cart.prototype = {
 					}
 				}
 			}
+		},
+	separate : function*(obj){
+
+		var cart = _s_util.clone.deep(yield this.get.all());
+
+		if(!cart.totals || !cart.totals.grand){
+			var t = yield this.calculate(cart);
+			console.log(t);
+			if(t.failure) return t;
+			cart = _s_util.clone.deep(yield this.get.all());
+			}
+		
+		var _products = _s_load.library('products');
+
+		// let's process the order and separate everything, figure out who is stripe and who is paypal and who is neither here
+
+		var country = _s_countries.active.get();
+
+		obj.address.country = cart.address.country
+		obj.address.postal = cart.address.postal
+
+		var fulfillment = _s_countries.fulfillment.fulfilled(country);
+		var separated = {};
+		var grouped = {};
+		var sellers = {};
+		var used_affiliate_offers = {};
+		var used_customer_offers = {};
+		var quantity_updates = {};
+		var error = false;
+
+		yield _s_util.each(cart.orders, function*(dets,s1){
+			yield _s_util.each(dets.items, function*(item_dets, item_id){
+				yield _s_util.each(item_dets.listings, function*(l_dets, l_Id){
+
+					var seller_id = l_dets.listing.seller.id;
+					var selected_shipping = dets.shipping.selected_shipping;
+					var seller_country = l_dets.details.seller.country.data;
+
+					l_dets.details.seller.country = l_dets.details.seller.country.id;
+
+					if(!separated[seller_id]){
+						
+						// load the seller information
+						var _s_o_seller = yield _s_load.object('seller' , seller_id);
+						if(_s_o_seller.failure){ error = { msg : 'The seller with the id '+seller_id + ' does not exist.' , code : 300 }; return; }
+
+
+						sellers[seller_id] = _s_o_seller;
+						grouped[seller_id] = {};
+						separated[seller_id] = {
+							items : [],
+							gift : (obj.gift||false),
+							type : 2,
+							address : obj.address,
+							user : _s_user.helpers.data.document(),
+							seller : _s_o_seller.helpers.data.document(),
+							offers : {},
+							totals : {
+								seller : 0,
+								customer : 0,
+								sellyx : 0
+								},
+							setup : {
+								active : 1,
+								status : 1,
+								added : _s_dt.now.datetime()
+								},
+							transactions : {
+								history : [],
+								setup : {
+									active : 1,
+									status : 2,
+									}
+								}
+							}
+
+
+						if(cart.promotions.order[seller_id]){
+							separated[seller_id].promotions = cart.promotions.order[seller_id];
+
+							//subtract order promotion totals from the seller and customer totals from the beginning
+							_s_u.each(cart.promotions.order[seller_id], function(disc, prom){
+								separated[seller_id].totals.seller -= parseFloat(disc);
+								separated[seller_id].totals.customer -= parseFloat(disc);
+								})
+							}
+						if(cart.offers){
+							if(cart.offers.affiliate&&cart.offers.affiliate[seller_id] && cart.offers.affiliate[seller_id].total){
+								separated[seller_id].offers.affiliate = {
+									id : cart.offers.affiliate[seller_id].offer.id,
+									total : cart.offers.affiliate[seller_id].total
+									}
+								
+								used_affiliate_offers[cart.offers.affiliate[seller_id].offer.id] = cart.offers.affiliate[seller_id].counter;
+								separated[seller_id].totals.seller -= parseFloat(cart.offers.affiliate[seller_id].total);
+								separated[seller_id].totals.customer -= parseFloat(cart.offers.affiliate[seller_id].total);									
+								}
+							if(cart.offers.customer&&cart.offers.customer[seller_id] && cart.offers.customer[seller_id].total){
+								separated[seller_id].offers.customer = {
+									id : cart.offers.customer[seller_id].offer.id,
+									total : cart.offers.customer[seller_id].total
+									}
+								
+								used_customer_offers[cart.offers.customer[seller_id].offer.id] = cart.offers.customer[seller_id].code;
+								separated[seller_id].totals.seller -= parseFloat(cart.offers.customer[seller_id].total);
+								separated[seller_id].totals.customer -= parseFloat(cart.offers.customer[seller_id].total);									
+								}
+							}
+						}
+
+					var item = {
+						item : {
+							id : item_id,
+							name : _products.helpers.name({ data : item_dets.item , listing : l_Id , break: true })
+							},
+						listing : l_Id,
+						process_time : l_dets.details.process_time.id,
+						quantity : l_dets.quantity,
+						totals : l_dets.totals,
+						promotions : l_dets.promotions,
+						gifts : l_dets.gifts
+						};
+
+
+					!quantity_updates[item_id]?quantity_updates[item_id]={}:null;
+					quantity_updates[item_id][l_Id] = l_dets.quantity;
+
+					l_dets.notes ? item.notes = l_dets.notes : null;
+					l_dets.waived ? item.waived = true : null;
+					l_dets.details.no_returns == 2 ? item.no_returns = true : null;
+
+					// add item subtotal to the order totals
+					separated[seller_id].totals.seller += parseFloat(l_dets.totals.subtotal);
+					separated[seller_id].totals.customer += parseFloat(l_dets.totals.subtotal);
+
+					// based on the shipping and the s1, we figure out what the shipping costs are
+					item.shipping = {
+						responsibility : s1
+						}
+
+					var g = false;
+
+					switch(s1){
+						case 'sellyx-1':
+							var t = selected_shipping.grouped;
+							item.shipping.service = selected_shipping.grouped;
+							g = 'sellyx';
+							item.status = 1
+							break;
+						case 'sellyx-2':
+							// we are going to be saving this shipping as SERVICES
+
+							!grouped[seller_id][s1] ? grouped[seller_id][s1] = {} : null;
+
+							if(fulfillment){
+								item.status = 12;
+								var t = selected_shipping['l2c.' + l_dets.details.country.id];
+								item.shipping.services = {
+									l2 : {
+										service : t,
+										},
+									l3 : {
+										service : selected_shipping.l3,
+										}
+									}
+								if(!grouped[seller_id][s1].l2){
+									grouped[seller_id][s1].l2 = true;
+									separated[seller_id].totals.sellyx += parseFloat(t.rate + selected_shipping.l3.rate);
+									separated[seller_id].totals.customer += parseFloat(t.rate + selected_shipping.l3.rate);
+									}
+								}
+							else{
+								item.status = 13;
+								var t = selected_shipping['l2d.' + l_dets.details.country.id]
+								item.shipping.services = {
+									l2 : {
+										service : t
+										}
+									}
+								if(!grouped[seller_id][s1].l2){
+									grouped[seller_id][s1].l2 = true;
+									separated[seller_id].totals.sellyx += parseFloat(t.rate);
+									separated[seller_id].totals.customer += parseFloat(t.rate);
+									}							
+								}
+
+							if(selected_shipping['l1.' + seller_id + '.custom.' + l_Id]){
+								var t = selected_shipping['l1.' + seller_id + '.custom.' + l_Id];
+								item.shipping.services.l1 = {
+									service : t,
+									type : 'custom',
+									}
+
+								item.status = 2;
+
+								// add shipping cost to money for seller
+								separated[seller_id].totals.seller += parseFloat(t.rate);
+								separated[seller_id].totals.customer += parseFloat(t.rate);
+								}
+							else if(selected_shipping['l1.' + seller_id + '.grouped']){
+								var t = selected_shipping['l1.' + seller_id + '.grouped'];
+								item.shipping.services.l1 = {
+									service : t
+									}
+
+								item.status = 3;
+
+								if(!grouped[seller_id][s1].l1){
+									grouped[seller_id][s1].l1 = true;
+									separated[seller_id].totals.sellyx += parseFloat(t.rate);
+									separated[seller_id].totals.customer += parseFloat(t.rate);
+									}
+								}
+							break;
+						default:
+							// we check to see if the seller has waived their policy
+							var di = (country == active ? 1 : 2);
+							if(sellers[seller_id].policy[di].allowed == 2 && (di == 1 || (di == 2 && (!sellers[seller_id].policy[di].restricted || _s_util.indexOf(sellers[seller_id].policy[di].restricted , active) == -1 )))) separated[seller_id].policy = sellers[seller_id].policy[di];
+
+							if(selected_shipping['custom.' + l_Id]) {
+								item.status = 4;
+
+								var t = selected_shipping['custom.' + l_Id];
+								item.shipping.type = 'custom';
+								separated[seller_id].totals.seller += parseFloat(t.rate);
+								separated[seller_id].totals.customer += parseFloat(t.rate);
+								}
+							else {
+								item.status = 5;
+
+								var t = selected_shipping.grouped;
+								g = 'seller';
+								}
+							item.shipping.service = t;
+							break;
+						}
+
+					if(g){
+						// add the shipping cost to money for Sellyx
+						if(!grouped[seller_id][s1]){
+							grouped[seller_id][s1] = true;
+							separated[seller_id].totals[g] += parseFloat(t.rate);
+							separated[seller_id].totals.customer += parseFloat(t.rate);
+							}
+						}
+
+					separated[seller_id].items.push(item);
+					})
+				if(error) return false;
+				})
+			if(error) return false;
+			})
+
+		if(error) return { failure : true };
+		return {orders : separated , affiliate_offers : used_affiliate_offers , customer_offers : used_customer_offers , quantities : quantity_updates};
 		}
 	}
 

@@ -2,6 +2,10 @@
 
 
 var obj = {
+	type : {
+		1 : 'Pickup Order',
+		2 : 'Shipped Order'
+		},
 	status : {
 		0 : 'Order Inactive (Sellyx Hold)',
 		1 : 'Order Processing',

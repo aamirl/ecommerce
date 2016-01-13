@@ -2,359 +2,8 @@
 var validator = require('validator'),
 	url = require('url'),
 	parser = require('querystring');
-	// parser = require('qs');
 
-validator.extend('isAlphaOrNumeric', function(str){
-	return true;
-	if(typeof str != 'string') return false;
-
-
-	try{
-		var e = JSON.parse(str)
-		return false;
-		}
-	catch(e){
-		}
-
-	return true;
-
-	// var pattern = /^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$/;
-	// return pattern.test(str);
-	// return true;
-	})
-validator.extend('isInt', function(str, filter){
-    if(/^(?:-?(?:0|[1-9][0-9]*))$/.test(str)){
-    	return parseInt(str);
-    	}
-	return false
-	})
-validator.extend('isStringInt', function(str, filter){
-    if(/^(?:-?(?:0|[1-9][0-9]*))$/.test(str)){
-    	return str.toString();
-    	}
-	return false
-	})
-validator.extend('isFloat', function(str, filter){
-    if(/^(?:-?(?:[0-9]+))?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/.test(str)){
-    	return parseFloat(str);
-    	}
-	return false
-	})
-
-validator.extend('isTextarea', function(str, filter){
-
-	// return str.nl2br();
-	return str;
-
-	// var pattern = /^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$/;
-	// return pattern.test(str);
-	return true;
-	})
-// email verification code
-validator.extend('isEVC',function(){
-	return true;
-	})
-validator.extend('isSCard',function(str){
-	try{
-		var e = JSON.parse(str)
-		return false;
-		}
-	catch(e){
-		}
-	return true;
-	})
-validator.extend('isOfferCode', function(){
-	return true
-	})
-validator.extend('isWebsite',function(){
-	return true;
-	})
-validator.extend('isProduct',function(){
-	return true;
-	})
-validator.extend('isCombination',function(){
-	return true;
-	})
-validator.extend('isTransferRequest',function(){
-	return true;
-	})
-validator.extend('isMessageThread',function(){
-	return true;
-	})
-validator.extend('isOrder',function(){
-	return true;
-	})
-validator.extend('isOffer',function(){
-	return true;
-	})
-validator.extend('isPostal',function(){
-	return true;
-	})
-validator.extend('isSeller',function(){
-	return true;
-	})
-validator.extend('isReturn',function(){
-	return true;
-	})
-validator.extend('isUser',function(){
-	return true;
-	})
-validator.extend('isNegotiation',function(){
-	return true;
-	})
-validator.extend('isNegotiationOffer',function(){
-	return true;
-	})
-validator.extend('isSearch',function(){
-	// make sure it's not in search words
-	return true;
-	})
-validator.extend('isListing',function(){
-	return true;
-	})
-validator.extend('isInterest',function(){
-	return true;
-	})
-validator.extend('isLocalListing',function(){
-	return true;
-	})
-validator.extend('isPaL',function(){
-	return true;
-	})
-validator.extend('isPromotion',function(){
-	return true;
-	})
-// multiples
-validator.extend('isArrayOfObjects', function(inp, filter){
-	return true;
-	})
-validator.extend('isArray', function(inp, filter){
-	if(inp.constructor == Array){
-		if(inp.length == 0) return false
-		if(filter) return inp;
-		return true;
-		}
-
-	var all = inp.split(',');
-	if(all.length == 0) return false;
-	if(filter) return all;
-	return true;
-	})
-validator.extend('isListings',function(){
-	return true;
-	})
-validator.extend('isCategories',function(inp, filter){
-	var categories = inp.split(',');
-	if(categories.length > 0){
-		// TODO : MAKE SURE EACH CATEGORY IS LEGITIMATE
-
-		if(filter) return categories;
-		else return true;
-		}
-	return false;
-	})
-validator.extend('isCountries',function(inp, filter){
-	// var all = _s_load.library('countries')().get();
-	var i = 0;
-	var len = 0;
-	var countries = inp.split(',');
-	// var len = countries.length;
-	// _s_u.each(countries, function(country, ind){
-	// 	if(_s_util.indexOf(all, country ) !== -1) i++;
-	// 	})
-	if(len==i){
-		if(filter) return countries;
-		else return true;
-		}
-	else{
-		return false;
-		}
-	})
-validator.extend('isPaLs',function(inp, filter){
-	var items = inp.split(',');
-	if(items.length > 0){
-		var send = [];
-		var i=0;
-
-		_s_u.each(items, function(item,ind){
-			if(filter) send.push(item);
-			i++;
-			})
-
-		// _s_u.each(items, function(item, ind){
-		// 	var pieces = item.split('-');
-		// 	// TODO : INSERT CHECK HERE TO MAKE SURE THAT PRODUCT AND LISTING PIECES ARE RIGHT
-		// 	var p = pieces.shift();
-		// 	if(filter) send.push({ product : p , listing : pieces.join('-') });
-		// 	i++; 
-		// 	})
-
-		if(i == items.length){
-			if(filter) return send;
-			else return true;
-			}
-		return false
-		}
-	return false;
-	})
-validator.extend('isLine',function(inp, filter){
-	inp = parseInt(inp);
-
-	if(filter){
-		return inp;
-		}
-	else{
-		return true;
-		}
-	})
-validator.extend('isManufacturer',function(inp, filter){
-	
-	if(typeof inp != 'string') return false;
-
-	if(filter){
-		return inp;
-		}
-	else{
-		return true;
-		}
-	})
-validator.extend('isDimension',function(inp, filter){
-	if(isNaN(inp)){
-		return false;
-		}
-	else{
-		if(filter){
-			return _s_load.engine('dimensions').convert.back('length',inp);
-			}
-		else{
-			return true;
-			}
-		}
-	})
-validator.extend('isWeight',function(inp, filter){
-	if(isNaN(inp)){
-		return false;
-		}
-	else{
-		if(filter){
-			return _s_load.engine('dimensions').convert.back('weight',inp);
-			}
-		else{
-			return true;
-			}
-		}
-
-	})
-validator.extend('isPrice', function(inp, filter){
-	if(isNaN(inp)){
-		return false;
-		}
-	else{
-		if(filter){
-			return _s_currency.convert.back(inp);
-			}
-		else{
-			return true;
-			}
-		}
-	})
-
-validator.extend('isMonth',function(){
-	return true;
-	})
-validator.extend('isDay',function(){
-	return true;
-	})
-validator.extend('isYear',function(){
-	return true;
-	})
-validator.extend('isDecimal', function(str,filter){
-	var pattern = /([0-9]+\.)?[0-9]+/;
-	if(pattern.test(str)){
-		if(filter) return str;
-		else return true;
-		}
-	return false;
-	})
-
-// datetime validation
-validator.extend('isDate',function(inp, filter){
-	if(_s_dt.valid.date(inp)){
-		if(filter){
-			return _s_dt.convert.date.input(inp);
-			}
-		else{
-			return true;
-			}
-		}
-	return false;
-	})
-validator.extend('isDateTime',function(inp, filter){
-	
-	if(_s_dt.valid.datetime(inp)){
-		if(filter){
-			return _s_dt.convert.datetime.input(inp);
-			}
-		else{
-			return true;
-			}
-		}
-	return false;
-	})
-
-validator.extend('isCurrency',function(){
-	return true;
-	})
-validator.extend('isCategory',function(){
-	return true;
-	})
-validator.extend('isCondition',function(inp){
-	if([1,2,3,4,5,6,7,'1','2','3','4','5','6','7'].indexOf(inp) == -1) return false; 
-	return true;
-	})
-validator.extend('isCountry',function(){
-	return true;
-	})
-validator.extend('isImages',function(){
-	return true;
-	})
-validator.extend('isUPC',function(){
-	return true;
-	})
-validator.extend('isEAN',function(){
-	return true;
-	})
-validator.extend('isISBN',function(){
-	return true;
-	})
-validator.extend('isMPN',function(){
-	return true;
-	})
-validator.extend('isISSN',function(){
-	return true;
-	})
-
-// Address Validators
-validator.extend('isPhone', function(){
-	return true;
-	})
-validator.extend('isCarrier', function(){
-	return true;
-	})
-validator.extend('isStreet', function(){
-	return true
-	})
-validator.extend('isCity', function(){
-	return true
-	})
-
-// payment validators
-validator.extend('isCC', function(inp, filter){
-	return true;
-	})
-validator.extend('isCVC', function(inp, filter){
-	return true;
-	})
+require(_s_config.paths.helpers+'extenders.js')(validator);
 
 function Request(req){
 	this.request = req;
@@ -367,7 +16,7 @@ function Request(req){
 	if (method == 'GET') var params = parser.parse(this.request.req._parsedUrl.query)
 	else if(method == 'POST') var params = this.request.body;
 	this[method + '_PARAMS'] = params;
-	// console.log(params);
+	console.log(params);
 	}
 
 Request.prototype = {
@@ -517,6 +166,24 @@ Request.prototype = {
 						}
 					else errors[i] = {msg: 'There were errors with your submission; it did not meet the requirements necessary.' , data : all_data[i] , failed : sub_errors }
 					}
+				else if(i_data.extra){
+					// this means that the expected value is supposed to be a json object and the json object will have an extra field and a value
+					try {all_data[i] = JSON.parse(all_data[i]); }
+					catch(err){errors[i] = { msg : 'This was not a valid JSON object.', data : all_data[i] }; return; }
+
+					if(all_data[i].value && i_data.extra.values[all_data[i].value]){
+						if(i_data.extra.values[all_data[i].value] == 'none'){ send[i] = { value : all_data[i].value } }
+						else {
+							var tangent = _s_req.validate({ validators : { extra : i_data.extra.values[all_data[i].value] } , data : all_data[i] , tangent:true })
+							tangent.failure ? errors[i] = { msg : 'The accompanying value submitted did not meet the requirements.' , accepted : Object.keys(i_data.extra.values) } : send[i] = { value : all_data[i].value , extra : tangent.extra }
+							}
+						}
+					else{
+						errors[i] = { msg : 'The accompanying value submitted was not an accepted value.' , accepted : Object.keys(i_data.extra.values) , data : all_data[i] }
+						errors.push(i);
+						}
+
+					}
 				else if(i_data.aoo){
 					// means array of objects
 
@@ -601,9 +268,10 @@ Request.prototype = {
 
 					}
 				else if(i_data.dependency){
-					if(i_data.dependency[all_data[i]]){
-						if(i_data.dependency[all_data[i]] != 'none'){
-							var tangent = _s_req.validate({validators : i_data.dependency[all_data[i]], data : all_data , tangent : true });
+					if(i_data.data[all_data[i]]  || i_data.default ){
+						var tester = ( i_data.data[all_data[i]] || i_data.default )
+						if(tester != 'none'){
+							var tangent = _s_req.validate({validators : tester, data : all_data , tangent : true });
 							if(tangent.failure){  errors[i] = tangent.failure }
 							else {
 								send = _s_util.merge(send, tangent);
@@ -617,12 +285,12 @@ Request.prototype = {
 				}
 			else{
 				if(i_data.dependency){
-					if(i_data.dependency.b){
-						var tangent = _s_req.validate({validators : i_data.dependency.b.data, data : all_data, tangent : true });
+					if(i_data.b){
+						var tangent = _s_req.validate({validators : i_data.b.data, data : all_data, tangent : true });
 						if(tangent.failure) errors[i] = tangent.failure;
 						else{
 							send = _s_util.merge(send, tangent);
-							send[i] = i_data.dependency.b.default;
+							send[i] = i_data.b.default;
 							}
 						}
 					else errors[i] = { msg : 'This was not submitted at all.' }

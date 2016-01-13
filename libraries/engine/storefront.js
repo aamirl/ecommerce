@@ -1,6 +1,7 @@
 
 function Storefront(){
-	this.list = _s_load.datafile('categories');
+	this.root = _s_load.datafile('categories/root');
+	this.detailed = _s_load.datafile('categories/detailed');
 	}
 
 
@@ -16,12 +17,15 @@ Storefront.prototype = {
 			decode : function(cid){
 				var parts = cid.match(/[\s\S]{1,2}/g) || [];
 
-				var obj = self.list;
+				if(cid.length == 2) return {name:self.root[cid]};
+
+				var obj = self.detailed;
 
 				_s_u.each(parts, function(o,i){
 					obj = obj[o].children ? obj[o].children : obj[o]
 					})
-				return obj || undefined;
+		
+				return obj;
 				},
 			name : function(cid){
 				return self.categories.decode(cid).name || 'Unknown';
@@ -31,26 +35,6 @@ Storefront.prototype = {
 				},
 			table : function(cid){
 				return self.categories.decode(cid).table || false;
-				},
-			tree : function*(category){
-				var all = yield this.list();
-				var parts = category.match(/.{1,2}/g);
-				var matched = [];
-				var tester = '';
-				var zeroes = '000000000000';
-
-				_s_u.each(parts, function(piece, index){
-
-					if(piece !== '00'){
-						tester += piece;
-						matched.push(all[tester + (zeroes.substr(0, 12-tester.length))].category_name);
-						}
-					else{
-						return false;
-						}
-
-					})
-				return matched;
 				}
 			}
 		}

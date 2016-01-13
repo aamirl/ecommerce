@@ -43,7 +43,8 @@ Sellers.prototype = {
 								json : true,
 								data : {
 									allowed : {
-										dependency : {
+										dependency : true, 
+										data : {
 											1 : 'none',
 											2 : {
 												duration : { v : ['isInt']},
@@ -60,7 +61,8 @@ Sellers.prototype = {
 								json : true,
 								data : {
 									allowed : {
-										dependency : {
+										dependency : true,
+										data : {
 											1 : 'none',
 											2 : {
 												duration : { v : ['isInt']},
@@ -90,6 +92,108 @@ Sellers.prototype = {
 		var c = {
 			name : { v:['isAlphaOrNumeric'] },
 			website : { v:['isWebsite'] , b:true},
+			financials : {
+				json : true,
+				b:true,
+				default:{},
+				data : {
+					accounts : {
+						aoo : true,
+						data : {
+							name : { v:['isAlphaOrNumeric'] },
+							bank : {
+								json : true,
+								data : {
+									name : { v:['isAlphaOrNumeric'] }
+									}
+								},
+							address : _s_common.helpers.validators.address({required:true}),
+							country : {
+								dependency : true,
+								default : {
+									'account_number' : { v:['isAlphaOrNumeric'] },
+									'other' : { v:['isTextarea'] }
+									},
+								data : {
+									'AU' : {
+										'bsb' : { v:['isAlphaOrNumeric'] },
+										'account_number' : { v:['isAlphaOrNumeric'] }
+										},
+									'CA' : {
+										'transit' : { v:['isAlphaOrNumeric'] },
+										'institution_number' : { v:['isAlphaOrNumeric'] },
+										'account_number' : { v:['isAlphaOrNumeric'] }
+										},
+									'DK' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'FI' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'IE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'NO' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'SE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'GB' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'US' : {
+										'account_number' : { v:['isAlphaOrNumeric'] },
+										'routing_number' : { v:['isAlphaOrNumeric'] }
+										},
+									'AT' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'BE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'FR' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'DE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'IT' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'JP' : {
+										'bank_name' : { v:['isAlphaOrNumeric'] },
+										'branch_name' : { v:['isAlphaOrNumeric'] },
+										'account_number' : { v:['isAlphaOrNumeric'] },
+										'account_owner' : { v:['isAlphaOrNumeric'] }
+
+										},
+									'LU' : {
+										'iban' : { v:['isIBAN']}
+										},
+									'NL' : {
+										'iban' : { v:['isIBAN']}
+										},
+									'SP' : {
+										'iban' : { v:['isIBAN']}
+										},
+									'MX' : {
+										'clabe' : { v:['isAlphaOrNumeric']}
+										},
+									'SG' : {
+										'bank_code' : { v:['isAlphaOrNumeric']},
+										'branch_code' : { v:['isAlphaOrNumeric']},
+										'account_number' : { v:['isAlphaOrNumeric'] },
+										},
+									'CH' : {
+										'iban' : { v:['isIBAN']}
+										},
+									}
+								}
+							}
+						}
+					}
+				},
 			fans : { 
 				aoo:true, 
 				data : {
@@ -155,18 +259,7 @@ Sellers.prototype = {
 					}, 
 				default : [] 
 				},
-			addresses : { 
-				aoo : true,
-				data : {
-					label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
-					street1 : { v:['isStreet'] },
-					street2 : { v:['isStreet'] , default : "" , b:true },
-					city : { v:['isCity'] },
-					state : { v:['isAlphaOrNumeric'] , b:true },
-					postal : { v:['isPostal'] , b:true },
-					country : { v:['isCountry'] }
-					}
-				},
+			addresses : _s_common.helpers.validators.address({aoo:true}),
 			reputation : {
 				json : true,
 				b: true,
@@ -209,10 +302,21 @@ Sellers.prototype = {
 		var data = ( obj.data ? _s_req.validate({ validators : c, data : obj.data }) : _s_req.validate(c) );
 		if(data.failure) return data; 
 
+		var striped = ['AU','CA','DK','FI','IE','NO','SE','GB','US','AT','BE','FR','DE','IT','JP','LU','NL','SP','MX','SG','CH'];
+		if(data.financials.accounts){
+			//means stripe
+			if(_s_util.indexOf(striped, data.financials.accounts[0].country)){
+				// let's connect to managed accounts on stripe on payment server and create a managed account
+				}
+
+			}
+
+
+
 		data.setup = {
 			added : _s_dt.now.datetime(),
-			status : 1,
-			active : 1
+			status : 0,
+			active : 0
 			}
 
 		return yield _s_common.new(data,'sellers', false, true);
@@ -246,8 +350,7 @@ Sellers.prototype = {
 
 		var update = yield this.model.update(result);
 		if(update){
-			if(!obj.convert) return { success : yield _s_common.helpers.convert(result, 'Sellers') }
-			return { success : true }
+			return yield this.helpers.cached(result.id, _s_cache_key)
 			}
 		return { failure : { msg : 'The user could not be updated at this time.' , code : 300 } }
 		},

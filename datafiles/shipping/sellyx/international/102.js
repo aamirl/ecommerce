@@ -3,7 +3,7 @@
 
 
 module.exports = exports = {
-	240 : {
+	'US' : {
 		8 : {
 			rate : 5000
 			},

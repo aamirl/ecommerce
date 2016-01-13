@@ -25,7 +25,7 @@ Listings.prototype = {
 					include : { v:['isAlphaOrNumeric'], b:true },
 					exclude : { v:['isAlphaOrNumeric'], b:true },
 					x : { v:['isInt'] , b:true , default : 0 },
-					y : { v:['isInt'] , b:true , default : 10 }
+					y : { v:['isInt'] , b:true , default : 100 }
 					}
 				},
 			validators : function(){
@@ -38,7 +38,8 @@ Listings.prototype = {
 					bathrooms_h : { in:['1','2','3','4','5','6'] },
 					square_feet : {v:['isInt'] },
 					pets : {
-						dependency : {
+						dependency : true,
+						data : {
 							1 : 'none',
 							2 : {
 								cats : { in:[1,2,'1','2'] },
@@ -70,7 +71,7 @@ Listings.prototype = {
 					quantity : { v : ['isInt'] , b:true},
 					price : { v:['isPrice'] },
 					p_type : { in:[1,2,'1','2'] , b : true},
-					delivery : { 
+					delivery : {
 						extra : {
 							values : {
 								1 : 'none',
@@ -85,7 +86,8 @@ Listings.prototype = {
 
 				var s = {
 					type : {
-						dependency : {
+						dependency : true,
+						data : {
 							1 : l,
 							2 : l,
 							3 : 'none',
@@ -97,9 +99,11 @@ Listings.prototype = {
 							}
 						},
 					title : { v:['isAlphaOrNumeric'] },
+					location : _s_common.helpers.validators.location(),
 					description : { v:['isTextarea'] , b : true },
 					images : { v:['isArray'] , b:'array'},
-					video : { in:[1,2,'1','2'] , default : 1, b:true }
+					video : { in:[1,2,'1','2'] , default : 2, b:true },
+					payment_type : { in:[1,2,'1','2'] , default : 1, b:true },
 					}
 
 				return s;
@@ -109,11 +113,11 @@ Listings.prototype = {
 				if(s.delivery){
 					s.delivery.value = {
 						data : s.delivery.value,
-						label : _s_l.info('delivery',s.delivery.value,'local'),
+						converted : _s_l.info('delivery',s.delivery.value,'listings'),
 						}
 					if(s.delivery.extra) s.delivery.extra = {
 						data : s.delivery.extra,
-						label : _s_load.library('currency').convert.front(s.delivery.extra)
+						converted : _s_currency.convert.front(s.delivery.extra)
 						}
 					}
 
@@ -171,8 +175,8 @@ Listings.prototype = {
 			 {
 			 	interest : Math.floor((Math.random() * 10000000000000)),
 			 	user : {
-			 		id : '5609dac8b8869a99d2d979d6',
-			 		name : 'ammar',
+			 		id : '569066db7c444ad53ca26509',
+			 		name : 'Customer',
 			 		verified : false
 			 		},
 			 	price : 10.00,
@@ -192,7 +196,8 @@ Listings.prototype = {
 			 		}
 			 }
 			];
-		data.location = _s_loc.active.get();
+			
+		// data.location = _s_loc.active.get();
 
 		return yield _s_common.new(data,'listings', true);
 		},

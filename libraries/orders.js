@@ -33,30 +33,20 @@ Orders.prototype = {
 	get new() {
 		var self  = this;
 		return {
-			order : function*(obj){
+			order : function*(obj , create){
 				!obj?obj={}:null;
 				
 				// this is the new function for the order library
 				// we can validate informtion here and then based on the flag add other things if needed
 
 				var c = {
-					items : { v:['isArrayOfObjects'] },
+					items : { v:['isArrayOfObjects'] , default : []},
 					gift : { in : ['1','2',1,2] , default : 1 },
-					address : {
-						json : true,
-						data : {
-							name : { v:['isAlphaOrNumeric'] },
-							street1 : { v:['isStreet'] },
-							street2 : { v:['isStreet'] , default : "" },
-							city : { v:['isCity'] },
-							state : { v:['isAlphaOrNumeric'] , b:true },
-							postal : { v:['isPostal'] , b:true },
-							country : { v:['isCountry'] }
-							}
-						},
+					type : { in : ['1','2',1,2] , default : 1 },
+					address : _s_common.helpers.validators.address(),
 					promotions : { v:['isArray'] , b:true },
 					user : { v:['isUser'] , b:true },
-					offers : { v:['isArray'] , b:true },
+					offers : { v:['isJSON'] , b:true },
 					transactions : {  
 						json : true,
 						data : {
@@ -134,7 +124,8 @@ Orders.prototype = {
 					}
 				data.policy = _o_seller.profile.policy((data.address.country==_o_seller.profile.country()?1:2));
 				
-				return yield _s_common.new(data,'orders', true);
+				if(create) return yield _s_common.new(data,'orders', true);
+				return data;
 				},
 			item : function*(obj){
 				var c = {

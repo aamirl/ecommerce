@@ -12,6 +12,12 @@ var obj = {
 		0 : 'Account Inactive (Sellyx Lock)',
 		1 : 'Account Active',
 		2 : 'Account Inactive'
+		},
+	role : {
+		0 : 'Deactivated',
+		1 : 'Master Administrator',
+		2 : 'Administrator',
+		3 : 'Employee'
 		}
 	}
 

@@ -333,7 +333,8 @@ Products.prototype = {
 						images : { v:['isArray'] , b : true },
 						product : { v:['isProduct']  },
 						reach : { 
-							dependency : {
+							dependency : true,
+							data : {
 								1 : {
 									pricing : {
 										json : true,
@@ -379,11 +380,13 @@ Products.prototype = {
 					// let's check to see if fulfillment and sellyxship is a thing for this country
 					if(_s_countries.fulfillment.fulfilled(obj&&obj.seller?obj.seller:_s_seller.profile.country())){
 						c.fulfillment = {
-							dependency : {
+							dependency : true,
+							data : {
 								1 : {
 									process_time : {in:['1','2','3','4','5']},
 									shipping_rates : {
-										dependency : {
+										dependency : true,
+										data : {
 											1 : 'none',
 											2 : {
 												custom_shipping : {v:['isJSON']}
@@ -402,26 +405,29 @@ Products.prototype = {
 						}
 					else{
 						c.fulfillment = {
-							dependency : {
-								b : {
-									default : "1",
-									data : {
-										process_time : {in:['1','2','3','4','5']},
-										shipping_rates : {
-											dependency : {
-												1 : 'none',
-												2 : {
-													custom_shipping : {v:['isJSON']}
-													}
+							dependency : true,
+							b : {
+								default : "1",
+								data : {
+									process_time : {in:['1','2','3','4','5']},
+									shipping_rates : {
+										dependency : true,
+										data : {
+											1 : 'none',
+											2 : {
+												custom_shipping : {v:['isJSON']}
 												}
-											},
-										sellyxship : {b:true, default : "1"}
-										}
-									},
+											}
+										},
+									sellyxship : {b:true, default : "1"}
+									}
+								},
+							data : {
 								1 : {
 									process_time : {in:['1','2','3','4','5']},
 									shipping_rates : {
-										dependency : {
+										dependency : true,
+										data : {
 											1 : 'none',
 											2 : {
 												custom_shipping : {v:['isJSON']}

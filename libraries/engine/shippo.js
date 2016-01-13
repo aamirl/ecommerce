@@ -7,6 +7,8 @@ function Shippo(){ }
 Shippo.prototype = {
 	
 	calculate : function*(obj){
+
+
 		
 		var deferred = _s_q.defer();
 		var v = {
@@ -18,9 +20,9 @@ Shippo.prototype = {
 				street1 : (obj.origin.address.street1||'street'),
 				street2 : (obj.origin.address.street2||''),
 				city: (obj.origin.address.city||''),
-				state : (obj.origin.address.country==240?'':(obj.origin.address.state||'')),
+				state : (obj.origin.address.country=='US'?'':(obj.origin.address.state||'')),
 				zip : (obj.origin.address.postal||''),
-				country : (yield _s_countries.code(obj.origin.address.country)),
+				country : obj.origin.address.country,
 				phone : (obj.origin.phone||'')
 				},
 			address_to : {
@@ -30,9 +32,9 @@ Shippo.prototype = {
 				street1 : (obj.recipient.address.street1||'street'),
 				street2 : (obj.recipient.address.street2||''),
 				city : (obj.recipient.address.city||''),
-				state : (obj.recipient.address.country==240?'':obj.recipient.address.state),
+				state : (obj.recipient.address.country=='US'?'':obj.recipient.address.state),
 				zip : (obj.recipient.address.postal||''),
-				country : (yield _s_countries.code(obj.recipient.address.country)),
+				country : obj.recipient.address.country,
 				phone : (obj.recipient.phone||'')
 				},
 			parcel : {
@@ -47,6 +49,8 @@ Shippo.prototype = {
 			async : false
 
 			}
+
+		console.log(v);
 
 		var options = {
 			url : 'https://api.goshippo.com/v1/shipments',

@@ -19,6 +19,7 @@ module.exports = {
 			}, meta);
 		},
 	get : function*(obj){
+
 		// if we have just an id we just submit that;
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('listings', obj);
 
@@ -35,9 +36,10 @@ module.exports = {
 				}
 			};
 
+
 		if(obj.user) get.body.query.bool.should.push( { match : { 'user.id' : obj.user } } )
 		if (obj.seller) get.body.query.bool.should.push( { match : { 'seller.id' : obj.seller } } )
-		else get.body.query = { match_all : {} }
+		// else get.body.query = { match_all : {} }
 
 		return yield _s_db.es.search(get, obj);
 		}

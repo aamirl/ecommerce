@@ -19,7 +19,7 @@ module.exports = {
 
 		// add seller to es
 		var new_seller = yield _sellers.new();
-		if(new_seller.failure) return r;
+		if(new_seller.failure) return new_seller;
 		else new_seller = new_seller.success.data;
 
 		GLOBAL._s_seller = yield _s_load.object('sellers',new_seller); 
@@ -31,6 +31,7 @@ module.exports = {
 		if(!result) return { failure : { msg : 'Could not find user.' , code : 300 } }
 
 		result.seller = _s_seller.helpers.data.document();
+		result.seller.role = 1;
 
 		var update = yield _s_common.update(result,'users',false, true);
 		if(!update) return { failure : { msg : "The seller profile was made but we were unable to add this information to your profile. Please contact Sellyx for more details" , code:300 } };
@@ -38,8 +39,9 @@ module.exports = {
 		// finally update user cache
 		yield _s_load.engine('users').helpers.cached(result , _s_cache_key);
 		yield _sellers.helpers.cached(_s_seller.profile.id(), _s_cache_key);
+		GLOBAL._s_user = yield _s_load.object('users', result);
 				
-		return { success : { msg : _s_seller.profile.id() , code : 300 } }
+		return { success : { data : { user : _s_user.profile.all(), seller : yield _s_seller.profile.all(true) } } }
 		},
 	'update/basic' : function*(){
 		if(!_s_seller) return _s_l.error(101);
@@ -50,13 +52,46 @@ module.exports = {
 			description : { v : ['isTextarea'] , b:true },
 			contact :  { v:['isPhone'] },
 			social : {
-				json: true,
+				json : true,
+				b : true,
+				default : {
+					twitter : {},
+					facebook : {},
+					google : {},
+					pinterest : {},
+					instagram : {}
+					},
 				data : {
-					facebook : { v:['isAlphaOrNumeric'] , b:true },
-					twitter : { v:['isAlphaOrNumeric'] , b:true },
-					pinterest : { v:['isAlphaOrNumeric'] , b:true },
-					google : { v:['isAlphaOrNumeric'] , b:true },
-					instagram : { v:['isAlphaOrNumeric'] , b:true }
+					twitter : {
+						json : true,
+						data : {
+							id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+							}
+						},
+					facebook : {
+						json : true,
+						data : {
+							id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+							}
+						},
+					google : {
+						json : true,
+						data : {
+							id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+							}
+						},
+					pinterest : {
+						json : true,
+						data : {
+							id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+							}
+						},
+					instagram : {
+						json : true,
+						data : {
+							id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+							}
+						},
 					}
 				}
 			});

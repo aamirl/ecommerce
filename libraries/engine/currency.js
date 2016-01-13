@@ -84,8 +84,8 @@ Currency.prototype = {
 				},
 			objectify : function(price){
 				return {
-					id : price,
-					label : self.convert.front(price)
+					data : price,
+					converted : self.convert.front(price)
 					}
 				}
 			}

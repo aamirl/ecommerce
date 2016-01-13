@@ -347,15 +347,15 @@ module.exports = {
                             return;
                             }
                         else if(v.country){
-                            data[k].country = countries[v.country].country_name;
+                            data[k].country = countries[v.country].name;
                             return;
                             }
                         }
                     else if(new RegExp(dates).test(k)){
                         var c = (obj.dates && obj.dates.d ? _s_dt.convert.date.output(targ) : _s_dt.convert.datetime.output(targ) );
                         if(obj.dates && obj.dates.r) var converted = c;
-                        else var converted = c;
-                        // else var converted = '<span><i class="fa fa-fw fa-clock-o s-green"></i> ' +c + ' </span><small class="date-timeago">'+_s_dt.timeago(targ)+'</small>';
+                        // else var converted = c;
+                        else var converted = {readable:c , timeago : _s_dt.timeago(targ) }
                         }
                     else if(new RegExp(csvs).test(k)){
                         try{
@@ -366,7 +366,7 @@ module.exports = {
                             }
                         }
                     else if(new RegExp(countries_t).test(k)){
-                        var converted = countries[targ].country_name;
+                        var converted = countries[targ].name;
                         }
                     else if(new RegExp(dimensions).test(k)){
                         var converted = _dimensions.convert.front(k, targ, label);
@@ -376,8 +376,8 @@ module.exports = {
                         }
                     else if(k == 'category'){
                         if(v instanceof Object) return;
-                        else var converted = 'CATEGORY NAME';
-                        // else var converted = yield _storefront.categories.name(v);
+                        // else var converted = 'CATEGORY NAME';
+                        else var converted = _s_sf.categories.name(v);
                         }
                     else if((library == 'orders' && k == 'items')){
                         var go = _s_util.clone.shallow(obj);

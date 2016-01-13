@@ -25,7 +25,7 @@ Users.prototype = {
 					var c = result.addresses[0];
 					result.country = c.country;
 					}
-				else{ result.country = 240; }	
+				else{ result.country = 'US'; }	
 
 				if(!oAuth_user){
 					oAuth_user = yield _s_req.sellyx({
@@ -45,6 +45,11 @@ Users.prototype = {
 					}
 				result.reputation = oAuth_user.reputation;
 				result.numbers = [ { number : oAuth_user.telephone , primary : true } ]
+
+				if(result.seller) result.seller.role = {
+					data : result.seller.role,
+					converted : _s_l.info('role', result.seller.role, 'users')
+					}
 
 				result.oAuth_setup = {
 					status : oAuth_user.status,

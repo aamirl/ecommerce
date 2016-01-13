@@ -5,7 +5,7 @@ function Countries(){
 	
 	var set = _s_req.headers('country');
 	if( set && (this.list[set]) ){ this.active.set(set); }
-	else{ this.active.set('240'); }
+	else{ this.active.set('US'); }
 	
 	var set2 = _s_req.headers('postal');
 	if( set2 ){ this.active.postal.set(set2); }
@@ -45,7 +45,7 @@ Countries.prototype = {
 		var send = 'Unknown';
 		var all = yield this.list;
 		_s_u.each(all, function(dets,id){
-			if(dets.country_name == name){
+			if(dets.name == name){
 				send = id;
 				return false;
 				}
@@ -53,7 +53,7 @@ Countries.prototype = {
 		return send;
 		},
 	name : function(countryId){
-		return this.get(countryId).country_name;
+		return this.get(countryId).name;
 		},
 	code : function*(countryId){
 		var c = yield this.get(countryId);
@@ -61,21 +61,21 @@ Countries.prototype = {
 		},
 	fulfillment : {
 		fulfilled : function(countryId){
-			var allowed = ['240','102',240,102];
+			var allowed = ['US','IN'];
 
 			if(_s_util.indexOf(allowed, countryId) !== -1) return true;
 			return false;
 			},
 		address : function(countryId){
 			var addresses = {
-				240 : {
+				US : {
 					name : 'Sellyx USA Fulfillment Center',
 					primary : '8054037831',
 					street1 : '2629 Townsgate Road',
 					street2 : 'Suite 235',
 					city : 'Westlake Village',
 					state : 'California',
-					country : '240',
+					country : 'US',
 					postal : '91362'
 					},
 				102 : {
@@ -85,7 +85,7 @@ Countries.prototype = {
 					street2 : 'Old Madras Road, 3/4/5 Floors',
 					city : 'Bangalore',
 					state : '',
-					country : '102',
+					country : 'IN',
 					postal : '560016'
 					}
 				}

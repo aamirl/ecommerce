@@ -128,6 +128,7 @@ Location.prototype = {
 				// let's translate the info into storables 
 
 				self.data.active = {
+					formatted : obj.city + ' ' + obj.regionName + ' ' + obj.countryName,
 					city : obj.city,
 					postal : obj.postalCode,
 					coordinates : {

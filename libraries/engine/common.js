@@ -27,6 +27,114 @@ Common.prototype = {
 				id : function(obj){
 					return Math.floor(Math.random() * 1000000000)
 					}
+				},
+			validators : {
+				location : function(){
+					return {
+						json : true,
+						data : {
+							name : { v:['isAlphaOrNumeric'] },
+							city : { v:['isAlphaOrNumeric'] , b:true },
+							postal : { v:['isAlphaOrNumeric'] , b:true },
+							coordinates : {
+								json : true,
+								data : {
+									lat : {v:['isFloat']},
+									lon : {v:['isFloat']},
+									}
+								},
+							region : {
+								json : true,
+								b:true,
+								data : {
+									name : { v:['isAlphaOrNumeric'] },
+									code : {v:['isAlphaOrNumeric'] }
+									}
+								},
+							country : {
+								json : true,
+								b:true,
+								data : {
+									name : { v:['isAlphaOrNumeric'] },
+									code : {v:['isAlphaOrNumeric'] }
+									}
+								}
+							}
+						}
+					},
+				address : function(obj){
+					if(obj && obj.countryless){
+						return {
+							json : true,
+							data : {
+								street1 : { v:['isStreet']  },
+								street2 : { v:['isStreet'] , b:true },
+								city : { v:['isCity']  },
+								state : { v:['isAlphaOrNumeric'] , b:true }
+								}
+							}
+						}
+					if(obj && obj.aoo){
+						return { 
+							aoo : true,
+							data : {
+								label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
+								street1 : { v:['isStreet'] },
+								street2 : { v:['isStreet'] , default : "" , b:true },
+								city : { v:['isCity'] },
+								state : { v:['isAlphaOrNumeric'] , b:true },
+								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get() },
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								}
+							}
+						}
+
+					if(obj && obj.label){
+						return {
+							json : true,
+							data : {
+								label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
+								street1 : { v:['isStreet']  },
+								street2 : { v:['isStreet'] , b:true },
+								city : { v:['isCity']  },
+								state : { v:['isAlphaOrNumeric'] , b:true },
+								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								}
+							}
+						}
+
+					if(obj && obj.required){
+						return {
+							json : true,
+							data : {
+								street1 : { v:['isStreet']  },
+								street2 : { v:['isStreet'] , b:true },
+								city : { v:['isCity']  },
+								state : { v:['isAlphaOrNumeric'] , b:true },
+								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								}
+							}
+						}
+
+
+					return {
+						json : true,
+						default : {
+							postal : _s_countries.active.postal.get(),
+							country :  _s_countries.active.get()
+							},
+						data : {
+							street1 : { v:['isStreet'] , b:true },
+							street2 : { v:['isStreet'] , b:true },
+							city : { v:['isCity'] , b:true },
+							state : { v:['isAlphaOrNumeric'] , b:true },
+							postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
+							country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+							}
+						}
+					}	
 				}
 			}
 		},
@@ -157,20 +265,26 @@ Common.prototype = {
 		
 		if(!obj.corporate){
 
-			if(obj.user && obj.seller){
-				// means that it could be either or so we need to check and see what is going on in the document
-				if(result.user) var iterator = 'user';
-				else var iterator = 'seller'
-				}
-			else{
-				var iterator = (obj.user?'user':'seller');
-				}
-
-			var id = (obj[iterator].id?obj[iterator].id: global['_s_'+iterator].profile.id() );
-
 			if(obj.deep){
 				var object = _s_util.array.find.object(result[obj.deep.array] , obj.deep.property , obj.deep.value , true, (obj.deep.obj||null) );
-				if(!object) return { failure : {msg:'The '+obj.label+' could not be found.' , code : 300 }  };
+				if(!object) return { failure : {msg:'The initial '+obj.label+' could not be found.' , code : 300 }  };
+				}
+
+			if(obj.deep.user || obj.deep.seller){
+				var iterator = (obj.deep.user?'user':'seller');
+				var id = obj.deep.user?obj.deep.user.id:obj.deep.seller.id;
+				}
+			else{
+				if(obj.user && obj.seller){
+					// means that it could be either or so we need to check and see what is going on in the document
+					if(result.user) var iterator = 'user';
+					else var iterator = 'seller'
+					}
+				else{
+					var iterator = (obj.user?'user':'seller');
+					}
+
+				var id = (obj[iterator].id?obj[iterator].id: global['_s_'+iterator].profile.id() );
 				}
 
 			if(obj.deep && obj.deep[iterator] && object.object[iterator]){
@@ -265,6 +379,9 @@ Common.prototype = {
 
 		if(update){
 			if(obj.send && obj.send == 'object' && object) result = object.object;
+
+			console.log(obj);
+
 
 			if(obj.type && typeof lib.helpers.convert[obj.type] == 'function'){
 				return { success : { data : yield lib.helpers.convert[obj.type](result,obj[iterator]) } }

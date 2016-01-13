@@ -29,6 +29,9 @@ app.use(ssl());
 
 app.use(function*(next){
 
+	// _s_cache.delete();
+	// return;
+
 	if(this.request.method != 'POST') {
 		this.body = { failure : { msg : 'This API only accepts POST requests.' , code : 300 } }
 		return;
@@ -44,13 +47,12 @@ app.use(function*(next){
 
 	GLOBAL._s_seller = false;
 
-	// _s_cache.delete();
-	// return;
-
 	var cached = undefined;	
 
 	// first we see if this path is an auth
 	var parts = this.request.path.split('/');
+	// first we see if this path is an auth
+
 
 	if(parts[2] == 'a'){
 		// means this path needs to be authorized or logged in
@@ -104,7 +106,6 @@ app.use(function*(next){
 			GLOBAL._s_seller = ty;
 			}
 		}
-
 
 	var main_route = parts.shift() + parts.shift() + '/' + parts.shift();
 	var target = parts.join('/');

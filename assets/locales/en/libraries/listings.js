@@ -18,6 +18,14 @@ var obj = {
 		7 : 'Employment/Careers (Temporary/Paid Internships)',
 		8 : 'Employment/Careers (Volunteer/Unpaid Internships)',
 		},
+	payment_type : {
+		1 : 'SellyxPay - Payment Accepted Through Sellyx',
+		2 : 'Pickup Only',
+		},
+	video : {
+		1 : 'Live Video Auditions Disabled',
+		2 : 'Live Video Auditions Enabled'
+		},
 	delivery : {
 		1 : 'No delivery, pick-ups only!',
 		2 : 'Free Local Delivery',
@@ -91,14 +99,14 @@ var obj = {
 		7 : 'Professional Degree (Law/Medicine)',
 		8 : 'Ph.D',
 		},
-	contact : {
-		1 : 'Sellyx',
-		2 : 'Sellyx Email',
-		3 : 'Sellyx Phone Number',
-		4 : 'Sellyx Email/Phone Number',
-		5 : 'Custom Email',
-		6 : 'Custom Phone Number',
-		}
+	// contact : {
+	// 	1 : 'Sellyx',
+	// 	2 : 'Sellyx Email',
+	// 	3 : 'Sellyx Phone Number',
+	// 	4 : 'Sellyx Email/Phone Number',
+	// 	5 : 'Custom Email',
+	// 	6 : 'Custom Phone Number',
+	// 	}
 	}
 
 module.exports = exports = obj;

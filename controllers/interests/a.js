@@ -11,7 +11,9 @@ module.exports = {
 		data.user = _s_user.profile.id();
 		data.endpoint = true;
 
-		return yield _interests.get(data);
+		var r =  yield _interests.get(data);
+console.log(r)
+		return r;
 		},
 	new : function*(){
 		// this is the api endpoint for adding a new interest to an existing listing
@@ -22,31 +24,37 @@ module.exports = {
 		},
 	status : function*(){
 		
-		return yield _interests.actions.status({
-			user : true
-			});
-
 		var data = _s_req.validate({
 			id : {v:['isListing']},
-			status : { in:['2','1',1,2] }
+			status : { in:['1','2',1,2] },
+			extra : { v:['isAlphaOrNumeric'] },
 			});
 		if(data.failure) return data;
 		
-		var r = yield _s_common.check({
+		var x = {
 			id : data.id,
 			library : 'listings',
-			user : 'interests',
-			label : 'listing', 
-			status : [1,2]
-			});
+			label : 'listing',
+			send : 'object',
+			status : {
+				allowed : [1,'1']
+				},
+			deep : {
+				user : {
+					id : _s_user.profile.id(),
+					target : true
+					},
+				array : 'interests',
+				property : 'interest',
+				value : data.extra,
+				status : {
+					allowed : [1,'1'],
+					change : data.status
+					}
+				}
+			}
 
-		if(r.failure) return r;
-		var p = r.object.object;
-
-		p.setup.status = parseInt(data.status);
-		r.result.interests[r.object.index] = p;
-
-		return yield _s_common.update(r.result , 'listings' , [{ insert : 'interest' , target : {id:'id' , data : _s_user.profile.id(), depth : 'user'} , replace : 'interests' }]);
+		return yield _s_common.check(x);
 		},
 	message : function*(){
 		return yield _listings.actions.message({type:1,user:_s_user.profile.id()});

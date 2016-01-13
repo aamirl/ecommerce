@@ -2,16 +2,120 @@
 var _cart = _s_load.engine('cart');
 
 module.exports = {
-	get : function*(){
-		var r = yield _cart.get.all(true);
-		if(!r || r.failure) return { failure : r.failure||{ msg : 'You have no items in your cart.' , code :300 } }
-		if(r) return {success : { data : r } };
-		return { failure : { msg : 'You have no items in your cart.' , code : 300 } }
+	test : function*(){
+		var data = _s_req.validate({
+			financials : {
+				json : true,
+				data : {
+					accounts : {
+						aoo : true,
+						data : {
+							name : { v:['isAlphaOrNumeric'] },
+							bank : {
+								json : true,
+								data : {
+									name : { v:['isAlphaOrNumeric'] }
+									}
+								},
+							address : _s_common.helpers.validators.address({required:true}),
+							country : {
+								dependency : true,
+								default : {
+									'account_number' : { v:['isAlphaOrNumeric'] },
+									'other' : { v:['isTextarea'] }
+									},
+								data : {
+									'AU' : {
+										'bsb' : { v:['isAlphaOrNumeric'] },
+										'account_number' : { v:['isAlphaOrNumeric'] }
+										},
+									'CA' : {
+										'transit' : { v:['isAlphaOrNumeric'] },
+										'institution_number' : { v:['isAlphaOrNumeric'] },
+										'account_number' : { v:['isAlphaOrNumeric'] }
+										},
+									'DK' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'FI' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'IE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'NO' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'SE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'GB' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'US' : {
+										'account_number' : { v:['isAlphaOrNumeric'] },
+										'routing_number' : { v:['isAlphaOrNumeric'] }
+										},
+									'AT' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'BE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'FR' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'DE' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'GB' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'IT' : {
+										'iban' : { v:['isIBAN'] }
+										},
+									'JP' : {
+										'bank_name' : { v:['isAlphaOrNumeric'] },
+										'branch_name' : { v:['isAlphaOrNumeric'] },
+										'account_number' : { v:['isAlphaOrNumeric'] },
+										'account_owner' : { v:['isAlphaOrNumeric'] }
+
+										},
+									'LU' : {
+										'iban' : { v:['isIBAN']}
+										},
+									'NL' : {
+										'iban' : { v:['isIBAN']}
+										},
+									'SP' : {
+										'iban' : { v:['isIBAN']}
+										},
+									'MX' : {
+										'clabe' : { v:['isAlphaOrNumeric']}
+										},
+									'SG' : {
+										'bank_code' : { v:['isAlphaOrNumeric']},
+										'branch_code' : { v:['isAlphaOrNumeric']},
+										'account_number' : { v:['isAlphaOrNumeric'] },
+										},
+									'CH' : {
+										'iban' : { v:['isIBAN']}
+										},
+									}
+								}
+							}
+						}
+					}
+				},
+			})
+	
+		if(data.failure) return data;
+		return { success : data }
 		},
-	total : function*(){
-		var r = yield _cart.totals.total();
-		if(r) return { success : { data : r } }
-		return { failure : { msg : 'There is no cart total set.' , code : 300 } }
+	get : function*(){
+		var r = yield _cart.get.all();
+		if(!r || r.failure) return { failure : r.failure||{ msg : 'You have no items in your cart.' , code :300 } }
+		return {success : { data : r } };
 		},
 	empty : function*(){
 		var r = yield _cart.empty();
@@ -22,67 +126,6 @@ module.exports = {
 		var r = yield _cart.get.count();
 		if(r) return { success : { data : r } }
 		return { failure : { msg : 'The cart could not be set.' , code : 300 } }
-		},
-	calculate : function*(){
-		var r = yield _cart.get.all();
-		if(!r) return { failure : { msg : 'You have no orders in your cart.' , code : 300 } };
-
-		// now we calculate
-		r = yield _cart.calculate(r);
-		if(!r||r.failure) return  { failure : r.failure || { msg : 'There were no calculations made.' , code : 300 } }
-		return { success : { data : r } }
-		},
-	'order/get' : function*(){
-		var data = _s_req.post('seller');
-		if(!data) return { failure : { msg : 'No seller information was submitted.' , code : 300 } }
-		var r = yield _cart.get.order(data);
-		if(r) return {success : { data : r } };
-		return { failure : { msg : 'You have no items in your cart by this seller.' , code : 300 } }
-		},
-	'order/shipping/get' : function*(){
-		var data = _s_req.validate({
-			seller : { v: ['isAlphaOrNumeric'] },
-			recipient : {
-				json : true,
-				data : {
-					name : { v:['isAlphaOrNumeric'], b:true, default : 'Sellyx Customer' },
-					address : {
-						json : true,
-						data : {
-							street1 : { v:['isStreet'] , b:true },
-							street2 : { v:['isStreet'] , b:true },
-							city : { v:['isCity'] , b:true },
-							state : { v:['isAlphaOrNumeric'] , b:true },
-							postal : { v:['isPostal'] , b:true, default : _s_countries.active.get() },
-							country : { v:['isCountry'] , b:true, default : _s_countries.active.postal.get() }
-							}
-						}
-					}
-				}
-			})
-		if(data.failure) return data;
-
-		data.order = yield _cart.get.order(data.seller);
-		if(!data.order) return { failure : { msg : 'There was no order that corresponded to this seller in this cart.' , code: 300 } }
-		
-		var options = yield _s_load.library('shipping').calculate(data)
-		if(options.failure||!options) return {failure:options.failure||{msg:'Rates could not be retrieved for this shipment.' , code:300} }
-		
-		yield _cart.items.update.shipping.options({ seller : data.seller, options : options })
-		return {success : { data : options} };
-		},
-	'order/shipping/save' : function*(){
-		var data = _s_req.validate({
-			send : { v:['isJSON'] },
-			seller : { v:['isAlphaOrNumeric'] }
-			})
-
-		if(data.failure) return data;
-		var r = yield _cart.items.update.shipping.save(data);
-
-		if(!r || r.failure) return { failure : r.failure|| { msg : 'There was an error in updating the cart.' , code: 300 } }
-		return { success : { msg : 'Shipping Saved!' , code : 300 } };
-		return
 		},
 	'item/add' : function*(){
 
@@ -112,19 +155,6 @@ module.exports = {
 		if(!r || r.failure) return { failure : r.failure||{ msg : 'There was an error in updating the quantity of the cart.' , code: 300 } }
 		return { success : { msg : 'Quantity Updated!' , code : 300 } };
 		},
-	'item/waive' : function*(){
-		var data = _s_req.validate({
-			listing : {v:['isListing']},
-			product : {v:['isProduct']},
-			type : { in:[1,2,'1','2'] }
-			})
-
-		if(data.failure) return data;
-		var r = yield _cart.items.update.waive(data);
-
-		if(!r || r.failure) return { failure : r.failure|| { msg : 'There was an error in updating the cart.' , code: 300 } }
-		return { success : { msg : 'Return Settings Applied!' , code : 300 } };
-		},
 	'item/notes' : function*(){
 		var data = _s_req.validate({
 			listing : {v:['isListing']},
@@ -138,5 +168,105 @@ module.exports = {
 		if(!r || r.failure) return { failure : r.failure|| { msg : 'There was an error in updating the cart.' , code: 300 } }
 		return { success : { msg : 'Notes Updated!' , code : 300 } };
 		},
+	'item/waive' : function*(){
+		var data = _s_req.validate({
+			listing : {v:['isListing']},
+			product : {v:['isProduct']},
+			waive : { in:[true,'true'] , b:true }
+			})
 
+		if(data.failure) return data;
+		var r = yield _cart.items.update.waive(data);
+
+		if(!r || r.failure) return { failure : r.failure|| { msg : 'There was an error in updating the cart.' , code: 300 } }
+		return { success : { msg : 'Return Settings Applied!' , code : 300 } };
+		},
+	'order/get' : function*(){
+		var data = _s_req.post('seller');
+		if(!data) return { failure : { msg : 'No seller information was submitted.' , code : 300 } }
+		var r = yield _cart.get.order(data);
+		if(r) return {success : { data : r } };
+		return { failure : { msg : 'You have no items in your cart by this seller.' , code : 300 } }
+		},
+	'order/shipping/get' : function*(){
+		var data = _s_req.validate({
+			seller : { v: ['isAlphaOrNumeric'] },
+			recipient : {
+				json : true,
+				data : {
+					name : { v:['isAlphaOrNumeric'], b:true, default : 'Sellyx Customer' },
+					address : _s_common.helpers.validators.address()
+					}
+				}
+			})
+
+		if(data.failure) return data;
+
+		data.order = yield _cart.get.order(data);
+		if(!data.order) return { failure : { msg : 'There was no order that corresponded to this seller in this cart.' , code: 300 } }
+		
+		var options = yield _s_load.library('shipping').calculate(data)
+		if(options.failure||!options) return {failure:options.failure||{msg:'Rates could not be retrieved for this shipment.' , code:300} }
+		
+		yield _cart.items.update.shipping.options({ seller : data.seller, options : options })
+		return {success : { data : options} };
+		},
+	'order/shipping/set' : function*(){
+		var data = _s_req.validate({
+			selected : { v:['isJSON'] },
+			seller : { v:['isAlphaOrNumeric'] }
+			})
+
+		if(data.failure) return data;
+		var r = yield _cart.items.update.shipping.save(data);
+
+		if(!r || r.failure) return { failure : r.failure|| { msg : 'There was an error in updating the cart.' , code: 300 } }
+		return { success : { msg : 'Shipping Saved!' , code : 300 } };
+		return
+		},
+	'transition' : function*(){
+		var data = _s_req.validate({
+			cart : _cart.helpers.validators.cart()
+			});
+
+		if(data.failure) return data;
+		try{
+			yield _s_cache.key.set('cart',data.cart);
+			return { success : true }
+			} 
+		catch(err){ return { failure : {msg:'The cart was not saved.' , code : 300 } } }
+		},
+	calculate : function*(){
+		// now we calculate
+		var r = yield _cart.calculate(r);
+		if(!r||r.failure) return  { failure : r.failure || { msg : 'There were no calculations made.' , code : 300 } }
+		return { success : { data : r } }
+		},
+	total : function*(){
+		var r = yield _cart.totals.total();
+		if(!r) return { failure : { msg : 'There is no cart total set.' , code : 300 } }
+		return { success : { data : _s_currency.convert.objectify(r) } }
+		},
+	complete : function*(){
+		// this is a special function only for the cart
+		// we need the charge information only
+
+		var data = _s_req.validate({
+			transaction : { v:['isJSON'] , b:true },
+			name : { v:['isAlphaOrNumeric'], b:true, default : 'Sellyx Customer' },
+			gift : { v:['true',true] , b:true },
+			address : _s_common.helpers.validators.address({countryless:true})
+			});
+		if(data.failure) return data;
+
+		var r = yield _cart.separate(data);
+
+		if(!r || r.failure) return { failure : r.failure|| { msg : 'There was an error in updating the cart.' , code: 300 } }
+		
+		// then we create orders here for each one
+
+
+
+		return { success : r }
+		}
 	}

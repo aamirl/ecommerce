@@ -215,7 +215,7 @@ Shipping.prototype = {
 						// if there is an exception or special rate for the active country, we use those values instead of the standards
 						if(di==2 && ship_dets.exceptions && ship_dets.exceptions[obj.country]) ship_dets = ship_dets.exceptions[obj.country];
 
-						if(details.quantity > 1){
+						if(details.quantity > 1 || total > 0){
 							if(ship_dets.with != ship_dets.single){
 								send.custom[id][service].rate = parseFloat(ship_dets.single) + parseFloat(ship_dets.with * (details.quantity - 1));
 								}
@@ -223,9 +223,9 @@ Shipping.prototype = {
 								send.custom[id][service].rate = parseFloat(ship_dets.single * details.quantity);
 								}
 							}
-						else if(total > 0){
-							send.custom[id][service].rate = parseFloat(ship_dets.with * details.quantity);
-							}
+						// else if(total > 0){
+						// 	send.custom[id][service].rate = parseFloat(ship_dets.with * details.quantity);
+						// 	}
 						else{
 							send.custom[id][service].rate = parseFloat(ship_dets.single);
 							}
@@ -483,6 +483,7 @@ Shipping.prototype = {
 					}
 				
 				// this variable denotes that this customer bought at least one quantity item from this seller at this time. the idea is that if this is true, the customer can get the 'with' price for the shipping always for the shipping speed.
+
 				var total = 0;
 
 				yield _s_util.each(obj.order.items, function*(dets, id){
