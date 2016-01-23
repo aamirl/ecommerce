@@ -5,11 +5,46 @@ var maxmind = require('maxmind');
 function Location(inp){
 
 	this.data = {};
-	maxmind.init('../ecommerce/geoip/GeoLiteCity.dat');
-	inp = '72.21.92.59';
-	// inp = '212.138.92.10';
 
-	if(!this.active.get(true)){
+	inp = '72.21.92.59';
+	
+	var set_latlon = _s_req.headers('latlon');
+	var set_location = _s_req.headers('loc');
+	var set_ip = _s_req.headers('ip');
+	
+	if( set_latlon ){ 
+		var p = set_latlon.split(',')
+		if(p.length!=2){
+			maxmind.init(_s_config.paths.geoip + 'GeoLiteCity.dat');
+			this.active.set(maxmind.getLocation(inp))
+			}
+		this.active.set({
+			latitude : p[0],
+			longitude : p[1],
+			source : 'user_submitted_latlon'
+			})
+		}
+
+	else if(set_location){
+		try{var t =JSON.parse(set_location)}
+		catch(err){var t=set_location}
+
+		var translate = _s_req.validate({data:t,validators:_s_common.validators.location()})
+		if(translate.failure){
+			maxmind.init(_s_config.paths.geoip + 'GeoLiteCity.dat');
+			this.active.set(maxmind.getLocation(inp))
+			}
+		else{
+			translate.source = 'user_submitted_location';
+			this.active.set(translate);
+			}
+		}
+	else if(set_ip){
+		maxmind.init(_s_config.paths.geoip + 'GeoLiteCity.dat');
+		this.active.set(maxmind.getLocation(set_ip))
+		}
+	else{
+		maxmind.init(_s_config.paths.geoip + 'GeoLiteCity.dat');
 		this.active.set(maxmind.getLocation(inp))
 		}
 	}
@@ -85,7 +120,7 @@ Location.prototype = {
 					var origin = ( !obj.origin ? (self.active.get()).coordinates : obj.origin )
 					var destination = obj.destination;
 					// units of 1 means miles, 2 means km
-					var units = _s_load.engine('dimensions').active.get();
+					var units = _s_dimensions.active.get();
 
 					var radlat1 = Math.PI * (origin.lat)/180
 				    var radlat2 = Math.PI * (destination.lat)/180
@@ -112,7 +147,7 @@ Location.prototype = {
 					}
 				},
 			units : function(){
-				var units = _s_load.library('dimensions').active.get();
+				var units = _s_dimensions.active.get();
 				if(units==1) return 'mi';
 				return 'km';
 				}
@@ -142,8 +177,10 @@ Location.prototype = {
 					country : {
 						name : obj.countryName,
 						code : obj.countryCode
-						}
+						},
+					source : (obj.source||'maxmind')
 					}
+				// console.log(self.data.active);
 				}
 			}
 		}

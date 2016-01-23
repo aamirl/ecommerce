@@ -1,5 +1,5 @@
 
-var _cart = _s_load.engine('cart');
+var _cart = _s_load.library('cart');
 
 module.exports = {
 	get : function*(){

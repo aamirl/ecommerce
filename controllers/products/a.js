@@ -1,60 +1,28 @@
-// authorized calls for product management
 var _products = _s_load.library('products');
-var c = _products.helpers.filters();
 
 module.exports = {
-	'get/inventory' : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		// we want to call the auth controller with the seller information
-		// we add the filters we need for this particular inventory call
-
-		var data = _s_req.validate(c);
+	'get' : function*(){
+		var data = _s_req.validate(_products.helpers.filters());
 		if(data.failure) return data;
-		
-		data.seller = _s_seller.profile.id();
-		data.admin = true;
 
-		var results = yield _products.get(data);
-		if(results.data && results.data.length > 0){
-			results.filters = data;
-			return { success : results };
-			}
-		return { failure : {msg: 'No products matched your query.' } , code : 300 };
+		data.entity = _s_entity.object.profile.id();
+		data.endpoint = true;
+
+		return yield _products.get(data);
 		},
-	'get/seller' : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		// we want to call the auth controller with the seller information
-		// we add the filters we need for this particular inventory call
-
-		var data = _s_req.validate(c);
-
-		if(data.failure) return data;
-		
-		// next we want to add the seller information
-		data.exclude = 'sellers';
-		// data.added = _s_seller.profile.id();
-		data.admin = true;
-
-		var results = yield _products.get(data);
-		if(results.data && results.data.length > 0){
-			results.filters = data;
-			return { success : results };
-			}
-		return { failure : {msg: 'No products matched your query.' } , code : 300 };
-		},
-	'get/seller/summary' : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		return yield _products.actions.summary({seller:_s_seller.profile.id() , combined : true, type : _s_req.post('type')});
+	'get/summary' : function*(){
+		return yield _products.actions.summary({
+			entity : _s_entity.object.profile.id(),
+			combined : true, 
+			type : _s_req.post('type')
+			});
 		},
 	new : function*(){
-		if(!_s_seller) return _s_l.error(101);
+		
 		
 		},
 	update : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		return yield _products.update.product({
-			seller : _s_seller.profile.id()
-			});
+		return yield _products.update.product();
 		},
 	'images/update' : function*(){
 		if(!_s_seller) return _s_l.error(101);
@@ -276,17 +244,12 @@ module.exports = {
 		return { success : true }
 		},
 	'listing/new' : function*(){
-		if(!_s_seller) return _s_l.error(101);
 		return yield _products.new.listing();
 		},
 	'listing/update' : function*(){
-		if(!_s_seller) return _s_l.error(101);
 		return yield _products.update.listing();
 		},
 	'listing/status' : function*(){
-		if(!_s_seller) return { failure : { msg:'this is not a seller' , code : 300 } };
-		return yield _products.actions.status.listing({
-			seller : true
-			});
+		return yield _products.actions.status.listing();
 		}
 	}

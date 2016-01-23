@@ -35,23 +35,29 @@ module.exports = {
 				}
 			};
 
+		if(obj.ids) {
+			search.body.query.bool.must.push({ ids : { values : obj.ids } }) 
+			return yield _s_db.es.search(search,obj);
+			}
+
+
 		if(obj.recipients){
 
 			_s_u.each(obj.recipients , function(id,ind){
 				search.body.query.bool.must.push({
 					nested : {
-						path : 'users',
+						path : 'entities',
 						query : {
 							bool : {
 								must : [
 									{
 										match : {
-											'users.id' : id
+											'entities.id' : id
 											}
 										},
 									{
 										match : {
-											'users.active' : 1
+											'entities.active' : 1
 											}
 										}
 									]
@@ -64,18 +70,28 @@ module.exports = {
 		else{
 			search.body.query.bool.must.push({
 				nested : {
-					path : 'users',
+					path : 'entities',
 					query : {
 						bool : {
 							must : [
 								{
 									match : {
-										'users.active' : 1
+										'entities.active' : 1
 										}
 									},
 								{
 									match : {
-										'users.id' : obj.user + (obj.seller?' '+obj.seller:'')
+										'entities.id' : obj.entity
+										}
+									},
+								{
+									match : {
+										'entities.deleted_forever' : false
+										}
+									},
+								{
+									match : {
+										'entities.deleted' : (obj.deleted?obj.deleted:false)
 										}
 									}
 								]

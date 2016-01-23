@@ -20,27 +20,100 @@ module.exports = {
 		},
 	get : function*(obj){
 
-		// if we have just an id we just submit that;
 		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('listings', obj);
-
-		var get = {
+		
+		var location = _s_loc.active.get();
+		var search = {
+			total : true,
 			index : 'listings',
 			body : {
+				from : obj.x,
+				size : obj.y,
 				query : {
 					bool : {
-						should : [
-							
-							]
+						must : [],
+						filter : []
 						}
 					}
 				}
-			};
+			}
 
+		_s_u.each(obj, function(dets, index){
+			var filter = false;
+			var query = false;
 
-		if(obj.user) get.body.query.bool.should.push( { match : { 'user.id' : obj.user } } )
-		if (obj.seller) get.body.query.bool.should.push( { match : { 'seller.id' : obj.seller } } )
-		// else get.body.query = { match_all : {} }
+			switch(index){
+				case 'q':
+					query = { 
+						multi_match : { 
+							query : dets , 
+							fields: [ 'title^3', 'description' ],
+							fuzziness : 2.0
+							}
+						}
+					break;
+				case 'categories':
+					query = { terms : { 'category' : dets } };
+					break;
+				case 'entity' :
+					filter = { term : { 'entity.id' : dets } }
+					break;
+				case 'conditions':
+					filter = { terms : { 'condition' : dets } }
+					break;
+				case 'price':
+					filter = { range : { 'price' : {  gte: dets[0], lte:dets[1] } } }
+					break;
+				case 'type':
+					filter = { term : { 'type' : dets } }
+					break;
+				case 'distance':
+					filter = {geo_distance  : {distance : dets + 'km', "location.coordinates" : location.coordinates } };
+					break;
+				default : 
+					return;
+					break;
+				}
 
-		return yield _s_db.es.search(get, obj);
+			if(query){
+				search.body.query.bool.must.push(query);
+				}
+			else if(filter){
+				search.body.query.bool.filter.push(filter);
+				}
+			})
+
+		if(obj.sort){
+			search.body.sort = [];
+			if(obj.sort == 'distance'){
+				search.body.sort.push({
+		            _geo_distance : {
+		                "location.coordinates" : location.coordinates,
+		                order : obj.rank,
+		                unit : "km",
+		                mode : "min",
+		                distance_type : "sloppy_arc"
+	            		}
+        			})
+				}
+			else if(obj.sort == 'date'){
+				search.body.sort.push({
+					"setup.added" : { 
+						order : obj.rank
+						}
+					})
+				}
+			else if(obj.sort == 'price'){
+				search.body.sort.push({
+					price : {
+						order : obj.rank
+						}
+					})
+				}
+			}
+
+		console.log(JSON.stringify(search));
+
+		return yield _s_db.es.search(search, obj);
 		}
 	}

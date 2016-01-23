@@ -82,13 +82,19 @@ module.exports = function(validator){
 	validator.extend('isOrder',function(){
 		return true;
 		})
+	validator.extend('isListingOrder',function(){
+		return true;
+		})
+	validator.extend('isListingKey',function(){
+		return true;
+		})
 	validator.extend('isOffer',function(){
 		return true;
 		})
 	validator.extend('isPostal',function(){
 		return true;
 		})
-	validator.extend('isSeller',function(){
+	validator.extend('isEntity',function(){
 		return true;
 		})
 	validator.extend('isReturn',function(){
@@ -222,7 +228,23 @@ module.exports = function(validator){
 			}
 		else{
 			if(filter){
-				return _s_load.engine('dimensions').convert.back('length',inp);
+				return _s_dimensions.convert.back('length',inp);
+				}
+			else{
+				return true;
+				}
+			}
+		})
+	validator.extend('isDistance',function(inp, filter){
+		if(isNaN(inp)){
+			return false;
+			}
+		else{
+			if(filter){
+				if(_s_dimensions.active.get() == 'US'){
+					return inp * 1.60934
+					}
+				return inp;
 				}
 			else{
 				return true;
@@ -235,7 +257,7 @@ module.exports = function(validator){
 			}
 		else{
 			if(filter){
-				return _s_load.engine('dimensions').convert.back('weight',inp);
+				return _s_dimensions.convert.back('weight',inp);
 				}
 			else{
 				return true;
@@ -288,7 +310,7 @@ module.exports = function(validator){
 		return false;
 		})
 	validator.extend('isDateTime',function(inp, filter){
-		
+		return true;
 		if(_s_dt.valid.datetime(inp)){
 			if(filter){
 				return _s_dt.convert.datetime.input(inp);

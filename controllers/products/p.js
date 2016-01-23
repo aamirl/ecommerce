@@ -1,7 +1,7 @@
 var _products = _s_load.library('products');
 
 module.exports = {
-	'search' : function*(){
+	get : function*(){
 
 		var data = _s_req.validate(_products.helpers.filters());
 		if(data.failure) return data;
@@ -17,7 +17,7 @@ module.exports = {
 		return { failure : {msg:'No products matched your query.' , code : 300 }};
 		
 		},
-	'template' : function*(){
+	template : function*(){
 		var data = _s_req.validate({
 			category : { v:['isCategory'] }
 			})

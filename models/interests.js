@@ -10,14 +10,14 @@ module.exports = {
 				query : {
 					bool : {
 						must : [
-							{ term : { 'setup.active' : 1 } }
+							// { term : { 'setup.active' : 1 } }
 							]
 						}
 					}
 				}
 			};
 
-		obj.user ? get.body.query.bool.must.push({nested : {path : 'interests', query : {bool : {must : [{match : {'interests.user.id' : obj.user } } ] } } } }) : null; 
+		obj.entity ? get.body.query.bool.must.push({nested : {path : 'interests', query : {bool : {must : [{match : {'interests.entity.id' : obj.entity } } ] } } } }) : null; 
 		return yield _s_db.es.search(get, obj);
 		}
 	}

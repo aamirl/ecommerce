@@ -25,10 +25,65 @@ Common.prototype = {
 				},
 			generate : {
 				id : function(obj){
-					return Math.floor(Math.random() * 1000000000)
+					return Math.floor(Math.random() * 10000000000000)
 					}
 				},
 			validators : {
+				social : function(){
+					return {
+						json : true,
+						b : true,
+						default : {
+							twitter : {},
+							facebook : {},
+							google : {},
+							pinterest : {},
+							instagram : {}
+							},
+						data : {
+							twitter : {
+								json : true,
+								b:true,
+								default : {id:''},
+								data : {
+									id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+									}
+								},
+							facebook : {
+								json : true,
+								b:true,
+								default : {id:''},
+								data : {
+									id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+									}
+								},
+							google : {
+								json : true,
+								b:true,
+								default : {id:''},
+								data : {
+									id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+									}
+								},
+							pinterest : {
+								json : true,
+								b:true,
+								default : {id:''},
+								data : {
+									id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+									}
+								},
+							instagram : {
+								json : true,
+								b:true,
+								default : {id:''},
+								data : {
+									id : { v:['isAlphaOrNumeric'] , b:true , default : '' }
+									}
+								}
+							}
+						}
+					},
 				location : function(){
 					return {
 						json : true,
@@ -63,6 +118,53 @@ Common.prototype = {
 						}
 					},
 				address : function(obj){
+					!obj?obj={}:null;
+
+					if(obj.json == false){
+						if(obj.required){
+							return {
+								label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
+								street1 : { v:['isStreet']  },
+								street2 : { v:['isStreet'] , b:true },
+								city : { v:['isCity']  },
+								state : { v:['isAlphaOrNumeric'] , b:true },
+								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								lat : { v:['isFloat'] },
+								lon : { v:['isFloat'] }
+								}
+							}
+						else{
+							return {
+								label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
+								street1 : { v:['isStreet'] , b:true },
+								street2 : { v:['isStreet'] , b:true },
+								city : { v:['isCity'] , b:true },
+								state : { v:['isAlphaOrNumeric'] , b:true },
+								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								lat : { v:['isFloat'] },
+								lon : { v:['isFloat'] }
+								}
+							}
+						}
+
+					if(obj && obj.nolatlon){
+						return {
+							json : true,
+							data : {
+								label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
+								street1 : { v:['isStreet']  },
+								street2 : { v:['isStreet'] , b:true },
+								city : { v:['isCity']  },
+								state : { v:['isAlphaOrNumeric'] , b:true },
+								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								}
+							}
+						}
+
+
 					if(obj && obj.countryless){
 						return {
 							json : true,
@@ -77,6 +179,8 @@ Common.prototype = {
 					if(obj && obj.aoo){
 						return { 
 							aoo : true,
+							b:(obj.required?false:true),
+							default : [],
 							data : {
 								label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
 								street1 : { v:['isStreet'] },
@@ -84,7 +188,9 @@ Common.prototype = {
 								city : { v:['isCity'] },
 								state : { v:['isAlphaOrNumeric'] , b:true },
 								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get() },
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								lat : { v:['isFloat'] },
+								lon : { v:['isFloat'] }
 								}
 							}
 						}
@@ -99,7 +205,9 @@ Common.prototype = {
 								city : { v:['isCity']  },
 								state : { v:['isAlphaOrNumeric'] , b:true },
 								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								lat : { v:['isFloat'] },
+								lon : { v:['isFloat'] }
 								}
 							}
 						}
@@ -108,12 +216,15 @@ Common.prototype = {
 						return {
 							json : true,
 							data : {
+								label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
 								street1 : { v:['isStreet']  },
 								street2 : { v:['isStreet'] , b:true },
 								city : { v:['isCity']  },
 								state : { v:['isAlphaOrNumeric'] , b:true },
 								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								lat : { v:['isFloat'] },
+								lon : { v:['isFloat'] }
 								}
 							}
 						}
@@ -126,19 +237,22 @@ Common.prototype = {
 							country :  _s_countries.active.get()
 							},
 						data : {
+							label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
 							street1 : { v:['isStreet'] , b:true },
 							street2 : { v:['isStreet'] , b:true },
 							city : { v:['isCity'] , b:true },
 							state : { v:['isAlphaOrNumeric'] , b:true },
 							postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-							country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+							country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+							lat : { v:['isFloat'] },
+							lon : { v:['isFloat'] }
 							}
 						}
 					}	
 				}
 			}
 		},
-	get : function*(obj , library){
+	get : function*(obj , library ,func){
 
 		var _controller = _s_load.library(library);
 		if(!_controller) _controller = _s_load.engine(library);
@@ -165,6 +279,7 @@ Common.prototype = {
 									}
 								})
 							}
+						if(func) o.data = func(o.data);
 
 						if(typeof _controller.helpers.convert == 'function') send.push(yield _controller.helpers.convert(o.data))
 						else send.push(yield self.helpers.convert(o.data , library));
@@ -197,6 +312,8 @@ Common.prototype = {
 				else return yield self.helpers.convert(results , library);
 				}
 			
+			if(func) results = func(results);	
+
 			if(obj.endpoint) return { success : { data : results } }
 			return results;
 			}
@@ -270,48 +387,35 @@ Common.prototype = {
 				if(!object) return { failure : {msg:'The initial '+obj.label+' could not be found.' , code : 300 }  };
 				}
 
-			if(obj.deep.user || obj.deep.seller){
-				var iterator = (obj.deep.user?'user':'seller');
-				var id = obj.deep.user?obj.deep.user.id:obj.deep.seller.id;
+			if(obj.deep && obj.deep.entity){
+				var id = obj.deep.entity.id;
+				var target = obj.deep.entity.target;
+				var check = object.object;
 				}
 			else{
-				if(obj.user && obj.seller){
-					// means that it could be either or so we need to check and see what is going on in the document
-					if(result.user) var iterator = 'user';
-					else var iterator = 'seller'
-					}
-				else{
-					var iterator = (obj.user?'user':'seller');
-					}
-
-				var id = (obj[iterator].id?obj[iterator].id: global['_s_'+iterator].profile.id() );
+				var id = obj.entity.id;
+				var target = obj.entity.target;
+				var check = result;
 				}
 
-			if(obj.deep && obj.deep[iterator] && object.object[iterator]){
-				var t = object.object[iterator].id;
-				}
-			else{
-
-				switch(obj[iterator].target){
-					case 'flat':
-						var t = result[iterator];
-						break;
-					case 'by':
-						var t = result.setup[iterator];
-						break;
-					case true:
-						var t = result[iterator].id;
-						break;
-					default : 
-						var object = _s_util.array.find.object(result[obj[iterator].target] , 'id' , id , true, iterator );
-						if(!object) return { failure : 'The '+iterator+' could not be found.' };
-						else var t = object.object[iterator].id;
-						break;
-					}
-
+			
+			switch(target){
+				case 'flat':
+					var t = check.entity;
+					break;
+				case 'by':
+					var t = check.setup.entity;
+					break;
+				case true:
+					var t = check.entity.id;
+					break;
+				default : 
+					var object = _s_util.array.find.object(result[target] , 'id' , id , true, 'entity' );
+					if(!object) return { failure : 'The entity could not be found.' };
+					else var t = check.entity.id;
+					break;
 				}
 
-		
 			if(t != id) return { failure : { msg: 'Oops! It looks like you do not have control over this particular '+obj.label+'.' , code : 300}};
 			if(result.setup.active == 0 && result.setup.status == 0 ) return { failure : { msg: 'This '+obj.label+' is no longer active. Please contact Sellyx if you feel this message is in error.' , code:300 } };
 			if(result.setup.locked == 1 ) return { failure : { msg : 'This '+obj.label+' has been locked by Sellyx. In order to make changes to this item, please contact Sellyx directly.' , code : 300} };
@@ -366,11 +470,7 @@ Common.prototype = {
 			else result.setup.active = 1
 			}
 
-		if(obj.additional){
-			result = _s_util.merge(result,obj.additional);
-			}
-
-
+		if(obj.additional) result = _s_util.merge(result,obj.additional);
 		if(obj.type && typeof lib.model.update[obj.type] == 'function' ) var update = yield lib.model.update[obj.type](result);
 		else var update = yield lib.model.update(result);
 
@@ -380,14 +480,13 @@ Common.prototype = {
 		if(update){
 			if(obj.send && obj.send == 'object' && object) result = object.object;
 
-			console.log(obj);
-
+			if(obj.deep && obj.deep.library) lib = _s_load.library(obj.deep.library);
 
 			if(obj.type && typeof lib.helpers.convert[obj.type] == 'function'){
-				return { success : { data : yield lib.helpers.convert[obj.type](result,obj[iterator]) } }
+				return { success : { data : yield lib.helpers.convert[obj.type](result,obj.entity) } }
 				}
 			else {
-				if(lib.helpers.convert) return { success : { data : yield lib.helpers.convert(result,obj[iterator]) } }
+				if(lib.helpers.convert) return { success : { data : yield lib.helpers.convert(result,obj.entity) } }
 				else return { success : { data : yield this.helpers.convert(result,obj.library) } }
 				}
 			}

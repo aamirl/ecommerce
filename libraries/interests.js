@@ -43,8 +43,8 @@ Interests.prototype = {
 					// means we are returning total too
 					yield _s_util.each(results.data, function*(o,i){
 						o.data.id = o.id;
-						if(obj.user){
-							var interest = _s_util.array.find.object(o.data.interests , 'id' , obj.user , false, 'user');
+						if(obj.entity){
+							var interest = _s_util.array.find.object(o.data.interests , 'id' , obj.entity , false, 'entity');
 							if(!interest) return;
 							else {
 								o.data.interest = interest;

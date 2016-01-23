@@ -19,6 +19,18 @@ Manufacturers.prototype = {
 				x : { v:['isInt'] , b:true , default : 0 },
 				y : { v:['isInt'] , b:true , default : 10 }
 				}
+			},
+		validators : {
+			base : function(obj){
+				!obj?obj={}:null;
+				var r = {
+					name : { v : ['isAlphaOrNumeric'] },
+					country : { v:['isCountry'] },
+					category : { v:['isCategory'] }
+					}
+				if(obj.update) r.id = { v:['isManufacturer'] }
+				return r;
+				}
 			}
 		},
 	get : function*(obj){
@@ -26,49 +38,15 @@ Manufacturers.prototype = {
 		},
 	new : function*(obj){
 		!obj?obj={}:null;
-		// this is the new function for the manufacturer library
-		// we can validate informtion here and then based on the flag add other things if needed
-
-		var validators = {
-			name : { v : ['isAlphaOrNumeric'] },
-			country : { v:['isCountry'] },
-			category : { v:['isCategory'] }
-			}
-
-		if(obj.data) var data = _s_req.validate({ data : obj.data, validators : validators })
-		else var data = _s_req.validate(validators);
+		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : _s_req.validate(this.helpers.validators.base()) );
 		if(data.failure) return data;
-		
 		return yield _s_common.new(data,'manufacturers', true);
 		},
 	update : function*(obj){
-		// this is the update function for the manufacturer library
-		// we can validate informtion here and then based on the flag add other things if needed
 		!obj?obj={}:null;
-
-
-		if(obj.data){
-			var data = obj.data;
-			}
-		else{
-			var data = _s_req.validate({
-				id : { v:['isManufacturer'] },
-				name : { v : ['isAlphaOrNumeric'] },
-				country : { v:['isCountry'] },
-				category : { v:['isCategory'] }
-				});
-			}
-
+		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base({update:true}), data : obj.data }) : _s_req.validate(this.helpers.validators.base({update:true})) );
 		if(data.failure) return data;
-
 		return yield _s_common.update(data, 'manufacturers');
-
-		// var results = yield this.model.update(data);
-		// if(results){
-		// 	if(obj.raw) return { success : data }
-		// 	return { success : yield _s_common.helpers.convert(data, 'manufacturers') }
-		// 	}
-		// return { failure : { msg : 'The manufacturer could not be updated at this time.' , code:300 } } 
 		}
 	
 	}

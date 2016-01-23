@@ -1,7 +1,7 @@
 var _promotions = _s_load.library('promotions');
 
 module.exports = {
-	'search' : function*(){
+	'get' : function*(){
 
 		var data = _s_req.validate(_promotions.helpers.filters());
 

@@ -5,16 +5,11 @@ function Orders(){}
 Orders.prototype = {
 	model : _s_load.model('orders'),
 	helpers : {
-		// convert : function*(obj){
-
-		// 	var r = yield _s_common.helpers.convert(obj , 'orders');
-
-		// 	return r;
-		// 	},
 		filters : function(){
 			return {
 				q : { v:['isSearch'] , b : true},
 				id : { v:['isOrder'] , b:true },
+				listing : { v:['isListing'] , b:true },
 				product : { v:['isProduct'] , b:true },
 				user : { v:['isUser'] , b:true },
 				seller : { v:['isSeller'] , b:true },
@@ -42,7 +37,7 @@ Orders.prototype = {
 				var c = {
 					items : { v:['isArrayOfObjects'] , default : []},
 					gift : { in : ['1','2',1,2] , default : 1 },
-					type : { in : ['1','2',1,2] , default : 1 },
+					type : { in : ['1','2',1,2] , default : 2 },
 					address : _s_common.helpers.validators.address(),
 					promotions : { v:['isArray'] , b:true },
 					user : { v:['isUser'] , b:true },
@@ -278,6 +273,42 @@ Orders.prototype = {
 			}	
 		},
 	update : function*(obj){
+		},
+	get actions(){
+		var self = this;
+		return {
+			listing : {
+				cancel : function*(order, success_status, failure_status, raw){
+					var cancel = yield _s_req.http({
+						url : _s_config.financials + 'reversals/p/new',
+						method : 'POST',
+						data : {
+							id : order.transactions[0]
+							}
+						})
+
+					if(cancel.failure){order.setup.status = (failure_status?failure_status:55); }
+					else{
+						cancel = cancel.success.data;
+
+						if(cancel.setup.status!=1){
+							order.setup.status = (failure_status?failure_status:55);
+							order.transactions.push(cancel.id)
+							}
+						else{
+							order.setup.status = (success_status?success_status:52);
+							order.transactions.push(cancel.id)
+							}
+						}
+
+					order.cancelled = _s_dt.now.datetime();
+					order.cancelled_by = _s_entity.object.profile.id();
+
+					if(raw) return order;
+					return yield _s_common.update(order,'orders',false);
+					}
+				},
+			}
 		}
 	}
 

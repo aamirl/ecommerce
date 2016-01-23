@@ -28,10 +28,43 @@ PUT /products/_mapping/base
         }
     }
 
-PUT /sellers/_mapping/base
+PUT /t1/_mapping/base
 {
     "base": {
         "properties" : {
+            "follows": {
+                "type" : "nested"
+                },
+            "entities": {
+                "type" : "nested",
+                "properties" : {
+                    "coordinates" : {
+                        "type" : "geo_point"
+                        }
+                    }
+                },
+            "reviews": {
+                "type" : "nested"
+                }
+            }
+        }
+    }
+
+PUT /t2/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "follows": {
+                "type" : "nested"
+                },
+            "entities": {
+                "type" : "nested",
+                "properties" : {
+                    "coordinates" : {
+                        "type" : "geo_point"
+                        }
+                    }
+                },
             "reviews": {
                 "type" : "nested"
                 }
@@ -45,11 +78,16 @@ PUT /orders/_mapping/base
         "properties" : {
             "items": {
                 "type" : "nested"
+                },
+            "listing" : {
+                "type" : "string",
+                "index" : "not_analyzed"
                 }
             }
         }
     }
 
+    
 PUT /promotions/_mapping/base
 {
     "base": {
@@ -80,7 +118,7 @@ PUT /messages/_mapping/base
 {
     "base": {
         "properties" : {
-            "users" : {
+            "entities" : {
                 "type":"nested"    
                 },
             "messages" : {

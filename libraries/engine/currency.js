@@ -28,6 +28,14 @@ Currency.prototype = {
 		if( set && this.data.currencies[set] ){ this.active.set(set); }
 		else{ this.active.set('USD'); }
 		},
+	get helpers(){
+		var self = this;
+		return {
+			valid : function(){
+				return Object.keys(self.data.currencies);
+				},
+			}
+		},
 	get active() {
 		var self = this;
 		return {

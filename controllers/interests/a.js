@@ -1,4 +1,3 @@
-var _listings = _s_load.library('listings');
 var _interests = _s_load.library('interests');
 
 
@@ -8,18 +7,12 @@ module.exports = {
 		var data = _s_req.validate(_interests.helpers.filters());
 		if(data.failure) return data;
 
-		data.user = _s_user.profile.id();
+		data.entity = _s_entity.object.profile.id();
 		data.endpoint = true;
 
-		var r =  yield _interests.get(data);
-console.log(r)
-		return r;
+		return yield _interests.get(data);
 		},
 	new : function*(){
-		// this is the api endpoint for adding a new interest to an existing listing
-		var r = { user : _s_user.profile.id() };
-		if(as && as == 2 && _s_seller) r = { seller : _s_seller.profile.id() };
-
 		return yield _interests.new(r);
 		},
 	status : function*(){
@@ -40,10 +33,11 @@ console.log(r)
 				allowed : [1,'1']
 				},
 			deep : {
-				user : {
-					id : _s_user.profile.id(),
+				entity : {
+					id : _s_entity.object.profile.id(),
 					target : true
 					},
+				library : 'interests',
 				array : 'interests',
 				property : 'interest',
 				value : data.extra,
@@ -57,6 +51,6 @@ console.log(r)
 		return yield _s_common.check(x);
 		},
 	message : function*(){
-		return yield _listings.actions.message({type:1,user:_s_user.profile.id()});
+		return yield _s_load.library('listings').actions.message({type:1});
 		}
 	}

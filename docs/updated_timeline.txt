@@ -1,0 +1,81 @@
+ecommerce admin
+	user account
+	manage listing orders (seller)
+		capture
+		cancel
+	manage listing orders (customer)
+		cancel
+	----
+	add product
+	manage product orders (seller)
+		ship
+		cancel
+	manage product orders (customer)
+		cancel
+		track
+	----
+	returns (seller)
+		confirm flow
+	returns (customer)
+		confirm flow
+	negotiations
+		add new
+		manage
+	----
+	promotions
+		add new
+	affiliates (seller)
+	affiliates (customer)
+
+
+android
+	add listing wizard - asif
+	manage listings page - asif
+	video chat - baiyu
+	listing search - abdallah
+	buy flow - abdallah
+	interest flow - abdallah
+	send messages - abdallah
+	----
+	edit listings
+	user page (chris script these pages)
+	entities page (chris script these pages)
+	messages page
+	----
+	product search 
+	product page - chris script
+	checkout page
+	----
+
+ecommerce backend
+	handle push notifications
+	cart flow
+	new order creations
+	add security
+	categories
+	returns
+	add product
+	shipping
+	make things active only in queries
+	verification
+
+
+ios
+	add listing wizard - aamir
+	manage listings page - aamir
+	video chat - baiyu
+	listing search - aamir
+	buy flow - baiyu/aamir
+	interest flow - aamir
+	
+	send messages - 
+	----
+	edit listings
+	user page (chris script these pages)
+	entities page (chris script these pages)
+	messages page
+	----
+	product search 
+	product page - chris script
+	checkout page
+	----

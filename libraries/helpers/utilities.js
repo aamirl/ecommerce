@@ -63,26 +63,29 @@ module.exports = {
             if(((clns && ( non.indexOf(obj2[attrname]) === -1 )) || !clns)  && typeof obj1[attrname] != 'function') obj3[attrname] = obj2[attrname]; 
             }
         return obj3;
-
-            // function (obj1, obj2) {
-            // var c = {};
-            // var keys = Object.keys(obj2);
-            // for(var i=0; i!==keys.length; i++) {
-            // c[keys[i]] = obj2[keys[i]];
-            // }
-
-            // keys = Object.keys(obj1);
-            // for(i=0; i!==keys.length; i++) {
-            // if (!c.hasOwnProperty(keys[i])) {
-            // c[keys[i]] = obj1[keys[i]];
-            // }
-            // }
-
-            // return c;
-            // }
-
         },
     object : {
+        stringed : function(obj, path, truthy){
+            if(path == undefined || Object.keys(obj).length == 0 ) return false;
+            else {
+                var o = obj;
+                path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+                path = path.replace(/^\./, '');           // strip a leading dot
+                var a = path.split('.');
+                while (a.length) {
+                    var n = a.shift();
+                    if (n in o) {
+                        o = o[n];
+                        } 
+                    else {
+                        return;
+                        }
+                    }
+
+                if(truthy !== undefined && truthy) return this.tf(o)
+                else return o;
+                }
+            },
         // if they are the same object it will return true;
         same : function(source, tester){
             if(Object.keys(source).length != Object.keys(tester).length) return false;
@@ -102,6 +105,20 @@ module.exports = {
                 arr.push(v);
                 })
             return arr;
+            },
+        delete : function(obj){
+            var data = _s_util.clone.deep(obj.data);
+            if(obj.delete){
+                _s_u.each(obj.delete, function(o,i){
+                    if(data[o]) delete data[o]
+                    })
+                }
+            if(obj.keep){
+                _s_u.each(obj.keep, function(o,i){
+                    if(!data[o]) delete data[o];
+                    })
+                }
+            return data;
             },
         extract : function(obj){
             var send = {};
@@ -302,8 +319,6 @@ module.exports = {
             single : function*(obj){
                 var data = (obj.data ? obj.data : obj);
                 
-                var _dimensions = _s_load.engine('dimensions');
-                // var _storefront = _s_load.engine('storefront');
                 var countries = _s_countries.get();
                 // load options
 
@@ -323,9 +338,6 @@ module.exports = {
 
                 yield _s_util.each(data, function*(v,k){
                     // here if  see that if the value is an object, that means that we have a sellyx object, which has a label and a data attribute. we wil add to that sellyx object a 'converted' property. otherwise, we just have a simple k,v pair that we are converting
-
-                    // console.log(k);
-                    // console.log(v);
 
 
                     if(obj.exclude && obj.exclude.search(k) !== -1 ) return;
@@ -369,7 +381,7 @@ module.exports = {
                         var converted = countries[targ].name;
                         }
                     else if(new RegExp(dimensions).test(k)){
-                        var converted = _dimensions.convert.front(k, targ, label);
+                        var converted = _s_dimensions.convert.front(k, targ, label);
                         }
                     else if(k == 'condition'){
                         var converted = _s_l.info('condition' , targ);

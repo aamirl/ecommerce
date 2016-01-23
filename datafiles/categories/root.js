@@ -17,5 +17,6 @@ module.exports = exports = {
 	'13' : 'Automotive',
 	'14' : 'Industrial',
 	'15' : 'Office / School',
-	'16' : 'Travel'
+	'16' : 'Travel',
+	"17" : "Other"
 	}

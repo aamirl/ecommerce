@@ -36,8 +36,7 @@ Database.prototype = {
 			add : function(obj){
 				
 				obj.data.added = _s_dt.now.datetime();
-				obj.data.by = _s_user.profile.id();
-
+				
 				var deferred = _s_q.defer();
 				mysql.query("INSERT INTO `" + obj.table + "` SET ?" , obj.data , deferred.makeNodeResolver());
 
@@ -92,16 +91,10 @@ Database.prototype = {
 						active : 1,
 						status : 1,
 						added : _s_dt.now.datetime(),
-						by : _s_user.profile.id(),
+						by : _s_t1.profile.id(),
 						}
 					}
-					
-				// else{
-				// 	obj.body.setup.active = 1;
-				// 	obj.body.setup.added = _s_dt.now.datetime();
-				// 	by : _s_user.profile.id(),
-				// 	}
-
+				
 				if(!obj.type) obj.type = 'base';
 				if(obj.body.id){
 					obj.id = obj.body.id;
@@ -116,7 +109,7 @@ Database.prototype = {
 							}
 						}
 					if(meta.user){
-						obj.body.user = _s_user.helpers.data.document()
+						obj.body.user = _s_t1.helpers.data.document()
 						}
 					}
 
@@ -238,11 +231,6 @@ Database.prototype = {
 					obj.seller || obj.user ? script += ' } ' : null;
 					update.body.script = script;
 					}
-
-				// obj.body.params.merge.setup.modified = {
-				// 	on: _s_dt.now.datetime(),
-				// 	by : _s_user.profile.id()
-				// 	}
 				
 				var deferred = _s_q.defer();
 				esearch.update(update, deferred.makeNodeResolver());

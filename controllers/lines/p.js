@@ -2,7 +2,7 @@ var _lines = _s_load.library('lines');
 
 
 module.exports = {
-	'search' : function*(){
+	'get' : function*(){
 		var data = _s_req.validate(_lines.helpers.filters());
 
 		if(data.failure) return data;

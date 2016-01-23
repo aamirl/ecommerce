@@ -199,7 +199,7 @@ Products.prototype = {
 							}
 
 						if(product.images){
-							var _images = _s_load.engine('images');
+							var _images = _s_load.library('images');
 							var images = product.images;
 
 							if(template.setup.images) {
@@ -307,8 +307,8 @@ Products.prototype = {
 					categories : { v:['isArray'] , b:true },
 					lines : { v:['isArray'] , b:true },
 					manufacturers : { v:['isArray'] , b:true },
-					sellers : { v:['isArray'] , b:true },
-					seller : { v:['isSeller'] , b:true },
+					entities : { v:['isArray'] , b:true },
+					entity : { v:['isAlphaOrNumeric'] , b:true },
 					sellyxship : { in:[1,2,'1','2']  , b:true },
 					negotiable : { in:[1,2,'1','2'] , b:true , array:true },
 					rank : { in:['asc','desc'] , default : 'asc', b:true },
@@ -850,7 +850,7 @@ Products.prototype = {
 						library : 'products',
 						type : 'listing',
 						label : 'listing',
-						seller : obj.seller,
+						entity : obj.entity,
 						deep : {
 							array : 'sellers',
 							property : 'id',

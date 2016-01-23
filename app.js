@@ -11,9 +11,7 @@ GLOBAL._s_u = require('underscore');
 GLOBAL._s_util = _s_load.helper('utilities');
 GLOBAL._s_db = _s_load.engine('database');	
 GLOBAL._s_common = _s_load.engine('common');	
-GLOBAL._s_sf = _s_load.engine('storefront');
-
-
+GLOBAL._s_sf = _s_load.library('storefront');
 
 app.use(require('koa-logger')());
 app.use(require('koa-cors')());
@@ -29,82 +27,109 @@ app.use(ssl());
 
 app.use(function*(next){
 
-	// _s_cache.delete();
-	// return;
-
-	if(this.request.method != 'POST') {
+	GLOBAL._s_req = _s_load.engine('request' , this.request);
+	var parts = this.request.path.split('/');
+	
+	if(this.request.method == 'GET'){
+		if(this.request.path == '/entities/a/confirm'){
+		// if(parts[2]=='a'){
+			this.request.header.key = _s_req.get('key');
+			if(!this.request.header.key){
+				this.body = { failure : { msg : 'GET requests to this endpoint require a proper authorization key.' , code : 300 } };
+				return;
+				}
+			}
+		// else{
+		// 	this.body = { failure : { msg : 'GET requests to this endpoint are not allowed.' , code : 300 } }
+		// 	}
+		}
+	else if(this.request.method != 'POST' ){
 		this.body = { failure : { msg : 'This API only accepts POST requests.' , code : 300 } }
 		return;
 		}
 
-	GLOBAL._s_req = _s_load.engine('request' , this.request);
 	GLOBAL._s_dt = _s_load.engine('datetime');
-	GLOBAL._s_session = _s_load.engine('session' , this.session);
 	GLOBAL._s_countries = _s_load.engine('countries');
 	GLOBAL._s_l = _s_load.engine('locales');
 	GLOBAL._s_currency = yield _s_load.engine('currency');
 	GLOBAL._s_loc = _s_load.engine('location' , this.request.ip);
+	GLOBAL._s_dimensions = _s_load.engine('dimensions');
 
-	GLOBAL._s_seller = false;
+	GLOBAL._s_entity = false;
 
 	var cached = undefined;	
 
 	// first we see if this path is an auth
-	var parts = this.request.path.split('/');
 	// first we see if this path is an auth
-
 
 	if(parts[2] == 'a'){
 		// means this path needs to be authorized or logged in
 
 		// first we check to see if there was a key sent
 		if(!this.request.header.key){ this.body = { failure : { msg : 'You did not submit the proper credentials.' , code : 101 } };  return; }
-
+		
 		var get = yield _s_req.sellyx({
 			path : 'auth/validate',
-			params : {
-				key : this.request.header.key
-				}
+			params : {key : this.request.header.key }
 		 	})
 
-		if(get.failure){ this.body = { failure : get.failure||{ msg : 'You are not authorized to make this ecommerce request.' , code : 300 } }; return; }
+
+		if(get.failure || !get.success.data.user){ this.body = { failure : get.failure||{ msg : 'You are not authorized to make this ecommerce request.' , code : 300 } }; return; }
 		else{ get = get.success.data; }
 
-		var id = get.user.id;
+		// this is the oauthid as well since we store the documents in ES using 
+		GLOBAL._s_cache_id = get.user.id;
+		GLOBAL._s_auth_key = this.request.header.key;
 	
 		// so now we check cache for user info. we update the cache no matter what with an updated document.
-		var cached = yield _s_cache.get('ec-' + id);
-		if(!cached){
+		// var cached = yield _s_cache.get('ec-' + id);
+		// if(!cached){
+			var _t1 = _s_load.library('t1');
+			var result = yield _t1.get(_s_cache_id);
 
-			var _users = _s_load.engine('users');
-
-			// let's check and see if the user exists in ES
-			var result = yield _users.get(id);
 			if(!result){
-				// if user doesn't exist let's add them
-				var create_user = yield _users.new(get.user);
-				if(create_user.failure || !create_user) { this.body = { failure : { msg : 'There was an error in registering your profile for ecommerce. Please try again later.' , code : 300 } }; return; }
+				var create_user = yield _t1.new({data:get.user, raw:true});
+				if(create_user.failure || !create_user) { this.body = { failure : create_user.failure||{ msg : 'There was an error in registering your profile for ecommerce. Please try again later.' , code : 300 } }; return; }
 				result = create_user.success.data;
 				}
 
 			// now we can standardize the data and then set the key in the cache to it
-			result = yield _users.helpers.cached(result , id, get.user);
-			cached = { user : result } ;
+			result = yield _t1.helpers.cached(result , _s_cache_id, get.user, true);
+			cached = { t1 : result } ;
+			// }
+
+		GLOBAL._s_t1 = yield _s_load.object('t1', cached.t1.raw);
+
+		if(this.request.header.entity && this.request.header.entity != _s_cache_id){
+			var checked = _s_t1.entities.check(this.request.header.entity);
+			if(checked){
+				result = yield _s_load.library(checked.object.type).helpers.cached(this.request.header.entity, _s_cache_id, false, true);
+				if(result.failure) return result;
+
+				GLOBAL._s_entity = {
+				 	id : this.request.header.entity,
+				 	type : checked.object.type,
+				 	library : _s_load.library(checked.object.type),
+				 	object : yield _s_load.object(checked.object.type, result.raw)
+					}
+				}
+			else{
+				this.body = { failure : { msg : 'The entity information you submitted was not accurate.' , code : 300 } }
+				return;
+				}
+			}
+		else{
+			yield _s_cache.key.delete('entity');
+			GLOBAL._s_entity = {
+				id : _s_cache_id,
+				type : '1',
+				library : _s_load.library('t1'),
+				object : _s_t1
+				}
 			}
 
-		GLOBAL._s_cache_key = id;
-		GLOBAL._s_auth_key = this.request.header.key;
-		GLOBAL._s_user = yield _s_load.object('users', cached.user);
-	
-		if(_s_user.seller.id()){
-			// if the user is a seller, let's see if we loaded their seller information in the cache
-			var seller = yield _s_cache.key.get('seller');
-			if(!seller) seller = yield _s_load.engine('sellers').helpers.cached(_s_user.seller.id(),id);
-
-			var ty = yield _s_load.object('sellers', seller);
-			if(ty.failure) { this.body = { failure : { msg : 'There was an issue loading your seller profile.' , code : 300 } }; return;  }
-			GLOBAL._s_seller = ty;
-			}
+		// check to make sure the entity is valid
+		if(!_s_entity.object.is.valid()) return { failure : { msg : 'This entity is not active at the current moment.' , code : 300 } }
 		}
 
 	var main_route = parts.shift() + parts.shift() + '/' + parts.shift();
@@ -132,10 +157,16 @@ app.use(function*(next){
 	if(typeof func === 'object'){
 		if(func.body) this.body = JSON.parse(func.body);
 		else this.body = func;
+
+		if(func.status) this.status = func.status;
+		if(func.headers && func.headers.Location){
+			this.set('Location',func.headers.Location)
+			}
+
 		}
 	else this.body = { failure : { msg : 'The requested path does not exist.3' , code : 300 } };
 	return;
 	})
 
 
-var server = app.listen(9000);
+var server = app.listen(10000);

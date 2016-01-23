@@ -13,7 +13,7 @@ function Request(req){
 
 	var method = this.request.req.method;
 
-	if (method == 'GET') var params = parser.parse(this.request.req._parsedUrl.query)
+	if (method == 'GET') var params = this.request.query;
 	else if(method == 'POST') var params = this.request.body;
 	this[method + '_PARAMS'] = params;
 	console.log(params);
@@ -23,6 +23,19 @@ Request.prototype = {
 	
 	http : function*(obj, raw){
 		var r = require('koa-request');
+
+		!obj.headers?obj.headers={}:null;
+		!obj.method?obj.method='GET':null;
+		!obj.form?obj.form={}:null;
+		!obj.url?obj.url=_s_config.oAuth+obj.path:null;
+		if(obj.data) obj.form = obj.data;
+
+		if(obj.params){
+			obj.url += '?';
+			_s_u.each(obj.params, function(v,k){
+				obj.url+="&" + k+'='+v;
+				})
+			}
 
 		var j = yield r(obj);
 		if(raw) return JSON.parse(j);
@@ -85,9 +98,12 @@ Request.prototype = {
 	ip : function(){
 		return this.current_ip;
 		},
+	url : function(){
+		return 
+		},
 	get : function(param){
 		if(param == undefined) return this.GET_PARAMS;
-		else return (this.GET_PARAMS[param] || false);
+		return (this.GET_PARAMS[param] || false);
 		},
 	post : function(param){
 		if(param == undefined) return this.POST_PARAMS;
@@ -107,7 +123,7 @@ Request.prototype = {
 			}
 		else { var all_data = this.post(); }
 
-		var i = 0, data_total = data.length, errors = {}, send = {}, abnorms = ['',0,undefined,'undefined',null,'null','0.00',0.00,'0'] , autoFilters = ['isPrice','isTextarea','isDecimal','isDimension','isArray','isWeight','isDate','isDateTime','isInt','isFloat'], send_tangent=(obj.tangent?obj.tangent:false);
+		var i = 0, data_total = data.length, errors = {}, send = {}, abnorms = ['',0,undefined,'undefined',null,'null','0.00',0.00,'0'] , autoFilters = ['isPrice','isTextarea','isDecimal','isDimension','isArray','isWeight','isDate','isDateTime','isInt','isFloat','isDistance'], send_tangent=(obj.tangent?obj.tangent:false);
 
 		_s_u.each(data, function(i_data,i){
 			
@@ -249,13 +265,19 @@ Request.prototype = {
 
 					if(typeof s != 'object') errors[i] = { msg : 'This was not properly formatted JSON.' , data : all_data[i] }
 
-					var tangent = _s_req.validate({
-						validators : i_data.data,
-						data : s, 
-						tangent : true 
-						})
+					if(Object.keys(s).length == 0){
+						if(i_data.default || i_data.default == 0){send[i] = i_data.default; }
+						else errors[i] = { msg : 'This was not submitted at all.' }
+						}
+					else{
+						var tangent = _s_req.validate({
+							validators : i_data.data,
+							data : s, 
+							tangent : true 
+							})
 
-					tangent.failure ? errors[i] = tangent.failure : send[i] = tangent;
+						tangent.failure ? errors[i] = tangent.failure : send[i] = tangent;
+						}
 					}
 				else if(i_data.range){
 					var parts = all_data[i].split(',');

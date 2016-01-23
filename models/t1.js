@@ -1,25 +1,26 @@
 
 // User Models
 
+
 module.exports = {
 
 	new : function*(obj, meta){
 		return yield _s_db.es.add({
-			index : 'sellers',
+			index : 't1',
 			body : obj
 			}, meta);
 		},
 	update : function*(obj){
 		// if we are just submitting the id, we are simply updating the information here
 		if(obj.doc){
-			obj.index = 'sellers';
+			obj.index = 'base';
 			return yield _s_db.es.update(doc);
 			}
 		
 		var doc = {
 			id : obj.id,
 			doc : obj,
-			index : 'sellers',
+			index : 't1',
 			}
 
 		var id = obj.id;
@@ -30,15 +31,16 @@ module.exports = {
 			yield _s_db.es.update(doc);
 
 
-			// after we update this information, we need to update the products with the new product information
+			// after we update this information, we need to update the products as well with the new product information
 			obj.id = id;
 
 			yield _s_db.es.update({
-				index : 'products,lines,users',
+				index : 'products,lines',
+				type : 'base',
 				body : {
 					query :{
 						match : {
-							'sellers.id' : id
+							't1.id' : id
 							}
 						},
 					script : 'ctx._source.line = merge',
@@ -55,10 +57,10 @@ module.exports = {
 		},
 	get : function*(obj){
 		// if we have just an id we just submit that;
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('sellers', obj);
+		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('t1', obj);
 
 		var search = {
-			index : 'sellers',
+			index : 't1',
 			body : {
 				query : {
 					bool : {
@@ -70,7 +72,16 @@ module.exports = {
 				}
 			};
 
-		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
+		if(obj.q){
+			search.body.query.bool.must.push({ 
+				multi_match : { 
+					query : obj.q , 
+					fields : [ 'name^3', 'name.display' , 'description' ],
+					fuzziness : 2.0
+				}})
+			}
+
+		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : t1 } }) : null;
 		return yield _s_db.es.search(search, obj);
 		}
 	}

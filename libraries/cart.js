@@ -50,7 +50,6 @@ Cart.prototype = {
 				},
 			validate : function*(obj){
 				var item = yield _s_load.library('products').get(obj.product);
-				// var _o_product = yield _s_load.object('products' , obj.product);
 				if(!item) return { failure : { msg : 'This item is not a valid item and listing.' , code : 300 } };
 
 

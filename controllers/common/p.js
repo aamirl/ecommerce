@@ -4,6 +4,9 @@ module.exports = {
 	'images' : function*(){
 		return { success : true }
 		},
+	'cache/delete' : function*(){
+		yield _s_cache.delete();
+		},
 	'address/validate' : function*(){
 		var data = _s_req.validate({
 			label : { v:['isAlphaOrNumeric'] , b:true },

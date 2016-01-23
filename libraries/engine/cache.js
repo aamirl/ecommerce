@@ -28,7 +28,7 @@ Cache.prototype = {
 						}
 
 					schema[path[len-1]] = (value?value:obj.value);
-					self.set({ key : (!es_key?'ec-'+_s_cache_key:(typeof es_key == 'object'?'ec-'+es_key.cache_key:es_key)) , value : get });
+					self.set({ key : (!es_key?'ec-'+_s_cache_id:(typeof es_key == 'object'?'ec-'+es_key.cache_key:es_key)) , value : get });
 					return true;
 					}
 				catch(err){
@@ -36,7 +36,7 @@ Cache.prototype = {
 					}
 				},
 			get : function*(obj, truthy, setter){
-				var get = yield self.get('ec-' + (obj && obj.cache_key?obj.cache_key:(_s_cache_key?_s_cache_key:undefined)));
+				var get = yield self.get('ec-' + (obj && obj.cache_key?obj.cache_key:(_s_cache_id?_s_cache_id:undefined)));
 				if(typeof obj !== 'string'){
 					return get;
 					}
@@ -66,7 +66,7 @@ Cache.prototype = {
 
 				},
 			delete : function*(obj){
-				var es_key = (obj && obj.cache_key?obj.cache_key:(_s_cache_key?_s_cache_key:undefined))
+				var es_key = (obj && obj.cache_key?obj.cache_key:(_s_cache_id?_s_cache_id:undefined))
 				var get = yield self.key.get({cache_key:es_key});
 				if(!get) return false;
 
