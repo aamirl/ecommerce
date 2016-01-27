@@ -27,5 +27,29 @@ module.exports = {
 		var converted = yield _s_loc.helpers.address.extract({data:r[0], latlon:true});
 		data = _s_util.merge(data , converted , true);
 		return { success : { formatted : r[0].formatted_address, raw : data } }
+		},
+	'test' : function*(){
+
+		return get_arm = yield _s_req.sellyx({
+			path : 'notification/fetch',
+			method : 'GET',
+			params : {
+				user_id : 'hi'
+				}
+			})
+
+
+
+		return yield _s_req.sellyx({
+			new_key : 'Yp^$p8*jK.d8&QF79%3vcD!4KrP$m49tY/s',
+			method : 'POST',
+			type : 'urlquery',
+			url : 'https://mq.sellyx.com',
+			form : _s_req.post(),
+			headers : {
+				'Content-Type' : 'application/json'
+				}
+			})
+
 		}
 	}

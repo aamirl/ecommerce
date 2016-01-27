@@ -20,7 +20,7 @@ Listings.prototype = {
 					conditions : { csv_in:['1','2','3','4','5','6','7'] , b: true },
 					price : { range:[0,100000000] , b:true , array : true },
 					rank : { in:['asc','desc'] , default : 'desc', b:true },
-					type : { in:[1,2,3,4,5,6,7,8,'1','2','3','4','5','6','7','8'] , b:true , default : 1},
+					type : { in:[1,2,3,4,5,6,7,8,'1','2','3','4','5','6','7','8'] , b:true },
 					sort : { in:['price','distance','date'] , b:true, default : 'date' },
 					convert : { in:['true','false'] , default:'true' },
 					include : { v:['isAlphaOrNumeric'], b:true },

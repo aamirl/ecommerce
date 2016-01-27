@@ -4,6 +4,17 @@ function Entities(){}
 
 Entities.prototype = {
 	model : _s_load.model('entities'),
+	get privileges(){
+		var self = this;
+		return {
+			check : function*(obj){
+				if(_s_entity.type == 't1') return { failure : { msg : 'This option is only valid for business entities at this time.' , code : 300 } }
+				if(! _s_entity.object.privileges.master.compare(_s_t1.profile.id())) return { failure : { msg: ' This option is only for the master administrator for this entity at this time.' ,code : 300  } }
+
+				return true;
+				},
+			}
+		},
 	get helpers(){
 		var self = this;
 		return {

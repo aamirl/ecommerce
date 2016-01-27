@@ -17,30 +17,30 @@ T2.prototype = {
 				else result.country = _s_countries.active.get(); 
 
 				if(!oAuth_entity){
-					// oAuth_entity = yield _s_req.sellyx({
-					// 	path : 'auth/validate',
-					// 	params : {
-					// 		key : _s_auth_key
-					// 		}
-					//  	})
+					oAuth_entity = yield _s_req.sellyx({
+						path : 'auth/validate',
+						params : {
+							key : _s_auth_key
+							}
+					 	})
 					
-					// if(oAuth_entity.failure){ return { failure : {msg:'Authorization failure.',code:300} }; }
-					// else { oAuth_entity = oAuth_entity.success.data.user; }
+					if(oAuth_entity.failure){ return { failure : {msg:'Authorization failure.',code:300} }; }
+					else { oAuth_entity = oAuth_entity.success.data.user; }
 
-					oAuth_entity = {
-						email : 'testseller@entities.sellyx.com',
-						reputation : {
-							"score": 0,
-					        "data": [],
-					        "createdAt": "2016-01-08T06:12:46.790Z",
-					        "updatedAt": "2016-01-09T00:32:01.725Z",
-					        "id": "568f535e923cf07534cac8a0"
-							},
-						telephone : '+1TESTENTITYPHONE',
-						status : 1,
-						active : 1,
-						added : "2016-01-08T06:12:46.797Z"
-						}
+					// oAuth_entity = {
+					// 	email : 'testseller@entities.sellyx.com',
+					// 	reputation : {
+					// 		"score": 0,
+					//         "data": [],
+					//         "createdAt": "2016-01-08T06:12:46.790Z",
+					//         "updatedAt": "2016-01-09T00:32:01.725Z",
+					//         "id": "568f535e923cf07534cac8a0"
+					// 		},
+					// 	telephone : '+1TESTENTITYPHONE',
+					// 	status : 1,
+					// 	active : 1,
+					// 	added : "2016-01-08T06:12:46.797Z"
+					// 	}
 					}
 
 				result.email = {
@@ -48,7 +48,7 @@ T2.prototype = {
 					verified : true
 					}
 				result.reputation = oAuth_entity.reputation;
-				result.numbers = [ { number : oAuth_entity.telephone , primary : true } ]
+				result.numbers = [ { id : oAuth_entity.telephone } ]
 
 				result.oAuth_setup = {
 					status : oAuth_entity.status,
@@ -74,108 +74,7 @@ T2.prototype = {
 						id : { v:['isAlphaOrNumeric'] , b:true },
 						name : { v:['isAlphaOrNumeric'] },
 						website : { v:['isWebsite'] , b:true},
-						financials : {
-							json : true,
-							b:true,
-							default:{},
-							data : {
-								accounts : {
-									aoo : true,
-									data : {
-										name : { v:['isAlphaOrNumeric'] },
-										bank : {
-											json : true,
-											data : {
-												name : { v:['isAlphaOrNumeric'] }
-												}
-											},
-										address : _s_common.helpers.validators.address({required:true}),
-										country : {
-											dependency : true,
-											default : {
-												'account_number' : { v:['isAlphaOrNumeric'] },
-												'other' : { v:['isTextarea'] }
-												},
-											data : {
-												'AU' : {
-													'bsb' : { v:['isAlphaOrNumeric'] },
-													'account_number' : { v:['isAlphaOrNumeric'] }
-													},
-												'CA' : {
-													'transit' : { v:['isAlphaOrNumeric'] },
-													'institution_number' : { v:['isAlphaOrNumeric'] },
-													'account_number' : { v:['isAlphaOrNumeric'] }
-													},
-												'DK' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'FI' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'IE' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'NO' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'SE' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'GB' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'US' : {
-													'account_number' : { v:['isAlphaOrNumeric'] },
-													'routing_number' : { v:['isAlphaOrNumeric'] }
-													},
-												'AT' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'BE' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'FR' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'DE' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'IT' : {
-													'iban' : { v:['isIBAN'] }
-													},
-												'JP' : {
-													'bank_name' : { v:['isAlphaOrNumeric'] },
-													'branch_name' : { v:['isAlphaOrNumeric'] },
-													'account_number' : { v:['isAlphaOrNumeric'] },
-													'account_owner' : { v:['isAlphaOrNumeric'] }
-
-													},
-												'LU' : {
-													'iban' : { v:['isIBAN']}
-													},
-												'NL' : {
-													'iban' : { v:['isIBAN']}
-													},
-												'SP' : {
-													'iban' : { v:['isIBAN']}
-													},
-												'MX' : {
-													'clabe' : { v:['isAlphaOrNumeric']}
-													},
-												'SG' : {
-													'bank_code' : { v:['isAlphaOrNumeric']},
-													'branch_code' : { v:['isAlphaOrNumeric']},
-													'account_number' : { v:['isAlphaOrNumeric'] },
-													},
-												'CH' : {
-													'iban' : { v:['isIBAN']}
-													},
-												}
-											}
-										}
-									}
-								}
-							},
+						roles : { v:['isJSON'] , b : true, default : [] },
 						follows : { 
 							aoo:true, 
 							data : {
@@ -265,10 +164,11 @@ T2.prototype = {
 							},
 						description : { v:['isAlphaOrNumeric'] , b:true, default : 'I am a new seller on Sellyx!' },
 						type : {
-							in : [1,2,3,4,5,6],
+							in :["t2"],
 							b : true,
-							default : 1
+							default : "t2"
 							},
+						detailed_type : {in:[1] , b:true, default: 1},
 						policy : _s_load.library('entities').helpers.validators.policy(),
 						master : { v:['isUser'] , default : _s_t1.profile.id(), b:true },
 						setup : {

@@ -1,3 +1,4 @@
+var _entities = _s_load.library('entities');
 
 module.exports = {
 	get : function*(){
@@ -9,7 +10,7 @@ module.exports = {
 		return { success : { data : key } };
 		},
 	existing : function*(){
-		if(_s_entity.type != 1) return { failure : { msg : 'This option is only valid for individuals users at this time.' , code : 300 } }
+		if(_s_entity.type != 't1') return { failure : { msg : 'This option is only valid for individuals users at this time.' , code : 300 } }
 
 		var data = _s_req.validate({
 			id : { v:['isAlphaOrNumeric'] }
@@ -20,25 +21,25 @@ module.exports = {
 		if(!get||get.counter > 1) return { failure : { msg : 'The entity you are trying to join does not exist.' , code : 300 } }
 		else get = get.data[0].data;
 
-		if(get.setup.active == 0) return { failure : { msg : 'The enrtity you are trying to join is not an active entity at this time.' , code : 300 }}
-		if(get.type == 1) return { failure : { msg : 'You cannot join this entity because it is not valid.' , code : 300 } }
+		if(get.setup.active == 0) return { failure : { msg : 'The entity you are trying to join is not an active entity at this time.' , code : 300 }}
 		if(get.type == 1) return { failure : { msg : 'You cannot join this entity because it is not valid.' , code : 300 } }
 		
 		// check if this entity tried to enroll
-		var r = _s_util.array.find.object(get.enrollment.pending, 'id', _s_t1.profile.id(), true);
-		if(r)  return { failure : { msg : 'You have already submitted an active request to enroll in this entity. Please wait for the entity administration to respond.' , code :300} }
-		r = _s_util.array.find.object(get.enrollment.blocked, 'id', _s_t1.profile.id(), true);
-		if(r)  return { failure : { msg : 'You have been blocked from joining this entity.' , code :300} }
-		// r = _s_util.array.find.object(get.enrollment.denied, 'id', _s_t1.profile.id(), true);
-		// if(r)  return { failure : { msg : 'Your request to join this entity was denied.' , code :300} };
+		var r = _s_util.array.find.object(get.enrollment, 'id', _s_t1.profile.id(), true);
+		if(r) return { failure : { msg : 'You have already submitted an active request to enroll in this entity. Please wait for the entity administration to respond.' , code :300} }
+			
 
 		var t = _s_entity.object.helpers.data.document();
-		t.added = _s_dt.now.datetime();
+		t.setup = {
+			status : 1,
+			active : 1,
+			added : _s_dt.now.datetime()
+			}
 		
-		get.enrollment.pending.push(t)
+		get.enrollment.push(t)
 
 		get.id = data.id;
-		var update = yield _s_common.update(get, 't'+get.type, false, true);
+		var update = yield _s_common.update(get, get.type, false, true);
 		if(update.failure) return update;
 		return { success : true }
 		},
@@ -59,6 +60,7 @@ module.exports = {
 			telephone : data.numbers[0].id
 			}
 
+	
 		var time = _s_dt.epoch();
 		var send = {
 			"data" : {
@@ -78,6 +80,7 @@ module.exports = {
 		var crypto = require('crypto');
 		var fs = require('fs');
 
+
 		send.data.Signature = {
 			"Algorithm":"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
 			"Reference":"#MA$N8l80:/GW793e6o{l",
@@ -85,7 +88,7 @@ module.exports = {
 			"Signature":new Buffer(crypto.createSign('RSA-SHA256').update(JSON.stringify(send.data)).sign(fs.readFileSync(_s_config.certs.key).toString(),'hex')).toString('base64')
 			}
 
-		return { success : { data : new Buffer(JSON.stringify(send)).toString('base64') , relayURI : s_config.dashboard + "entities/a/confirm" } }
+		return { success : { data : new Buffer(JSON.stringify(send)).toString('base64') , relayURI : _s_config.root + "entities/a/confirm" } }
 
 		},
 	confirm : function*(){
@@ -121,7 +124,14 @@ module.exports = {
 		if(_s_entity.object.failure) return { failure : _s_entity.object.failure };
 
 		var g = _s_t1.entities.all();
-		g.push(_s_entity.object.helpers.data.document());
+		var u = _s_entity.object.helpers.data.document();
+		u.role = 'superadmin';
+		u.setup = {
+			active : 1,
+			status : 1,
+			added : _s_dt.now.datetime()
+			}
+		g.push(u);
 
 		// update _s_t1
 		var result = yield _s_t1.library.update({
@@ -156,20 +166,22 @@ module.exports = {
 			}
 		else result.faq.push(_s_entity.library.actions.new.faq(data));
 
+		console.log(result.faq);
+
 		var update = yield _s_common.update(result, _s_entity.type, false, true);
-		if(update.failure) return update;
+		if(update.failure || !update) return update;
 		return { success : { data : yield _s_util.convert.single(update.faq) } }
 		},
 	follow : function*(){
 		var data = _s_req.validate({
 			id : { v:['isAlphaOrNumeric'] },
-			type : { in:['1','2'] , b:true, default:'1'}
+			type : { in:['t1','t2'] , b:true, default:'t1'}
 			})
 		if(data.failure) return data;
 
 		if(data.id == _s_entity.object.profile.id()) return { failure : { msg : 'Unfortunately, at this time you cannot follow yourself on Sellyx!' , code : 300 } }
 
-		var result = yield _s_load.library("t"+data.type).get(data.id);
+		var result = yield _s_load.library(data.type).get(data.id);
 		if(!result) return { failure : { msg : 'This is not a valid entity.' , code : 300 } }
 
 		// check result follows
@@ -177,18 +189,18 @@ module.exports = {
 		if(_s_util.array.find.object(result.follows, 'id', _s_entity.object.profile.id())) { return { success : { msg : 'You were already a follower of this entity!' , code : 300 } } }
 		result.follows.push(_s_entity.object.helpers.data.document());
 
-		var update = yield _s_common.update(result, "t"+data.type, false, true);
+		var update = yield _s_common.update(result, data.type, false, true);
 		if(update.failure) return update;
 		return { success : { msg : 'You were added to the follow list for this entity.', code : 300 } }
 		},
 	unfollow : function*(){
 		var data = _s_req.validate({
 			id : { v:['isAlphaOrNumeric'] },
-			type : { in:['1','2'] , b:true, default:'1'}
+			type : { in:['t1','t2'] , b:true, default:'t1'}
 			})
 		if(data.failure) return data;
 
-		var result = yield _s_load.library("t"+data.type).get(data.id);
+		var result = yield _s_load.library(data.type).get(data.id);
 		if(!result) return { failure : { msg : 'This is not a valid entity.' , code : 300 } }
 
 		// check result follows
@@ -198,11 +210,199 @@ module.exports = {
 		
 		result.follows.splice(r.index,1);
 
-		var update = yield _s_common.update(result, "t"+data.type, false, true);
+		var update = yield _s_common.update(result, data.type, false, true);
 		if(update.failure) return update;
 		return { success : { msg : 'You were removed from the follow list for this entity.', code : 300 } }
 		},
 	approve : function*(){
 		if(_s_entity.type == 1) return { failure : { msg : 'This action cannot be completed.' , code : 300 } }
-		}
+		},
+	
+	'get/active' : function*(){
+		var check = _entities.privileges.check();
+		if(check.failure) return check;
+		
+		var get = yield _s_load.library('t1').get({entity:_s_entity.object.profile.id() });
+		if(!get || get.counter == 1) return { failure : { msg : 'No objects matched your query.' , code : 300 } }
+
+		var send = [];
+
+		_s_u.each(get.data, function(o,i){
+
+			var r = _s_util.array.find.object(o.data.entities, 'id', _s_entity.object.profile.id());
+
+			if(o.id == _s_t1.profile.id()) return;
+
+			send.push({
+				id : o.id,
+				name : o.data.name,
+				role : r.role,
+				setup : {
+					active : r.setup.active,
+					status : {
+						data : r.setup.status,
+						converted : _s_l.info('status',r.setup.status,_s_entity.type, 'entity')
+						},
+					added : {
+						data : r.setup.added,
+						converted : _s_dt.convert.datetime.output(r.setup.added)
+						}
+					}
+				})
+
+			})
+
+		return { success : { data : send } }
+		},
+	'privileges/status' : function*(){
+		var check = _entities.privileges.check();
+		if(check.failure) return check;
+		
+		var data = _s_req.validate({
+			id : {v:['isAlphaOrNumeric']},
+			status : { in:['1','2','3',1,2,3] }
+			});
+		if(data.failure) return data;
+
+		var r  = yield _s_common.check({
+			id : data.id,
+			library : 't1',
+			label : 'user',
+			send : 'object',
+			raw : true,
+			status : {
+				allowed : [1,'1']
+				},
+			corporate : true,
+			deep : {
+				array : 'entities',
+				property : 'id',
+				value : _s_entity.object.profile.id(),
+				status : {
+					allowed : [1,'1'],
+					change : data.status
+					}
+				}
+			});
+
+		if(r.failure) return r;
+
+		return { success : {data: {setup: {
+			active : r.setup.active,
+			status : {
+				data : r.setup.status,
+				converted : _s_l.info('status',r.setup.status,_s_entity.type, 'entity')
+				},
+			added : {
+				data : r.setup.added,
+				converted : _s_dt.convert.datetime.output(r.setup.added)
+				}
+			} } }};
+
+		},
+
+	'get/enrollment' : function*(){
+		var check = _entities.privileges.check();
+		if(check.failure) return check;
+		
+		var get = yield _s_load.library(_s_entity.type).get(_s_entity.object.profile.id());
+		if(!get || get.enrollment.length == 0) return { failure : { msg : 'No objects matched your query.' , code : 300 } }
+		
+		var send = [];
+
+		_s_u.each(get.enrollment, function(o,i){
+
+			send.push({
+				id : o.id,
+				name : o.name,
+				setup : {
+					active : o.setup.active,
+					status : {
+						data : o.setup.status,
+						converted : _s_l.info('status', o.setup.status,_s_entity.type, 'enrollment')
+						},
+					added : {
+						data : o.setup.added,
+						converted : _s_dt.convert.datetime.output(o.setup.added)
+						}
+					}
+				})
+
+			})
+
+		return { success : { data : send } }
+		},
+	'enrollment/status' : function*(){
+		var check = _entities.privileges.check();
+		if(check.failure) return check;
+		
+		var data = _s_req.validate({
+			id : {v:['isAlphaOrNumeric']},
+			status : { in:['2','3',2,3] }
+			});
+		if(data.failure) return data;
+
+		var r  = yield _s_common.check({
+			id : _s_entity.object.profile.id(),
+			library : _s_entity.type,
+			label : 'user',
+			send : 'object',
+			raw : true,
+			status : {
+				allowed : [1,'1']
+				},
+			corporate : true,
+			deep : {
+				array : 'enrollment',
+				property : 'id',
+				value : data.id,
+				status : {
+					allowed : [1,'1', 2,'2'],
+					change : data.status
+					},
+				active : [1,'1',3,'3']
+				}
+			});
+
+		if(r.failure) return r;
+
+		 r = { success : {data: {setup: {
+			active : r.setup.active,
+			status : {
+				data : r.setup.status,
+				converted : _s_l.info('status',r.setup.status,_s_entity.type, 'enrollment')
+				},
+			added : {
+				data : r.setup.added,
+				converted : _s_dt.convert.datetime.output(r.setup.added)
+				}
+			} } }};
+
+		// now if status is 4, we go ahead and add the user document
+		if(data.status != 3) return r;
+
+		var _s_o_t1 = yield _s_load.object('t1',data.id);
+		if(!_s_o_t1) return { failure : { msg : 'The user was not found.' , code : 300 } };
+
+		// check and make sure the entity doesnt already exist
+		if(_s_o_t1.entities.check(_s_entity.object.profile.id())) return { failure : { msg : 'This user was already added to this entity.' , code : 300 } };
+
+		var i = _s_o_t1.data;
+		var s = _s_entity.object.helpers.data.document();
+		s.role = 'superadmin';
+		s.setup = {
+			status : 1,
+			active : 1,
+			added : _s_dt.now.datetime()
+			};
+
+		i.entities.push(s);
+		i.id = data.id;
+
+		var update = yield _s_common.update(i,'t1');
+		if(update.failure) return update;
+
+		return r
+
+		},
 	}

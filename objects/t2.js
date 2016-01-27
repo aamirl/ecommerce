@@ -26,6 +26,15 @@ T2.prototype = {
 	get privileges() {
 		var self = this;
 		return {
+			master : {
+				id : function(){
+					return self.data.master;
+					},
+				compare : function(inp){
+					if(inp == self.privileges.master.id()) return true;
+					return false;
+					},
+				},
 			verification : {
 				verified : function(){
 					return self.data.verifications.verified;
@@ -50,7 +59,7 @@ T2.prototype = {
 		var self = this;
 		return {
 			all : function*(convert){
-				if(convert) return yield _s_util.convert.single({ library:'t2',data:self.data,label:true })
+				if(convert) return yield _s_util.convert.single({ library:'t2',data:_s_util.clone.deep(self.data),label:true })
 				return self.data;
 				},
 			id : function(){
@@ -62,9 +71,6 @@ T2.prototype = {
 			country : function(){
 				return self.data.country;
 				},
-			role : function(){
-				return self.data.role;
-				},
 			policy : function(type){
 				if(type) return self.data.policy[type];
 				return self.data.policy;
@@ -75,6 +81,7 @@ T2.prototype = {
 					},
 				primary : function(){
 					var numbers = self.profile.contact.all();
+					return numbers[0];
 					return _s_util.array.find.object(numbers, 'primary' , true);
 					}
 				},

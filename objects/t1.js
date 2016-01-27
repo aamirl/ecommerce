@@ -58,7 +58,8 @@ T1.prototype = {
 			check : function(inp){
 				if (inp == _s_cache_id) return true;
 				if(self.data.entities.length > 0){
-					return _s_util.array.find.object(self.data.entities, 'id', inp, true);
+					var r = _s_util.array.find.object(self.data.entities, 'id', inp, true);
+					if(r.object.setup.active != 0) return r;
 					}
 				return false
 				},
@@ -70,9 +71,11 @@ T1.prototype = {
 					}]
 
 				_s_u.each(all, function(o,i){
+					if(o.setup.active == 0) return;
 					send.push({
 						id : o.id,
-						name : o.name
+						name : o.name,
+						role : o.role
 						})
 					})
 
@@ -101,7 +104,8 @@ T1.prototype = {
 	get profile(){
 		var self = this;
 		return {
-			all : function(){
+			all : function*(convert){
+				if(convert) return yield _s_util.convert.single({ library:'t1',data:_s_util.clone.deep(self.data),label:true })
 				return self.data;
 				},
 			id : function(){
@@ -142,6 +146,7 @@ T1.prototype = {
 					},
 				primary : function(){
 					var numbers = self.profile.contact.all();
+					return numbers[0];
 					return _s_util.array.find.object(numbers, 'primary' , true);
 					}
 				},

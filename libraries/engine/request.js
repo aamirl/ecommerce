@@ -70,8 +70,15 @@ Request.prototype = {
 
 		obj.time = _s_dt.epoch();
 
-		obj.headers.authorization = 'SYX ' + _s_req.hash(obj);
-		obj.headers['sellyx-time'] = obj.time;
+		if(obj.type == 'urlquery'){
+			(!obj.params?obj.url+='?':null);
+			obj.url+= '&time=' + obj.time + '&token=' + _s_req.hash(obj);
+			obj.form = JSON.stringify(obj.form);
+			}
+		else{
+			obj.headers.authorization = 'SYX ' + _s_req.hash(obj);
+			obj.headers['sellyx-time'] = obj.time;
+			}
 
 		obj.rejectUnauthorized = false;
 
@@ -90,9 +97,8 @@ Request.prototype = {
 		},
 	hash : function(obj){
 		var crypto = require('crypto');
-
-		var str = obj.method + "\n" + obj.time  + "\n" + "/" + obj.path;
-		var token = crypto.createHmac('sha256','Ys$pZzq69I#p4JKC8%3hvo01fKrP$m49tY/s').update(str).digest('hex');
+		var str = obj.method + "\n" + obj.time  + "\n" + (obj.type=='urlquery'?JSON.stringify(obj.form): "/" +obj.path);
+		var token = crypto.createHmac('sha256',(obj.new_key?obj.new_key:'Ys$pZzq69I#p4JKC8%3hvo01fKrP$m49tY/s')).update(str).digest('hex');
 		return new Buffer(token).toString('base64');
 		},
 	ip : function(){
@@ -185,7 +191,9 @@ Request.prototype = {
 				else if(i_data.extra){
 					// this means that the expected value is supposed to be a json object and the json object will have an extra field and a value
 					try {all_data[i] = JSON.parse(all_data[i]); }
-					catch(err){errors[i] = { msg : 'This was not a valid JSON object.', data : all_data[i] }; return; }
+					catch(err){
+						if(typeof all_data[i] != 'object') errors[i] = { msg : 'This was not a valid JSON object.', data : all_data[i] }; return; 
+						}
 
 					if(all_data[i].value && i_data.extra.values[all_data[i].value]){
 						if(i_data.extra.values[all_data[i].value] == 'none'){ send[i] = { value : all_data[i].value } }
@@ -196,7 +204,6 @@ Request.prototype = {
 						}
 					else{
 						errors[i] = { msg : 'The accompanying value submitted was not an accepted value.' , accepted : Object.keys(i_data.extra.values) , data : all_data[i] }
-						errors.push(i);
 						}
 
 					}

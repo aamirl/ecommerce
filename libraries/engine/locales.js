@@ -55,7 +55,7 @@ Locales.prototype = {
 			}
 
 		var locale = (context == undefined || context == false ? _s_load.locale() : _s_load.locale(context));
-		
+	
 		if(type && locale[type][parameter] &&  locale[type][parameter][value]){
 			return locale[type][parameter][value]
 			}

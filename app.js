@@ -122,7 +122,7 @@ app.use(function*(next){
 			yield _s_cache.key.delete('entity');
 			GLOBAL._s_entity = {
 				id : _s_cache_id,
-				type : '1',
+				type : 't1',
 				library : _s_load.library('t1'),
 				object : _s_t1
 				}

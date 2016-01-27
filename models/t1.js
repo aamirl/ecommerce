@@ -81,6 +81,8 @@ module.exports = {
 				}})
 			}
 
+
+		obj.entity ? search.body.query.bool.must.push({nested : {path : 'entities', query : {bool : {must : [{match : {'entities.id' : obj.entity } } ] } } } }) : null; 
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : t1 } }) : null;
 		return yield _s_db.es.search(search, obj);
 		}

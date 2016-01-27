@@ -1,16 +1,17 @@
 
 module.exports = {
-
+	root : 'http://10.0.1.3:10000/',
 	oAuth : 'https://auth.sellyx.com/',
 	financials : 'http://localhost:8000/',
+	// financials : 'https://financials.sellyx.com/',
+	dashboard : 'http://localhost:8090/',
+	// dashboard : 'http://dashboard.sellyx.com/',
 	certs : {
-		issuer : 'ec.sellyx.com',
+		issuer : '10.0.1.3',
+		// issuer : 'ec.sellyx.com',
 		key : __dirname + '/certs/server.key',
 		cert : __dirname + '/certs/server.crt'
 		},
-	// 	oAuth : 'https://auth.sellyx.com/',
-	// financials : 'https://financials.sellyx.com/',
-	// dashboard : 'http://dashboard.sellyx.com/',
 	app : {
 		name : 'ecommerce_service',
 		machine : 'SELLYX_ECOMMERCE__MAIN',

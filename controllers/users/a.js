@@ -4,7 +4,7 @@ var _t1 = _s_load.library('t1');
 module.exports = {
 	get : function*(){
 		// this is the api endpoint for getting the information for the user who is currently using the system
-		return { success : { data : yield _t1.get({id:_s_t1.profile.id(),convert:true,exclude:'faq,entities,follows'})} };
+		return { success : { data : yield _s_t1.profile.all(true) } }
 		},
 	'entities/summary' : function*(){
 		return { success : { data: _s_t1.entities.summary() } }
@@ -16,7 +16,7 @@ module.exports = {
 			description : { v : ['isTextarea'] , b:true },
 			social : _s_common.helpers.validators.social(),
 			currency : { in:_s_currency.helpers.valid(), b:true, default:'US' },
-			standard : { in:[1,2,'1','2'], b:true, default:'MT' },
+			standard : { in:['US','MT'], b:true, default:'MT' },
 			});
 
 		if(data.failure) return data;

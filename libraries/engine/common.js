@@ -377,15 +377,14 @@ Common.prototype = {
 		if(obj.type && typeof lib.model.get[obj.type] == 'function') var result = yield lib.model.get[obj.type](obj);
 		else var result = yield lib.model.get(obj);
 
-
 		if(!result) return { failure : { msg:'There was no data found with that information.' , code:300 }};
+
+		if(obj.deep){
+			var object = _s_util.array.find.object(result[obj.deep.array] , obj.deep.property , obj.deep.value , true, (obj.deep.obj||null) );
+			if(!object) return { failure : {msg:'The initial '+obj.label+' could not be found.' , code : 300 }  };
+			}
 		
 		if(!obj.corporate){
-
-			if(obj.deep){
-				var object = _s_util.array.find.object(result[obj.deep.array] , obj.deep.property , obj.deep.value , true, (obj.deep.obj||null) );
-				if(!object) return { failure : {msg:'The initial '+obj.label+' could not be found.' , code : 300 }  };
-				}
 
 			if(obj.deep && obj.deep.entity){
 				var id = obj.deep.entity.id;
@@ -479,8 +478,10 @@ Common.prototype = {
 
 		if(update){
 			if(obj.send && obj.send == 'object' && object) result = object.object;
+			if(obj.raw) return result;
 
 			if(obj.deep && obj.deep.library) lib = _s_load.library(obj.deep.library);
+
 
 			if(obj.type && typeof lib.helpers.convert[obj.type] == 'function'){
 				return { success : { data : yield lib.helpers.convert[obj.type](result,obj.entity) } }

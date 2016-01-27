@@ -2,20 +2,27 @@
 
 
 var obj = {
-	type : {
-		1 : 'General Seller',
-		2 : 'Registered LLC',
-		3 : 'Registered Incorporation',
-		4 : 'Registered Branch'
-		},
-	role : {
-		1 : 'Employee',
-		2 : 'General Administrator',
-		3 : 'Branch Owner',
-		4 : 'Master Administrator'
+	detailed_type : {
+		1 : 'Branch',
 		},
 	status : {
 		1 : 'In Good Standing'
+		},
+	entity: {
+		status : {
+			0 : 'Deactivated (Sellyx)',
+			1 : 'Active',
+			2 : 'Suspended',
+			3 : 'Deactivated'
+			}
+		},
+	enrollment : {
+		status : {
+			0 : 'Deactivated (Sellyx)',
+			1 : 'Pending',
+			2 : 'Denied',
+			3 : 'Enrolled'
+			}
 		}
 	}
 
