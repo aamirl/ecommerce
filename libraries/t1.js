@@ -148,32 +148,29 @@ T1.prototype = {
 		return yield _s_common.new(data,'t1', (obj.raw?false:true) , (obj.id?false:true));
 		},
 	update : function*(obj){
-		// this is the update function for the t1 library for basic information
+		!obj?obj={}:null;
+		// this is the update function for the t2 library for basic information
 		// we are going to supply the information being updated here 
+		var data = ( obj.data ? obj.data : _s_req.validate(this.helpers.validators.base({update:true})) );
+		if(data.failure) return data;
 
-		if(!obj && !obj.data){
-			return { failure : { msg : 'No information was submitted for update.'} , code : 300 }
+		if(obj.id){
+			obj.result = yield _s_load.library('t1').get(obj.id);
+			if(obj.result.failure) return obj.result.failure
+			}
+		
+		if(data.contact){
+			obj.result.numbers[0].id = data.contact;
+			delete data.contact;
 			}
 
-		var data = (obj.data?obj.data:obj);
+		delete obj.result.oAuth_setup;
 
-		if(Object.keys(data).length == 1){
-			// means only id was submitted so nothing needs to be changed
-			return { failure : { msg : 'No details were changed for this user.' , code : 300 } }
-			}
+		var r = yield _s_common.update(_s_util.merge(obj.result,data) , 't1');
+		if(r.failure) return r;
 
-		// first we want to load the user information
-		var result = yield this.get({id:data.id,convert:false});
-		if(!result) return { failure : {  msg : 'This user\'s information was not found.' , code : 300 } }
-
-		result = _s_util.merge(result,data);
-
-		var update = yield this.model.update(result);
-		if(update){
-			if(!obj.convert) return { success : yield _s_common.helpers.convert(result, 't1') }
-			return { success : true }
-			}
-		return { failure : { msg : 'The user could not be updated at this time.' , code : 300 } }
+		if(obj.return_target) return { success : { data : r.success.data[obj.return_target] } }
+		return r;
 		},
 	actions : {
 		new : {

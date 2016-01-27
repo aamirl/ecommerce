@@ -275,37 +275,37 @@ Cart.prototype = {
 				}
 			}
 		},
-	get offer(){
-		var self =this;
-		return {
-			affiliate : {
-				get : function(seller , truthy){
-					if(seller) return _s_session.get('cart.offers.affiliate.' + seller , truthy);
-					return _s_session.set('cart.offers.affiliate' , truthy)
-					},
-				set : function(obj){
-					_s_session.set('cart.offers.affiliate.'+obj.seller, { offer : obj.offer , counter : obj.counter } );
-					},
-				delete : function(seller){
-					_s_session.delete('cart.offers.affiliate.'+seller);
-					if(Object.keys(_s_session.get('cart.offers.affiliate')).length == 0) _s_session.delete('cart.offers.affiliate');
-					}
-				},
-			customer : {
-				get : function(seller, truthy){
-					if(seller) return _s_session.get('cart.offers.customer.' + seller , truthy);
-					return _s_session.set('cart.offers.customer' , truthy);
-					},
-				set : function(obj){
-					_s_session.set('cart.offers.customer.'+obj.seller, { offer : obj.offer , code: obj.code } );
-					},
-				delete : function(seller){
-					_s_session.delete('cart.offers.customer.'+seller);
-					if(Object.keys(_s_session.get('cart.offers.customer')).length == 0) _s_session.delete('cart.offers.customer');
-					}
-				}
-			}
-		},
+	// get offer(){
+	// 	var self =this;
+	// 	return {
+	// 		affiliate : {
+	// 			get : function(seller , truthy){
+	// 				if(seller) return _s_session.get('cart.offers.affiliate.' + seller , truthy);
+	// 				return _s_session.set('cart.offers.affiliate' , truthy)
+	// 				},
+	// 			set : function(obj){
+	// 				_s_session.set('cart.offers.affiliate.'+obj.seller, { offer : obj.offer , counter : obj.counter } );
+	// 				},
+	// 			delete : function(seller){
+	// 				_s_session.delete('cart.offers.affiliate.'+seller);
+	// 				if(Object.keys(_s_session.get('cart.offers.affiliate')).length == 0) _s_session.delete('cart.offers.affiliate');
+	// 				}
+	// 			},
+	// 		customer : {
+	// 			get : function(seller, truthy){
+	// 				if(seller) return _s_session.get('cart.offers.customer.' + seller , truthy);
+	// 				return _s_session.set('cart.offers.customer' , truthy);
+	// 				},
+	// 			set : function(obj){
+	// 				_s_session.set('cart.offers.customer.'+obj.seller, { offer : obj.offer , code: obj.code } );
+	// 				},
+	// 			delete : function(seller){
+	// 				_s_session.delete('cart.offers.customer.'+seller);
+	// 				if(Object.keys(_s_session.get('cart.offers.customer')).length == 0) _s_session.delete('cart.offers.customer');
+	// 				}
+	// 			}
+	// 		}
+	// 	},
 	get items() {
 		var self = this;
 		return {

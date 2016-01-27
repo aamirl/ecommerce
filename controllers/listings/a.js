@@ -117,14 +117,15 @@ module.exports = {
 			url : _s_config.financials + 'charges/p/new',
 			method : 'POST',
 			data : {
-				account : _s_t1.profile.id(),
-				total : price,
-				transactions : data.transactions
+				id : _s_t1.profile.id(),
+				amount : price,
+				transactions : data.transactions,
+				service : 'ecommerce'
 				}
 			})
 
 		if(charge.failure) return charge;
-		if(charge.amounts.total != charge.amounts.authorized) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : charge.transactions[0].error } }
+		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : charge.transactions[0].error } }
 
 
 		// if no problem we create the order!
@@ -183,12 +184,13 @@ module.exports = {
 			url : _s_config.financials + 'charges/p/capture',
 			method : 'POST',
 			data : {
-				id : order.transactions[0]
+				transaction : order.transactions[0],
+				service : 'ecommerce'
 				}
 			})
 
 		if(capture.failure) return capture;
-		if(capture.amounts.total != capture.amounts.processed) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : capture.transactions[0].error } }
+		if(capture.amounts.requested != capture.amounts.processed) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : capture.transactions[0].error } }
 
 		order.transactions.push(capture.id);
 
@@ -197,8 +199,9 @@ module.exports = {
 			url : _s_config.financials + 'load/p/new',
 			method : 'POST',
 			data : {
-				account : order.selling.id,
-				amount : capture.amounts.total
+				id : order.selling.id,
+				amount : capture.amounts.processed,
+				service : 'ecommerce'
 				}
 			})
 

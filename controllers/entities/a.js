@@ -2,7 +2,14 @@ var _entities = _s_load.library('entities');
 
 module.exports = {
 	get : function*(){
-		return { success : { data : yield _s_entity.object.profile.all(true) } };
+		var t = _s_util.clone.deep(yield _s_entity.object.profile.all(true));
+
+		delete t.faq;
+		delete t.enrollment;
+		delete t.follows;
+		delete t.financials;
+
+		return { success : { data : t } };
 		},
 	'get/faq' : function*(){
 		var key = _s_entity.object.key('faq');
@@ -149,7 +156,10 @@ module.exports = {
 		return { status: 302, headers :{ 'Location' : _s_req.get('redirect') ||'www.google.com?&q=Grandmas+Are+The+Best' } }
 		},
 	'update/basic' : function*(){
-		return  yield _s_entity.library.update();
+		var data = _s_req.validate(_s_entity.library.helpers.validators.base({update:true}));
+		if(data.failure) return data;
+
+		return  yield _s_entity.library.update({data:data , result : _s_entity.object.data});
 		},
 	'update/faq' : function*(){
 		var data = _s_req.validate(_s_load.library('entities').helpers.validators.faq());
@@ -166,11 +176,40 @@ module.exports = {
 			}
 		else result.faq.push(_s_entity.library.actions.new.faq(data));
 
-		console.log(result.faq);
+		return  yield _s_entity.library.update({data:{} , result : result , return_target : 'faq'});
+		},
+	'update/address' : function*(){
+		var s = _s_common.helpers.validators.address({required:true,json:false});
+		s.index = { v:['isInt'] , b:true };
+		var data = _s_req.validate(s)
+		if(data.failure) return data;
 
-		var update = yield _s_common.update(result, _s_entity.type, false, true);
-		if(update.failure || !update) return update;
-		return { success : { data : yield _s_util.convert.single(update.faq) } }
+		// next we are going to see whether the inputted address exists in the address book
+		var addresses = _s_entity.object.profile.addresses.all();
+		if(_s_util.array.compare.objects(addresses , data)) return {  failure : { msg : 'You already have this address on file.' , code : 300 } };
+		
+		var result = _s_entity.object.data;
+
+		// let's see if we are adding this or updating something
+		if(data.index || data.index == 0){
+			var index = data.index;
+			delete data.index;
+			result.addresses[index] = data;
+			}
+		else result.addresses.push(data);			
+		
+		return  yield _s_entity.library.update({data:data , result : result , return_target : 'addresses'});
+		},
+	'update/address/delete' : function*(){
+		var data = _s_req.validate({
+			index : { v:['isInt'] , b:true }
+			})
+		if(data.failure) return data;
+
+		var result = _s_entity.object.data;
+		result.addresses.splice(data.index,1);
+
+		return  yield _s_entity.library.update({data:data , result : result , return_target : 'addresses'});
 		},
 	follow : function*(){
 		var data = _s_req.validate({
@@ -214,10 +253,6 @@ module.exports = {
 		if(update.failure) return update;
 		return { success : { msg : 'You were removed from the follow list for this entity.', code : 300 } }
 		},
-	approve : function*(){
-		if(_s_entity.type == 1) return { failure : { msg : 'This action cannot be completed.' , code : 300 } }
-		},
-	
 	'get/active' : function*(){
 		var check = _entities.privileges.check();
 		if(check.failure) return check;

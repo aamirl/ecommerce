@@ -283,7 +283,8 @@ Orders.prototype = {
 						url : _s_config.financials + 'reversals/p/new',
 						method : 'POST',
 						data : {
-							id : order.transactions[0]
+							transaction : order.transactions[0],
+							service : 'ecommerce'
 							}
 						})
 

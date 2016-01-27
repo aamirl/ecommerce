@@ -26,21 +26,6 @@ T2.prototype = {
 					
 					if(oAuth_entity.failure){ return { failure : {msg:'Authorization failure.',code:300} }; }
 					else { oAuth_entity = oAuth_entity.success.data.user; }
-
-					// oAuth_entity = {
-					// 	email : 'testseller@entities.sellyx.com',
-					// 	reputation : {
-					// 		"score": 0,
-					//         "data": [],
-					//         "createdAt": "2016-01-08T06:12:46.790Z",
-					//         "updatedAt": "2016-01-09T00:32:01.725Z",
-					//         "id": "568f535e923cf07534cac8a0"
-					// 		},
-					// 	telephone : '+1TESTENTITYPHONE',
-					// 	status : 1,
-					// 	active : 1,
-					// 	added : "2016-01-08T06:12:46.797Z"
-					// 	}
 					}
 
 				result.email = {
@@ -73,7 +58,6 @@ T2.prototype = {
 					var t = {
 						id : { v:['isAlphaOrNumeric'] , b:true },
 						name : { v:['isAlphaOrNumeric'] },
-						website : { v:['isWebsite'] , b:true},
 						roles : { v:['isJSON'] , b : true, default : [] },
 						follows : { 
 							aoo:true, 
@@ -86,6 +70,8 @@ T2.prototype = {
 							default : [],
 							b:true
 							},
+						website : { v:['isWebsite'] , b:true},
+						description : { v:['isAlphaOrNumeric'] , b:true, default : 'I am a new seller on Sellyx!' },
 						social : _s_common.helpers.validators.social(),
 						faq : { 
 							aoo : true,
@@ -162,7 +148,6 @@ T2.prototype = {
 								verified : { in:[true,false] , b:true, default:true }
 								}
 							},
-						description : { v:['isAlphaOrNumeric'] , b:true, default : 'I am a new seller on Sellyx!' },
 						type : {
 							in :["t2"],
 							b : true,
@@ -184,9 +169,14 @@ T2.prototype = {
 						}
 
 					if(obj.update) {
-						t = _s_util.object.delete({ data:t, keep:['id','website','description','social'] })
-						t.contact = { v:['isPhone'] }
+						t = {
+							contact : { v:['isPhone'] },
+							website : { v:['isWebsite'] , b:true},
+							description : { v:['isAlphaOrNumeric'] , b:true, default : 'I am a seller on Sellyx!' },
+							social : _s_common.helpers.validators.social(),
+							}
 						}
+
 					return t;
 					}
 				}
@@ -208,31 +198,32 @@ T2.prototype = {
 			}
 
 		if(obj.validate_only) return data;
-
-		// var striped = ['AU','CA','DK','FI','IE','NO','SE','GB','US','AT','BE','FR','DE','IT','JP','LU','NL','SP','MX','SG','CH'];
-		// if(data.financials.accounts){
-		// 	//means stripe
-		// 	if(_s_util.indexOf(striped, data.financials.accounts[0].country)){
-		// 		// let's connect to managed accounts on stripe on payment server and create a managed account
-		// 		}
-
-		// 	}
-
-
 		return yield _s_common.new(data,'t2', (obj.raw?obj.raw:false) , (obj.id?false:true));
 		},
-	update : function*(obj){
+	update : function*(obj , result){
+		!obj?obj={}:null;
 		// this is the update function for the t2 library for basic information
 		// we are going to supply the information being updated here 
-		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base({update:true}), data : obj.data }) : _s_req.validate(this.helpers.validators.base({update:true})) );
-		var result = _s_entity.object.data;
+		var data = ( obj.data ? obj.data : _s_req.validate(this.helpers.validators.base({update:true})) );
+		if(data.failure) return data;
+
+		if(obj.id){
+			obj.result = yield _s_load.library('t2').get(obj.id);
+			if(obj.result.failure) return obj.result.failure
+			}
 		
 		if(data.contact){
-			result.numbers[0].id = data.contact;
+			obj.result.numbers[0].id = data.contact;
 			delete data.contact;
 			}
 
-		return yield _s_common.update(_s_util.merge(result,data) , 't2');
+		delete obj.result.oAuth_setup;
+
+		var r = yield _s_common.update(_s_util.merge(obj.result,data) , 't2');
+
+		if(r.failure) return r;
+		if(obj.return_target) return { success : { data : r.success.data[obj.return_target] } }
+		return r;
 		},
 	actions : {
 		new : {

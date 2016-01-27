@@ -20,14 +20,7 @@ module.exports = {
 			});
 
 		if(data.failure) return data;
-
-		data.id = _s_t1.profile.id();
-		var update = yield _t1.update(data);
-		if(update){
-		 	var converted = yield _t1.helpers.cached(data, true);
-		 	return { success : true}
-			}
-		return { failure : { msg : 'The user could not be updated at this time.' , code : 300 } }
+		return  yield _t1.update({data:data , result : _s_t1.data});
 		},
 	'update/address' : function*(){
 		var s = _s_common.helpers.validators.address({required:true,json:false});
@@ -40,10 +33,7 @@ module.exports = {
 		var addresses = _s_t1.profile.addresses.all();
 		if(_s_util.array.compare.objects(addresses , data)) return {  failure : { msg : 'You already have this address on file.' , code : 300 } };
 
-		
-		// if it doesn't exist, we are going to grab the user information from the database and then update it
-		var result = yield _t1.get(_s_t1.profile.id());
-		if(!result) return { failure : { msg : 'We could not find the user in order to update the address information.' , code : 300 } };
+		var result = _s_t1.object.data;
 
 		// let's see if we are adding this or updating something
 		if(data.index || data.index == 0){
@@ -51,18 +41,9 @@ module.exports = {
 			delete data.index;
 			result.addresses[index] = data;
 			}
-		else{
-			result.addresses.push(data);			
-			}
+		else result.addresses.push(data);			
 
-		// update the user and the cache
-		result.id = _s_t1.profile.id();
-		var update = yield _t1.update(result);
-		if(update){
-		 	var converted = yield _t1.helpers.cached(result, true);
-		 	return { success : { data: result.addresses } }
-			}
-		return { failure : { msg : 'The user could not be updated at this time.' , code : 300 } }
+		return  yield _t1.update({data:data , result : result , return_target : 'addresses'});
 		},
 	'update/address/delete' : function*(){
 		var data = _s_req.validate({
@@ -71,19 +52,9 @@ module.exports = {
 
 		if(data.failure) return data;
 
-		// if it doesn't exist, we are going to grab the user information from the database and then update it
-		var result = yield _t1.get( _s_t1.profile.id() );
-		if(!result) return { failure : { msg : 'We could not find the user in order to update the address information.' , code : 300 } };
-
+		var result = _s_t1.object.data;
 		result.addresses.splice(data.index,1);
 
-		// update the user and the cache
-		result.id = _s_t1.profile.id();
-		var update = yield _t1.update(result);
-		if(update){
-		 	var converted = yield _t1.helpers.cached(result, true);
-		 	return { success : { data: result.addresses } }
-			}
-		return { failure : { msg : 'The user could not be updated at this time.' , code : 300 } }
+		return  yield _t1.update({data:data , result : result , return_target : 'addresses'});
 		}
 	}
