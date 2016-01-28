@@ -38,11 +38,14 @@ Request.prototype = {
 			}
 
 		var j = yield r(obj);
+		console.log(j);
+		console.log('adasldkjalajdaklsjklasd')
 		if(raw) return JSON.parse(j);
 		try{
 			j= JSON.parse(j).body;
 			}
 		catch(e){
+			console.log(e)
 			return JSON.parse(j.body);
 			}
 		try{

@@ -9,8 +9,9 @@
 //  	});
 
 var esearch = require('elasticsearch').Client({
-	host : 'http://localhost:9200/',
-	// log : 'trace'
+	// host : 'http://localhost:9200/',
+	host : 'http://authdb.sellyx.com:9980',
+	log : 'trace'
 	})
 
 function Database(){ }

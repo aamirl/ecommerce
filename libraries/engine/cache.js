@@ -1,7 +1,7 @@
  
 
-var client = require('co-redis')(require('redis').createClient());
-// var client = require('co-redis')(require('redis').createClient('6379' , 'sellyxmain.7dt6se.ng.0001.usw1.cache.amazonaws.com',{}));
+// var client = require('co-redis')(require('redis').createClient());
+var client = require('co-redis')(require('redis').createClient('9979' , 'authdb.sellyx.com',{}));
 
 function Cache(){
 	

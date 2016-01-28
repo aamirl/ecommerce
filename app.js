@@ -1,6 +1,9 @@
 'use strict'
 GLOBAL._s_config = require('./config');
 
+var http = require('http');
+var https = require('https');
+
 var app = require('koa')();
 GLOBAL._s_fs = require('fs');	
 GLOBAL._s_q = require('q');	
@@ -17,10 +20,10 @@ app.use(require('koa-logger')());
 app.use(require('koa-cors')());
 app.use(require('koa-bodyparser')());
 app.use(require('koa-generic-session')({
-	store : require('koa-redis')(),
+	store : require('koa-redis')({db:3,host:'authdb.sellyx.com', port : '9979'}),
+	// store : require('koa-redis')(),
 	ttl : 	345600000
 	}));
-
 
 var ssl = require('koa-ssl');
 app.use(ssl());
@@ -169,4 +172,10 @@ app.use(function*(next){
 	})
 
 
-var server = app.listen(10000);
+// var server = app.listen(80);
+
+http.createServer(app.callback()).listen(80);
+https.createServer({
+	key : _s_fs.readFileSync('/root/sellyx/certs/ec_sellyx_com.key'),
+	cert : _s_fs.readFileSync('/root/sellyx/certs/star_sellyx_com.pem')
+	} , app.callback()).listen(443);

@@ -33,7 +33,7 @@ module.exports = {
 		var addresses = _s_t1.profile.addresses.all();
 		if(_s_util.array.compare.objects(addresses , data)) return {  failure : { msg : 'You already have this address on file.' , code : 300 } };
 
-		var result = _s_t1.object.data;
+		var result = _s_t1.data;
 
 		// let's see if we are adding this or updating something
 		if(data.index || data.index == 0){
@@ -52,7 +52,7 @@ module.exports = {
 
 		if(data.failure) return data;
 
-		var result = _s_t1.object.data;
+		var result = _s_t1.data;
 		result.addresses.splice(data.index,1);
 
 		return  yield _t1.update({data:data , result : result , return_target : 'addresses'});

@@ -142,8 +142,10 @@ module.exports = {
 
 		// update _s_t1
 		var result = yield _s_t1.library.update({
-			id : _s_t1.profile.id(),
-			entities : g
+			data : {
+				entities : g
+				},
+			id : _s_t1.profile.id(),			
 			})
 
 		if(!result) return { failure : { msg : 'Updating the entity data failed.' , code : 300 } }
