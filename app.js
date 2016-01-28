@@ -2,7 +2,7 @@
 GLOBAL._s_config = require('./config');
 
 var http = require('http');
-var https = require('https');
+//var https = require('https');
 
 var app = require('koa')();
 GLOBAL._s_fs = require('fs');	
@@ -171,11 +171,10 @@ app.use(function*(next){
 	return;
 	})
 
+var server = app.listen(8080);
 
-// var server = app.listen(80);
-
-http.createServer(app.callback()).listen(80);
-https.createServer({
-	key : _s_fs.readFileSync('/root/sellyx/certs/ec_sellyx_com.key'),
-	cert : _s_fs.readFileSync('/root/sellyx/certs/star_sellyx_com.pem')
-	} , app.callback()).listen(443);
+//http.createServer(app.callback()).listen(8080);
+//https.createServer({
+//	key : _s_fs.readFileSync('/root/sellyx/certs/ec_sellyx_com.key'),
+//	cert : _s_fs.readFileSync('/root/sellyx/certs/star_sellyx_com.pem')
+//	} , app.callback()).listen(443);
