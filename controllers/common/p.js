@@ -30,26 +30,40 @@ module.exports = {
 		},
 	'test' : function*(){
 
-		return get_arm = yield _s_req.sellyx({
-			path : 'notification/fetch',
-			method : 'GET',
-			params : {
-				user_id : 'hi'
-				}
+		var s = _s_load.engine('notifications');
+		yield s.new.websocket({
+			user : '568f535e923cf07534cac8a1',
+			key : 'f5c0ec77482fe7586473acda28740fcd00c6a900',
+			message : 'hi'
 			})
 
-
-
-		return yield _s_req.sellyx({
-			new_key : 'Yp^$p8*jK.d8&QF79%3vcD!4KrP$m49tY/s',
-			method : 'POST',
-			type : 'urlquery',
-			url : 'https://mq.sellyx.com',
-			form : _s_req.post(),
-			headers : {
-				'Content-Type' : 'application/json'
-				}
+		yield s.new.email({
+			email : 'aamir@sellyx.com',
+			subject : 'test',
+			message : '<style>a{ font-weight:bold; font-size:20px; }</style><a href="www.sellyx.com">hello from sellyx</a><p>this is ot test stuff</p>'
 			})
+		
+
+		// return get_arm = yield _s_req.sellyx({
+		// 	path : 'notification/fetch',
+		// 	method : 'GET',
+		// 	params : {
+		// 		user_id : 'hi'
+		// 		}
+		// 	})
+
+
+
+		// return yield _s_req.sellyx({
+		// 	new_key : 'Yp^$p8*jK.d8&QF79%3vcD!4KrP$m49tY/s',
+		// 	method : 'POST',
+		// 	type : 'urlquery',
+		// 	url : 'https://mq.sellyx.com',
+		// 	form : _s_req.post(),
+		// 	headers : {
+		// 		'Content-Type' : 'application/json'
+		// 		}
+		// 	})
 
 		}
 	}

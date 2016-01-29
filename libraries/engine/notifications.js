@@ -18,7 +18,7 @@ Notifications.prototype = {
 						}
 					})
 
-				if(req.success) return { success : { msg : 'Notification sent.' , code : 300 } }
+				if(r.success) return { success : { msg : 'Notification sent.' , code : 300 } }
 				return { failure : { msg : 'The notifcation was not sent.' , code : 300 } }
 				}
 			}
@@ -26,6 +26,20 @@ Notifications.prototype = {
 	get new() {
 		var self = this;
 		return {
+			websocket : function*(obj){
+				if(obj.broadcast){
+
+					}
+
+				return yield self.helpers.request({
+					data : {
+						type : 105,
+						endpoint : (obj.broadcast?obj.user+'.'+obj.key:obj.user+"."),
+						message : "{\"servermsg\": 300, \"message\": \""+obj.message+"\" }",
+						expiration : (obj.expiration?obj.expiration:100)
+						}
+					});
+				},
 			push : function*(obj){
 
 				var arn = yield _s_req.sellyx({
@@ -50,15 +64,14 @@ Notifications.prototype = {
 					})
 			
 				},
-			email : function*(){
+			email : function*(obj){
 
 				return yield self.helpers.request({
 					data : {
 						type : 106,
 						endpoint : obj.email,
-						message : obj.message,
-						subject : obj.subject,
-						expiration : (obj.expiration:100)
+						message : "Content-Type: text/html; charset=ISO-8859-1\r\nSubject: " + obj.subject + "\r\n\r\n" + obj.message + "\r\n",
+						expiration : (obj.expiration?obj.expiration:100)
 						}
 					})
 
