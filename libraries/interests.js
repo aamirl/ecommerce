@@ -13,7 +13,8 @@ Interests.prototype = {
 					include : { v:['isAlphaOrNumeric'], b:true },
 					exclude : { v:['isAlphaOrNumeric'], b:true },
 					x : { v:['isInt'] , b:true , default : 0 },
-					y : { v:['isInt'] , b:true , default : 10 }
+					y : { v:['isInt'] , b:true , default : 10 },
+					count : { in:['true','false',true,false], b:true, default:false }
 					}
 				},
 			validators : function(){
@@ -37,6 +38,7 @@ Interests.prototype = {
 		var _listings = _s_load.library('listings');
 
 		if(results){
+			if(results.count) return { success : { data:results.count } }
 			if(obj.convert && obj.convert != 'false'){
 				if(results.counter){
 					var send = [];

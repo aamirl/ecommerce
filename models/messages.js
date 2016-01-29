@@ -29,7 +29,8 @@ module.exports = {
 					bool : {
 						must : [
 							
-							]
+							],
+						must_not : []
 						}
 					}
 				}
@@ -102,7 +103,12 @@ module.exports = {
 			}
 
 
-		return yield _s_db.es.search(search, obj);
+		if(obj.unread) search.body.query.bool.must_not.push({ term : { read : obj.entity } })
+
+
+
+		if(obj.count) return yield _s_db.es.count(search,obj);
+		return yield _s_db.es.search(search, obj)
 		}
 	
 	}

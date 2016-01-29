@@ -307,9 +307,7 @@ Database.prototype = {
 					data._source.id = data._id;
 					return data._source;
 					}
-				else{
-					return false;
-					}
+				return false;	
 				},
 			count : function*(obj, meta){
 				if(!obj.type) obj.type = 'base';

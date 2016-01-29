@@ -17,7 +17,8 @@ T1.prototype = {
 					exclude : { v:['isAlphaOrNumeric'], b:true },
 					active : { v:['isAlphaOrNumeric'], b:true },
 					x : { v:['isInt'] , b:true , default : 0 },
-					y : { v:['isInt'] , b:true , default : 10 }
+					y : { v:['isInt'] , b:true , default : 10 },
+					count : { in:['true','false',true,false], b:true, default:false }
 					}
 				},
 			cached : function*(result , key, oAuth_user, return_both){
@@ -144,8 +145,6 @@ T1.prototype = {
 		},
 	new : function*(obj){
 		!obj?obj={}:null;
-
-		var c = 
 
 		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : _s_req.validate(this.helpers.validators.base()) );
 		if(data.failure) return data; 

@@ -70,6 +70,8 @@ module.exports = {
 			};
 
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
-		return yield _s_db.es.search(search, obj);
+		
+		if(obj.count) return yield _s_db.es.count(search,obj);
+		return yield _s_db.es.search(search, obj)
 		}
 	}

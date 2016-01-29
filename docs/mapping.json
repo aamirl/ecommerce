@@ -123,6 +123,10 @@ PUT /messages/_mapping/base
                 },
             "messages" : {
                 "type":"nested"    
+                },
+            "read" : {
+                "type" : "string",
+                "index" : "not_analyzed"
                 }
             }
         }

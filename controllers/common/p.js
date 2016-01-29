@@ -65,5 +65,18 @@ module.exports = {
 		// 		}
 		// 	})
 
+		},
+	'flag/listing' : function*(){
+
+		var data = _s_req.validate({
+			id : { v:['isListing'] },
+			entity : { v:['isEntity'] },
+			reason : { v:['1','2','3','4','5'] },
+			message : { v:['isTextarea'] }
+			})
+		if(data.failure) return data;
+
+		yield _s_common.new(data,'flags');
+		
 		}
 	}

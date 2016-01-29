@@ -29,9 +29,10 @@ module.exports = {
 			return yield _s_db.es.search(search,obj);
 			}
 
-
 		// if(obj.active) search.body.query.filtered.query.bool.must.push({ match : { 'setup.active' : 1 } })
 		if(obj.entities) search.body.query.bool.must.push({ ids : { values : obj.entities } }) 
+
+		if(obj.count) return yield _s_db.es.count(search,obj);
 		return yield _s_db.es.search(search, obj)
 		}
 	}

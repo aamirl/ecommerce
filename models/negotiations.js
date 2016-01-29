@@ -72,6 +72,7 @@ module.exports = {
 
 		obj.active ? get.body.query.bool.must.push({ match : { 'setup.active' : obj.active } }) : null;
 
-		return yield _s_db.es.search(get, obj);
+		if(obj.count) return yield _s_db.es.count(get,obj);
+		return yield _s_db.es.search(get, obj)
 		}
 	}

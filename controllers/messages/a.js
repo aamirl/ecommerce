@@ -2,6 +2,17 @@ var _messages = _s_load.library('messages');
 
 
 module.exports = {
+	'count' : function*(){
+		var data = _s_req.validate(_messages.helpers.filters());
+		if(data.failure) return data;
+		
+		data.entity = _s_entity.object.profile.id();
+		data.endpoint = true;
+		data.unread = true;
+		data.count = true;
+
+		return yield _messages.get(data);
+		},
 	'get/inbox' : function*(){
 		var data = _s_req.validate(_messages.helpers.filters());
 		if(data.failure) return data;

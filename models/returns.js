@@ -38,6 +38,8 @@ module.exports = {
 		obj.seller ? search.body.query.bool.must.push({match:{'seller.id':obj.seller}}) : null;
 		obj.user ? search.body.query.bool.must.push({match:{'user.id':obj.user}}) : null;
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : obj.active } }) : null;
-		return yield _s_db.es.search(search, obj);
+		
+		if(obj.count) return yield _s_db.es.count(search,obj);
+		return yield _s_db.es.search(search, obj)
 		}
 	}

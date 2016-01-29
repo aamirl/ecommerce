@@ -69,6 +69,20 @@ module.exports = {
 
 		return yield _orders.get(data);
 		},
+	'orders/get/selling/count' : function*(){
+		var c = _orders.helpers.filters();
+		var data = _s_req.validate(c);
+		if(data.failure) return data;
+
+		data.selling = _s_entity.object.profile.id();
+		data.exclude = 'transactions,key';
+		data.count = true;
+		data.endpoint = true;
+		data.status = 51;
+		data.type = 1
+
+		return yield _orders.get(data);
+		},
 	'orders/get/buying' : function*(){
 		var c = _orders.helpers.filters();
 		var data = _s_req.validate(c);
@@ -77,6 +91,20 @@ module.exports = {
 		data.buying = _s_entity.object.profile.id();
 		data.exclude = 'transactions';
 		data.endpoint = true;
+		data.type = 1
+
+		return yield _orders.get(data);
+		},
+	'orders/get/buying/count' : function*(){
+		var c = _orders.helpers.filters();
+		var data = _s_req.validate(c);
+		if(data.failure) return data;
+
+		data.buying = _s_entity.object.profile.id();
+		data.exclude = 'transactions';
+		data.count = true;
+		data.endpoint = true;
+		data.status = 51;
 		data.type = 1
 
 		return yield _orders.get(data);
@@ -153,6 +181,14 @@ module.exports = {
 		// now we add the order to the listing
 		result.orders.push(r.success.id);
 		var update = yield _s_common.update(result, 'listings', false);
+
+		// send push notification to seller
+		// yield _s_load.engine('notifications').new.push({
+		// 	entity : _s_entity.object.profile.id(),
+			
+		// 	})
+		// send email notification
+
 		return r;
 		},
 	'order/process' : function*(){

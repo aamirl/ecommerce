@@ -45,6 +45,7 @@ module.exports = {
 		
 
 		console.log(JSON.stringify(search))
-		return yield _s_db.es.search(search, obj);
+		if(obj.count) return yield _s_db.es.count(search,obj);
+		return yield _s_db.es.search(search, obj)
 		}
 	}

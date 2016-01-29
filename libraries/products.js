@@ -573,6 +573,7 @@ Products.prototype = {
 		var self = this;
 
 		if( results.data && results.data.length > 0){
+			if(results.count) return { success : { data:results.count } }
 			if(!obj.convert || obj.convert == 'false'){
 				if(obj.endpoint){
 					delete obj.endpoint;

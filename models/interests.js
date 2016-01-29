@@ -18,6 +18,8 @@ module.exports = {
 			};
 
 		obj.entity ? get.body.query.bool.must.push({nested : {path : 'interests', query : {bool : {must : [{match : {'interests.entity.id' : obj.entity } } ] } } } }) : null; 
-		return yield _s_db.es.search(get, obj);
+		
+		if(obj.count) return yield _s_db.es.count(get,obj);
+		return yield _s_db.es.search(get, obj)
 		}
 	}

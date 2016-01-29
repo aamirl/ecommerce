@@ -26,7 +26,8 @@ Listings.prototype = {
 					include : { v:['isAlphaOrNumeric'], b:true },
 					exclude : { v:['isAlphaOrNumeric'], b:true },
 					x : { v:['isInt'] , b:true , default : 0 },
-					y : { v:['isInt'] , b:true , default : 100 }
+					y : { v:['isInt'] , b:true , default : 100 },
+					count : { in:['true','false',true,false], b:true, default:false }
 					}
 				},
 			validators : {

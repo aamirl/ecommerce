@@ -16,7 +16,8 @@ Messages.prototype = {
 				exclude : { v:['isAlphaOrNumeric'], b:true },
 				active : { v:['isAlphaOrNumeric'], b:true },
 				x : { v:['isInt'] , b:true , default : 0 },
-				y : { v:['isInt'] , b:true , default : 10 }
+				y : { v:['isInt'] , b:true , default : 10 },
+				count : { in:['true','false',true,false], b:true, default:false }
 				}
 			},
 		convert : function*(r){
