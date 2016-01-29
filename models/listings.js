@@ -65,7 +65,7 @@ module.exports = {
 					filter = { range : { 'price' : {  gte: dets[0], lte:dets[1] } } }
 					break;
 				case 'type':
-					filter = { term : { 'type' : dets } }
+					query = { terms : { 'type' : dets } }
 					break;
 				case 'distance':
 					filter = {geo_distance  : {distance : dets + 'km', "location.coordinates" : location.coordinates } };

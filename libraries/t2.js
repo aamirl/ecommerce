@@ -83,41 +83,9 @@ T2.prototype = {
 							},
 						addresses : _s_common.helpers.validators.address({aoo:true}),
 						enrollment : {
-							json : true,
-							default : { pending : [] , blocked : [] , denied : [] },
+							v :['isArray'],
+							default : [],
 							b:true,
-							data : {
-								pending : {
-									aoo : true,
-									b: true,
-									default : [],
-									data : {
-										id : { v:['isAlphaOrNumeric'] },
-										name : { v:['isAlphaOrNumeric'] },
-										added : { v:['isDateTime'] , default : _s_dt.now.datetime() }
-										}
-									},
-								blocked : {
-									aoo : true,
-									b: true,
-									default : [],
-									data : {
-										id : { v:['isAlphaOrNumeric'] },
-										name : { v:['isAlphaOrNumeric'] },
-										added : { v:['isDateTime'] , default : _s_dt.now.datetime() }
-										}
-									},
-								denied : {
-									aoo : true,
-									b: true,
-									default : [],
-									data : {
-										id : { v:['isAlphaOrNumeric'] },
-										name : { v:['isAlphaOrNumeric'] },
-										added : { v:['isDateTime'] , default : _s_dt.now.datetime() }
-										}
-									}
-								}
 							},
 						reputation : {
 							json : true,

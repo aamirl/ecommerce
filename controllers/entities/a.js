@@ -31,6 +31,8 @@ module.exports = {
 		if(get.setup.active == 0) return { failure : { msg : 'The entity you are trying to join is not an active entity at this time.' , code : 300 }}
 		if(get.type == 1) return { failure : { msg : 'You cannot join this entity because it is not valid.' , code : 300 } }
 		
+		if(!get.enrollment) get.enrollment = [];
+
 		// check if this entity tried to enroll
 		var r = _s_util.array.find.object(get.enrollment, 'id', _s_t1.profile.id(), true);
 		if(r) return { failure : { msg : 'You have already submitted an active request to enroll in this entity. Please wait for the entity administration to respond.' , code :300} }
@@ -42,7 +44,8 @@ module.exports = {
 			active : 1,
 			added : _s_dt.now.datetime()
 			}
-		
+
+
 		get.enrollment.push(t)
 
 		get.id = data.id;
