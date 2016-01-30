@@ -1,0 +1,49 @@
+dashboard
+	- show large images
+	- dont show undefined if the item property is not set
+	when you accept or deny interest, the item id goes to undefined
+	- make a space betwen the interest accepted text and the green check mark
+	- add a space between the items in the tool
+	- disable refresh button when requesting
+
+	- for price for services, denote monthly, hourly, weekly, or per
+
+	images details and interests need to all be either bolded or not
+	service listing cannot be clicked on?
+
+
+	send push notification and email to the person who's interest was accepted or denied
+	notifications for new listings, new messages
+
+
+	test transfer to managed account
+
+		for seller
+			send email for 
+				new interest
+				new buy order
+				new company join request
+
+			send push for 
+				new interest
+				new buy order	
+				new message
+				new company join request
+
+		for buyer
+			send email for
+				accepted interest
+				denied interest
+				joined company
+				denied company
+
+			send push for
+				accepted interest
+				denied interest
+				new message
+				listing sold
+				joined company 
+				denied company
+
+
+build 400 and build 500 pages

@@ -70,6 +70,18 @@ module.exports = {
 				case 'distance':
 					filter = {geo_distance  : {distance : dets + 'km', "location.coordinates" : location.coordinates } };
 					break;
+				case 'p_type':
+					filter = { term : { 'p_type' : dets } }
+					break;
+				case 'rooms':
+					filter = { terms : { 'rooms' : dets } }
+					break;
+				case 'bathrooms_f':
+					filter = { terms : { 'bathrooms_f' : dets } }
+					break;
+				case 'bathrooms_h':
+					filter = { terms : { 'bathrooms_h' : dets } }
+					break;
 				default : 
 					return;
 					break;

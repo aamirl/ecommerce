@@ -16,11 +16,20 @@ Listings.prototype = {
 					id : { v:['isLocalListing'] , b:true },
 					entity : { v:['isAlphaOrNumeric'], b:true },
 					distance : { v:['isDistance'], b:true , default : 250 },
+					type : { csv_in:[1,2,3,4,5,6,7,8,'1','2','3','4','5','6','7','8'] , b:true },
+					
+					// filters for products
 					categories : { v:['isArray'] , b:true },
 					conditions : { csv_in:['1','2','3','4','5','6','7'] , b: true },
 					price : { range:[0,100000000] , b:true , array : true },
+
+					// filters for housing
+					p_type : { in:['1','2','3','4','5','6',1,2,3,4,5,6] , b:true },
+					rooms : { csv_in:[1,2,3,4,5,6,7,'1','2','3','4','5','6','7'] , b:true },
+					bathrooms_f : { csv_in:[1,2,3,4,5,6,7,'1','2','3','4','5','6','7'] , b:true },
+					bathrooms_h : { csv_in:[1,2,3,4,5,6,7,'1','2','3','4','5','6','7'] , b:true },
+
 					rank : { in:['asc','desc'] , default : 'desc', b:true },
-					type : { csv_in:[1,2,3,4,5,6,7,8,'1','2','3','4','5','6','7','8'] , b:true },
 					sort : { in:['price','distance','date'] , b:true, default : 'date' },
 					convert : { in:['true','false'] , default:'true' },
 					include : { v:['isAlphaOrNumeric'], b:true },
@@ -32,14 +41,37 @@ Listings.prototype = {
 				},
 			validators : {
 				base : function(){
-					var h = {
+					var h1 = {
 						price : { v:['isPrice'] },
 						payment_type : { in:[2,'2'] , default : 2, b:true },
-						p_type : { in:[1,2,'1','2'] , b : true},
+						price_type : { in :[5,6,7,8,9,'5','6','7','8','9'] , b:true, default :9 },
 						htype : { in:['1','2','3','4','5','6','7'] },
-						rooms : { in:['1','2','3','4','5','6','7'] },
-						bathrooms_f : { in:['1','2','3','4','5','6','7'] },
-						bathrooms_h : { in:['1','2','3','4','5','6','7'] },
+						rooms : { in:['1','2','3','4','5','6','7']  },
+						bathrooms_f : { in:['1','2','3','4','5','6','7'] , b:true, default : 0 },
+						bathrooms_h : { in:['1','2','3','4','5','6','7'] , b:true, default : 0 },
+						square_feet : {v:['isInt'] },
+						pets : {
+							dependency : true,
+							data : {
+								1 : 'none',
+								2 : {
+									cats : { in:[1,2,'1','2'] },
+									ldogs : { in:[1,2,'1','2'] },
+									sdogs : { in:[1,2,'1','2'] },
+									birds : { in:[1,2,'1','2'] },
+									}
+								}
+							}
+						}
+
+					var h2 = {
+						price : { v:['isPrice'] },
+						payment_type : { in:[2,'2'] , default : 2, b:true },
+						price_type : { in :[10,'10'] , b:true, default :10 },
+						htype : { in:['1','2','3','4','5','6','7'] },
+						rooms : { in:['1','2','3','4','5','6','7']  },
+						bathrooms_f : { in:['1','2','3','4','5','6','7'] , b:true, default : 0 },
+						bathrooms_h : { in:['1','2','3','4','5','6','7'] , b:true, default : 0 },
 						square_feet : {v:['isInt'] },
 						pets : {
 							dependency : true,
@@ -57,13 +89,14 @@ Listings.prototype = {
 
 					var z = {
 						price : { v:['isPrice'] },
+						price_type : { in :[4,5,6,7,8,9,'4','5','6','7','8','9'] , b:true, default :4 },
 						payment_type : { in:[1,2,'1','2'] , default : 1, b:true },
 						}
 
 					var e = {
 						price : { v:['isPrice'] },
-						p_type : { in:[3,4,5,'3','4','5'] },
 						company : { v:['isAlphaOrNumeric'] },
+						price_type : { in :[5,6,7,8,9,'5','6','7','8','9'] , b:true, default :9 },
 						jtitle : { v:['isTextarea'] },
 						payment_type : { in:[2,'2'] , default : 2, b:true },
 						experience : { in:['1','2','3','4','5','6','7'] },
@@ -73,6 +106,7 @@ Listings.prototype = {
 						company : { v:['isAlphaOrNumeric'] },
 						jtitle : { v:['isTextarea'] },
 						experience : { in:['1','2','3','4','5','6','7'] },
+						price_type : { in :['11',11] , b:true, default :11 },
 						payment_type : { in:[2,'2'] , default : 2, b:true },
 						}
 						
@@ -83,7 +117,7 @@ Listings.prototype = {
 						quantity : { v : ['isInt'] , b:true},
 						quantity_mpo : { v : ['isInt'] , b:true , default :1},
 						price : { v:['isPrice'] },
-						p_type : { in:[1,2,'1','2'] , b : true},
+						price_type : { in :[1,2,3,9,'1','2','3','9'] , b:true, default :1 },
 						delivery : {
 							extra : {
 								values : {
@@ -104,14 +138,15 @@ Listings.prototype = {
 								1 : l,
 								2 : l,
 								3 : z,
-								4 : h,
-								5 : h,
+								4 : h1,
+								5 : h2,
 								6 : e,
 								7 : e,
 								8 : n
 								}
 							},
 						title : { v:['isAlphaOrNumeric'] },
+						p_type : { in:[1,2,'1','2'] , b : true , default : 1},
 						location : _s_common.helpers.validators.location(),
 						description : { v:['isTextarea'] , b : true },
 						images : { v:['isArray'] , b:'array'},
@@ -232,6 +267,9 @@ Listings.prototype = {
 		if(!results) return { failure : { msg : 'The listing could not be found in the system.' , code : 300 } }
 
 		if(results.entity.id != _s_entity.object.profile.id()) return { failure : { msg : 'The listing does not belong to the entity making the changes.' , code : 300 } }
+
+		delete results.distance;
+		
 		return yield _s_common.update(_s_util.merge(results,data),'listings',true);
 		},
 	get actions() {
@@ -299,9 +337,11 @@ Listings.prototype = {
 		},
 	get : function*(obj){
 		return yield _s_common.get(obj, 'listings', function(data){
-			data.distance = _s_loc.helpers.calculate.distance({
-				destination : data.location.coordinates
-				})
+			// if(data.location){
+				data.distance = _s_loc.helpers.calculate.distance({
+					destination : data.location.coordinates
+					})
+				// }
 			return data;
 			});
 		}

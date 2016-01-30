@@ -36,10 +36,19 @@ var obj = {
 	p_type : {
 		1 : 'Fixed/Firm',
 		2 : 'Negotiable/OBO',
-		3 : 'Yearly',
-		4 : 'Monthly',
+		},
+	price_type : {
+		1 : 'Item',
+		2 : 'Items',
+		3 : 'Everything',
+		4 : 'Appointment',
 		5 : 'Hourly',
-		6 : 'Special Arrangement',
+		6 : 'Daily',
+		7 : 'Monthly',
+		8 : 'Yearly',
+		9 : 'Custom',
+		10 : 'Property',
+		11 : 'No Price'
 		},
 	htype : {
 		1 : 'Single Family Home',
@@ -59,7 +68,7 @@ var obj = {
 		7 : '5+',
 		},
 	bathrooms_f : {
-		1 : '1',
+		1 : '0',
 		2 : '1',
 		3 : '2',
 		4 : '3',
@@ -68,7 +77,7 @@ var obj = {
 		7 : '5+',
 		},
 	bathrooms_h : {
-		1 : '1',
+		1 : '0',
 		2 : '1',
 		3 : '2',
 		4 : '3',

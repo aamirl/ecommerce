@@ -158,6 +158,10 @@ module.exports = {
 
 		// if no problem we create the order!
 
+		var crpyto = require('crypto');
+		var start =  Math.random().toString(36).slice(2) + _s_entity.object.profile.id();
+		var key = crpyto.createHash('md5').update(start).digest('hex');
+
 		var order = {
 			buying : _s_entity.object.helpers.data.document(),
 			selling : result.entity,
@@ -167,7 +171,7 @@ module.exports = {
 			price : price,
 			quantity : data.quantity,
 			transactions : [charge.id],
-			key : Math.random().toString(36).slice(2),
+			key : key,
 			setup : {
 				active : 1,
 				status : 51,
@@ -191,7 +195,37 @@ module.exports = {
 
 		return r;
 		},
-	'order/process' : function*(){
+	'order/key/check' : function*(){
+		var data = _s_req.validate({
+			key : { v:['isListingKey'] }
+			})
+		if(data.failure) return data;
+
+		var order = yield _orders.get(data);
+		if(!order) return { failure : { msg : 'There is not a valid order matching that key.' , code : 300 } }
+
+		// now that we have an order with a valid key, we check the order and listing
+		if(order.type != 1) return { failure : { msg : 'This is not an order that can be picked up in person.' , code : 300 } }
+		if(order.setup.status != 51) return { failure : { msg : 'This is not an order that can be processed.' , code : 300 } }
+
+		// now let's make sure that the person trying to complete the order (entity) is the same as the one who started the listing
+		var listing = yield _s_load.library('listings').get(order.listing);
+		if(!listing) return { failure : { msg: 'This listing is not a valid listing anymore.' , code : 300 } }
+		if(listing.setup.active != 1) return { failure : { msg : 'This listing is not an active listing.' , code : 300 } }
+		if(listing.quantity < order.quantity) return { failure : { msg : 'This listing cannot be confirmed because the total quantity available is not enough.' , code : 300 } }
+		if(listing.entity.id != _s_entity.object.profile.id()) return { failure : { msg : 'This listing is not being confirmed by the same entity that listed it - therefore the payment cannot be completed.' , code : 300 } }
+
+		return {  
+			success : { 
+				data : { 
+					order : order,
+					listing : listing
+					}
+				}
+			}
+
+		},
+	'order/key/process' : function*(){
 		var data = _s_req.validate({
 			id : { v:['isListingOrder'] },
 			key : { v:['isListingKey'] }

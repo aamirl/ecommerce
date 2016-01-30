@@ -37,9 +37,10 @@ module.exports = {
 
 		obj.listing ? search.body.query.bool.must.push({match:{'listing':obj.listing}}) : null;
 		obj.quantity ? search.body.query.bool.must.push({ range: { 'quantity' : { gt : obj.quantity } } }) : null;
-		obj.status ? search.body.query.bool.must.push({match:{'setup.status':obj.status}}) : null;
+		obj.status ? search.body.query.bool.filter.push({term:{'setup.status':obj.status}}) : null;
 		obj.buying ? search.body.query.bool.filter.push({term:{'buying.id':obj.buying}}) : null;
 		obj.selling ? search.body.query.bool.filter.push({term:{'selling.id':obj.selling}}) : null;
+		obj.key ? search.body.query.bool.filter.push({term:{'key':obj.key}}) : null;
 		obj.type ? search.body.query.bool.filter.push({term:{'type':obj.type}}) : null;
 		
 		

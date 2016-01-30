@@ -166,6 +166,7 @@ Request.prototype = {
 								}
 							}
 						else{
+							console.log(flag);
 							_s_util.indexOf(autoFilters, flag) !== -1 ? filter = flag : null;
 							validator[flag](all_data[i]) ? count++ : sub_errors.push(flag)
 							}						

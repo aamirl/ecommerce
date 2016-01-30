@@ -296,9 +296,12 @@ Common.prototype = {
 					return { counter : results.counter , data : send };
 					}
 
+				
+				if(func) results = func(results);	
+
 				if(obj.deep_convert){
 					yield _s_util.each(obj.deep_convert , function*(o_lib, o_key){
-						if(results.data[o_key]) results.data[o_key] = yield self.helpers.convert(results.data[o_key] , o_lib);
+						if(results[o_key]) results[o_key] = yield self.helpers.convert(results[o_key] , o_lib);
 						})
 	
 					delete obj.deep_convert;
@@ -314,7 +317,7 @@ Common.prototype = {
 				}
 			
 			if(func) results = func(results);	
-
+			
 			if(obj.endpoint) return { success : { data : results } }
 			return results;
 			}

@@ -131,18 +131,18 @@ Location.prototype = {
 				    dist = dist * 180/Math.PI
 				    dist = dist * 60 * 1.1515
 
-				    if(units == 1){
+				    if(units == 'US'){
 				    	var e = (dist * 0.8684).toFixed(2);
 				    	return {
-				    		id : e,
-				    		label : e + ' mi'
+				    		data : dist,
+				    		converted : e + ' mi'
 				    		}
 				    	}
 
-				    var e = (dist * 1.609344).toFixed(2);
+				    // var e = (dist * 1.609344).toFixed(2);
 				    return {
-				    	id : e,
-				    	label : e + ' km'
+				    	data : dist,
+				    	converted : dist.toFixed(2) + ' km'
 				    	}
 					}
 				},
