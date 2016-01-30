@@ -113,7 +113,7 @@ T1.prototype = {
 							default : [] 
 							},
 						social : _s_common.helpers.validators.social(),
-						currency : { in:_s_currency.helpers.valid(), b:true, default:'US' },
+						currency : { in:_s_currency.helpers.valid(), b:true, default:'USD' },
 						standard : { in:['US','MT'], b:true, default:'MT' },
 						addresses : _s_common.helpers.validators.address({aoo:true}),
 						verifications : {

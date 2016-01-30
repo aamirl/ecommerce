@@ -321,7 +321,8 @@ module.exports = {
 				status : {
 					allowed : [1,'1'],
 					change : data.status
-					}
+					},
+				active : [1,'1']
 				}
 			});
 
