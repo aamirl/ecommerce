@@ -201,8 +201,15 @@ module.exports = {
 			})
 		if(data.failure) return data;
 
-		var order = yield _orders.get(data);
-		if(!order) return { failure : { msg : 'There is not a valid order matching that key.' , code : 300 } }
+		var order = yield _orders.get({
+			key : data.key,
+			include : 'buying,type,listing,price,quantity,setup,location'
+			});
+		if(!order || order.counter != 1) return { failure : { msg : 'There is not a valid order matching that key.' , code : 300 } }
+		else {
+			order.data[0].data.id = order.data[0].id,
+			order = order.data[0].data
+			}
 
 		// now that we have an order with a valid key, we check the order and listing
 		if(order.type != 1) return { failure : { msg : 'This is not an order that can be picked up in person.' , code : 300 } }
@@ -218,8 +225,8 @@ module.exports = {
 		return {  
 			success : { 
 				data : { 
-					order : order,
-					listing : listing
+					order : yield _s_util.convert.single({data:order, label:true, library:'orders'}),
+					listing : yield _s_load.library('listings').helpers.convert(listing)
 					}
 				}
 			}
@@ -227,13 +234,16 @@ module.exports = {
 		},
 	'order/key/process' : function*(){
 		var data = _s_req.validate({
-			id : { v:['isListingOrder'] },
 			key : { v:['isListingKey'] }
 			})
 		if(data.failure) return data;
 
 		var order = yield _orders.get(data);
-		if(!order) return { failure : { msg : 'This is not a valid listing order.' , code : 300 } }
+		if(!order || order.counter != 1) return { failure : { msg : 'This is not a valid listing order.' , code : 300 } }
+		else{
+			order.data[0].data.id = order.data[0].id,
+			order = order.data[0].data
+			}
 
 		if(order.type != 1) return { failure : { msg : 'This is not an order that can be picked up in person.' , code : 300 } }
 		if(order.setup.status != 51) return { failure : { msg : 'This is not an order that can be processed.' , code : 300 } }
@@ -271,7 +281,14 @@ module.exports = {
 			data : {
 				id : order.selling.id,
 				amount : capture.amounts.processed,
-				service : 'ecommerce'
+				service : 'ecommerce',
+				transactions : [
+					{
+						amount : capture.amounts.processed,
+						type : 'sellyx',
+						capture : 'true'
+						}
+					]
 				}
 			})
 
