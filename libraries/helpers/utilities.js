@@ -330,7 +330,8 @@ module.exports = {
 
                 
                 // load validator strings
-                var amounts = 'total|amount|price|subtotal|msrp|sale|standard1|standard2|sale1|sale2|return1|return2|sreturn1|sreturn2|local';
+                var amounts = ['total','amount','price','subtotal','msrp','sale','standard1','standard2','sale1','sale2','return1','return2','sreturn1','sreturn2','local','requested','processed','refunded','authorized'];
+                // var amounts = 'total|amount|price|subtotal|msrp|sale|standard1|standard2|sale1|sale2|return1|return2|sreturn1|sreturn2|local|requested|processed|refunded|authorized';
                 var csvs = 'restricted|categories';
                 var dates = 'added|deleted|modified|submitted|start|end|expiration|cancelled|rejected|requested|approved|denied|withdrawn';
                 var countries_t = 'origin|country';
@@ -344,11 +345,11 @@ module.exports = {
 
                     var targ = (v instanceof Object && v.data ? v.data : v);
 
-                    if(k=='totals'){
+                    if(k=='totals' | k == 'amounts'){
                         k = _s_currency.convert.array.front({data:v});
                         return;
                         }
-                    if(new RegExp(amounts).test(k)){
+                    if(_s_util.indexOf(amounts,k) != -1){
                         var converted =  _s_currency.convert.front(targ, false);
                         }
                     else if(k == 'address'){
