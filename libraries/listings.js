@@ -36,7 +36,8 @@ Listings.prototype = {
 					exclude : { v:['isAlphaOrNumeric'], b:true },
 					x : { v:['isInt'] , b:true , default : 0 },
 					y : { v:['isInt'] , b:true , default : 100 },
-					count : { in:['true','false',true,false], b:true, default:false }
+					count : { in:['true','false',true,false], b:true, default:false },
+					status : { in:['1','2','3',1,2,3] , b:true }
 					}
 				},
 			validators : {

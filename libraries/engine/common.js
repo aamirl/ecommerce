@@ -280,6 +280,29 @@ Common.prototype = {
 									}
 								})
 							}
+
+						if(obj.full && obj.full != "true" && obj.full != "false"){
+							yield _s_util.each(obj.full ,function*(o2,i2){
+
+								if(o.data[o2.key]){
+
+									var t = (o2.obj?o2.obj:{});
+									t.id = o.data[o2.key];
+
+									var get_small = yield _s_common.get(t , o2.index);
+									if(!get_small) return;
+
+									o.data[o2.key] = get_small;
+
+									}
+
+								})
+
+
+
+							}
+
+
 						if(func) o.data = func(o.data);
 
 						if(typeof _controller.helpers.convert == 'function') send.push(yield _controller.helpers.convert(o.data))

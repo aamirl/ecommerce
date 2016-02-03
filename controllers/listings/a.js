@@ -91,7 +91,9 @@ module.exports = {
 		data.buying = _s_entity.object.profile.id();
 		data.exclude = 'transactions';
 		data.endpoint = true;
-		data.type = 1
+		data.type = 1;
+	
+		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location' , convert : 'true' } }];
 
 		return yield _orders.get(data);
 		},

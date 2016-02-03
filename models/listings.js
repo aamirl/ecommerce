@@ -53,6 +53,7 @@ module.exports = {
 						}
 					break;
 				case 'categories':
+					if(dets==["0"]) return;
 					query = { terms : { 'category' : dets } };
 					break;
 				case 'entity' :
@@ -81,6 +82,9 @@ module.exports = {
 					break;
 				case 'bathrooms_h':
 					filter = { terms : { 'bathrooms_h' : dets } }
+					break;
+				case 'status':
+					filter = { term : { 'setup.status' : dets } }
 					break;
 				default : 
 					return;
@@ -123,6 +127,8 @@ module.exports = {
 					})
 				}
 			}
+
+		console.log(JSON.stringify(search));
 
 		if(obj.count) return yield _s_db.es.count(search,obj);
 		return yield _s_db.es.search(search, obj);

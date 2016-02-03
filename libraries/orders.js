@@ -19,7 +19,9 @@ Orders.prototype = {
 				active : { v:['isAlphaOrNumeric'], b:true },
 				x : { v:['isInt'] , b:true , default : 0 },
 				y : { v:['isInt'] , b:true , default : 10 },
-				count : { in:['true','false',true,false], b:true, default:false }
+				count : { in:['true','false',true,false], b:true, default:false },
+				// this is the parameter to denote whether we need to bring back the listing information with the order as well
+				full : { in:['true','false',true,false], b:true, default:false }
 				};
 			}
 		},
