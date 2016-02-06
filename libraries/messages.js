@@ -101,6 +101,13 @@ Messages.prototype = {
 				deleted : false,
 				deleted_forever : false
 				})
+
+			// yield _s_load.library('notifications').new.websocket({
+			// 	user : d.id,
+			// 	message : JSON.stringify({ header : "message_count" , body :  })				
+			// 	})
+
+
 			})
 
 		result.messages = [this.actions.new.message(data,index)];

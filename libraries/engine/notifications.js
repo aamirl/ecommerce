@@ -27,6 +27,7 @@ Notifications.prototype = {
 		var self = this;
 		return {
 			websocket : function*(obj){
+				
 				if(obj.broadcast){
 
 					}
@@ -35,10 +36,11 @@ Notifications.prototype = {
 					data : {
 						type : 105,
 						endpoint : (obj.broadcast?obj.user+'.'+obj.key:obj.user+"."),
-						message : "{\"servermsg\": 300, \"message\": \""+obj.message+"\" }",
+						message : "{\"servermsg\": "+(obj.code?obj.code:103)+", \"message\": \""+obj.message+"\" }",
 						expiration : (obj.expiration?obj.expiration:100)
 						}
 					});
+				
 				},
 			push : function*(obj){
 
