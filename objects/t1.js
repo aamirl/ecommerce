@@ -177,28 +177,6 @@ T1.prototype = {
 				}
 			}
 		},
-	get financials() {
-		var self = this;
-		return {
-			profile : function(){
-
-				},
-			cards : {
-				get : { 
-					single : function(obj){
-						var all = self.financials.cards.get.all();
-						if(!all) return false;
-						return _s_util.array.find.object(all, 'id' , (obj.card?obj.card:obj));
-						},
-					all : function(){
-						var cards = self.financials.cards;
-						if(!cards) return false;
-						return self.financials.cards;
-						}
-					}
-				}
-			}
-		},
 	get actions() {
 		var self = this;
 		return {

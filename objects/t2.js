@@ -97,39 +97,6 @@ T2.prototype = {
 				}
 			}
 		},
-	get financials(){
-		var self = this;
-		return {
-			tax : function(){
-				try{ return self.data.financials.profile.customer.tax; }
-				catch(err){ return false; }
-				},
-			set : function(){
-				if(self.data.financials.profile) return true;
-				return false;
-				},
-			profile : function(){
-				return self.data.financials.profile;
-				},
-			account : function(){
-				return 
-				},
-			cards : {
-				get : { 
-					single : function(obj){
-						var all = self.financials.cards.get.all();
-						if(!all) return false;
-						return _s_util.array.find.object(all, 'id' , (obj.card?obj.card:obj));
-						},
-					all : function(){
-						var cards = self.data.financials.cards;
-						if(!cards) return false;
-						return data.financials.cards;
-						}
-					}
-				}
-			}
-		},
 	get helpers(){
 		var self = this;
 		return {

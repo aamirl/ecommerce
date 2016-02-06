@@ -146,6 +146,9 @@ module.exports = {
 		var charge = yield _s_req.http({
 			url : _s_config.financials + 'charges/p/new',
 			method : 'POST',
+			headers : {
+				key : _s_auth_key
+				},
 			data : {
 				id : _s_t1.profile.id(),
 				amount : price,
@@ -264,6 +267,9 @@ module.exports = {
 		// let's capture the payment information
 		var capture = yield _s_req.http({
 			url : _s_config.financials + 'charges/p/capture',
+			headers : {
+				key : _s_auth_key
+				},
 			method : 'POST',
 			data : {
 				transaction : order.transactions[0],
@@ -280,6 +286,9 @@ module.exports = {
 		var transfer = yield _s_req.http({
 			url : _s_config.financials + 'load/p/new',
 			method : 'POST',
+			headers : {
+				key : _s_auth_key
+				},
 			data : {
 				id : order.selling.id,
 				amount : capture.amounts.processed,

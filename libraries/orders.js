@@ -285,6 +285,9 @@ Orders.prototype = {
 					var cancel = yield _s_req.http({
 						url : _s_config.financials + 'reversals/p/new',
 						method : 'POST',
+						headers : {
+							key : _s_auth_key
+							},
 						data : {
 							transaction : order.transactions[0],
 							service : 'ecommerce'
