@@ -59,6 +59,7 @@ T1.prototype = {
 				if (inp == _s_cache_id) return true;
 				if(self.data.entities.length > 0){
 					var r = _s_util.array.find.object(self.data.entities, 'id', inp, true);
+					if(!r) return false;
 					if(r.object.setup.active != 0) return r;
 					}
 				return false

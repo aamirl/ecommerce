@@ -342,6 +342,17 @@ module.exports = {
 
 		},
 
+	'privileges/check' : function*(){
+		var data = _s_req.validate({
+			id : { v:['isAlphaOrNumeric'] }
+			})
+		if(data.failure) return data;
+
+		// check to see if the supplied company credentials are okay for access by the user
+		var r = _s_t1.entities.check(data.id);
+		if(!r) return { failure : { msg : 'This user is not authorized.' , code : 300 } }
+		return { success : { msg : 'This user is valid.' , code : 300 } }
+		},
 	'get/enrollment' : function*(){
 		var check = _entities.privileges.check();
 		if(check.failure) return check;
