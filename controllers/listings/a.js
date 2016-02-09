@@ -144,7 +144,7 @@ module.exports = {
 
 		// let's charge the payment information
 		var charge = yield _s_req.http({
-			url : _s_config.financials + 'charges/p/new',
+			url : _s_config.financials + 'charges/a/new',
 			method : 'POST',
 			headers : {
 				key : _s_auth_key
@@ -266,7 +266,7 @@ module.exports = {
 
 		// let's capture the payment information
 		var capture = yield _s_req.http({
-			url : _s_config.financials + 'charges/p/capture',
+			url : _s_config.financials + 'charges/a/capture',
 			headers : {
 				key : _s_auth_key
 				},
@@ -284,7 +284,7 @@ module.exports = {
 
 		// next we then transfer money to the seller account which is the same thing as loading their account
 		var transfer = yield _s_req.http({
-			url : _s_config.financials + 'load/p/new',
+			url : _s_config.financials + 'load/a/new',
 			method : 'POST',
 			headers : {
 				key : _s_auth_key

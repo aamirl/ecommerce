@@ -283,7 +283,7 @@ Orders.prototype = {
 			listing : {
 				cancel : function*(order, success_status, failure_status, raw){
 					var cancel = yield _s_req.http({
-						url : _s_config.financials + 'reversals/p/new',
+						url : _s_config.financials + 'reversals/a/new',
 						method : 'POST',
 						headers : {
 							key : _s_auth_key
