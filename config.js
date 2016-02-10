@@ -10,8 +10,8 @@ module.exports = {
 	certs : {
 		// issuer : '10.0.1.3',
 		issuer : 'ec.sellyx.com',
-		key : '/root/sellyx/certs/ec_sellyx_com.key',
-		cert : '/root/sellyx/certs/server.pem',
+		key : '/sellyx/certs/ec_sellyx_com.key',
+		cert : '/sellyx/certs/server.pem',
 		// key : __dirname + '/certs/server.key',
 		// cert : __dirname + '/certs/server.crt'
 		},
