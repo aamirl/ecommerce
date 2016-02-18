@@ -80,8 +80,83 @@ Interests.prototype = {
 			return { failure : { msg : 'No objects matched your query.' , code : 300 } };
 			}
 		return false;
-		}
+		},
+	new : function*(){
+		
+		var data = _s_req.validate({
+			id : { v:['isAlphaOrNumeric'] },
+			price : { v:['isPrice'] },
+			contact : {
+				dependency : true,
+				data : {
+					1 : 'none',		// contact through sellyx
+					2 : 'none',		// contact through sellyx email
+					3 : 'none',		// contact through sellyx phone
+					4 : 'none',		// contact through sellyx email and/or phone
+					5 : {
+						custom : { v:['isAlphaOrNumeric'] }
+						}
+					}
+				},
+			message : { v:['isAlphaOrNumeric'] , b:true }
+			})
 
+		if(data.failure) return data;
+
+		// first get the listing
+		var result = yield _s_load.library('listings').get(data.id);
+		if(!result) return {failure:{msg:'The listing was not found.' , code : 300}}
+		if(result.setup.active == 0) return { failure : { msg : 'This listing is not active.' , code : 300 } }
+		if(result.payment_type == 1) return { failure : { msg : 'Unfortunately, you cannot submit an interest for this listing.', code : 300 } }
+
+		// find and see if the user has submitted an interest for the item before
+		var r = _s_util.array.find.object(result.interests, 'id', _s_t1.profile.id(), 'entity');
+		if(r) return { failure : { msg : 'You have already submitted an interest for this item. Please wait for the seller to get back to you or go to your interests and send them a message about the listing.', code : 300  } }
+
+		switch(data.contact){
+			case 1:
+			case "1":
+				data.contact = [];
+				break;
+			case 2:
+			case "2":
+				data.contact = [_s_t1.profile.email.id()]
+				break;
+			case 3:
+			case "3":
+				data.contact = [_s_t1.profile.contact.primary()]
+				break;
+			case 4:
+			case "4":
+				data.contact = [_s_t1.profile.email.id() , _s_t1.profile.contact.primary()]
+				break;
+			case 5:
+			case "5":
+				data.contact = [data.custom]
+				break;
+			}
+
+		var t = {
+			interest : _s_common.helpers.generate.id(),
+		 	entity : _s_t1.helpers.data.document(),
+		 	price : data.price,
+		 	contact : data.contact,
+		 	location : _s_loc.active.get(),
+		 	messages : [
+		 		],
+		 	setup : {
+		 		active : 1,
+		 		status : 1,
+		 		added : _s_dt.now.datetime()
+		 		}
+			}
+		if(data.message) t.messages.push({ message : data.message, by : 1, on: _s_dt.now.datetime() })
+
+		result.interests.push(t);
+		var t = yield _s_common.update(result, 'listings', true);
+		if(!t||t.failure)  return { failure : { msg : 'Your interest was not added.', code : 300 } }
+		return { success : { msg : 'Your interest was successfully added.' , code : 300 } }
+		}
 	}
 
 

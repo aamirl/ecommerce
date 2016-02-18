@@ -13,6 +13,7 @@ Orders.prototype = {
 				product : { v:['isProduct'] , b:true },
 				user : { v:['isUser'] , b:true },
 				seller : { v:['isSeller'] , b:true },
+				s_status : {csv_in:["50","51","52","53","54","55","56","57",50,51,52,53,54,55,56,57] , b:true },
 				convert : { in:['true','false'] , default : 'true' },
 				include : { v:['isAlphaOrNumeric'], b:true },
 				exclude : { v:['isAlphaOrNumeric'], b:true },

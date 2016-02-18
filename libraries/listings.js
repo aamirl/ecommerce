@@ -15,7 +15,7 @@ Listings.prototype = {
 					q : { v:['isSearch'] , b:true },
 					id : { v:['isLocalListing'] , b:true },
 					entity : { v:['isAlphaOrNumeric'], b:true },
-					distance : { v:['isDistance'], b:true , default : 250 },
+					distance : { v:['isDistance'], b:true  },
 					type : { csv_in:[1,2,3,4,5,6,7,8,'1','2','3','4','5','6','7','8'] , b:true },
 					
 					// filters for products
@@ -37,7 +37,8 @@ Listings.prototype = {
 					x : { v:['isInt'] , b:true , default : 0 },
 					y : { v:['isInt'] , b:true , default : 100 },
 					count : { in:['true','false',true,false], b:true, default:false },
-					status : { in:['1','2','3',1,2,3] , b:true }
+					s_status : { in:['1','2','3',1,2,3] , b:true },
+					active : {in:[1,"1","0",0] , b:true, default:1}
 					}
 				},
 			validators : {
@@ -115,8 +116,8 @@ Listings.prototype = {
 						category : { v : ['isCategory'] , b:true },
 						payment_type : { in:[1,2,'1','2'] , default : 1, b:true },
 						condition : { v : ['isCondition'] },
-						quantity : { v : ['isInt'] , b:true},
-						quantity_mpo : { v : ['isInt'] , b:true , default :1},
+						quantity : { v : ['isInt'] , b:true , default : 1},
+						quantity_mpo : { v : ['isInt'] , b:true },
 						price : { v:['isPrice'] },
 						price_type : { in :[1,2,3,9,'1','2','3','9'] , b:true, default :1 },
 						delivery : {
@@ -148,7 +149,10 @@ Listings.prototype = {
 							},
 						title : { v:['isAlphaOrNumeric'] },
 						p_type : { in:[1,2,'1','2'] , b : true , default : 1},
-						location : _s_common.helpers.validators.location(),
+						location : {
+							json : true,
+							data : _s_common.helpers.validators.location()
+							},
 						description : { v:['isTextarea'] , b : true },
 						images : { v:['isArray'] , b:'array'},
 						video : { in:[1,2,'1','2'] , default : 2, b:true },
@@ -227,29 +231,7 @@ Listings.prototype = {
 		data = _s_util.merge(data, {
 			entity : _s_entity.object.helpers.data.document(),
 			orders : [],
-			interests : [{
-				interest : Math.floor((Math.random() * 10000000000000)),
-			 	entity : {
-			 		id : '569066db7c444ad53ca26509',
-			 		name : 'Customer',
-			 		verified : false
-			 		},
-			 	price : 10.00,
-			 	contact : 'test-customer@sellyx.com',
-			 	location : _s_loc.active.get(),
-			 	messages : [
-			 		{
-			 			message : 'Hi this is a test message',
-			 			by : 1, 
-			 			on : _s_dt.now.datetime()
-			 		}
-			 		],
-			 	setup : {
-			 		active : 1,
-			 		status : 1,
-			 		added : _s_dt.now.datetime()
-			 		}
-				}]
+			interests : []
 			});
 
 		return yield _s_common.new(data,'listings', true);
@@ -300,17 +282,23 @@ Listings.prototype = {
 				else{
 					if(entity != result.entity.id){ return { failure : { msg : 'You are not allowed to send messages in this particular interest thread.' } }; }
 					}
-				
-				result.interests[interest.index].messages.push({
+				var t = {
 					message : data.message,
 					by : obj.type,
 					on : _s_dt.now.datetime()
-					})
+					}
+				result.interests[interest.index].messages.push(t)
 
 				if(obj.type == 1){
-					return yield _s_common.update(result,'listings',[{ insert : 'interest' , target : {id:'id' , data : entity, depth : 'entity'} , replace : 'interests' }]);
+					var update = yield _s_common.update(result,'listings',[{ insert : 'interest' , target : {id:'id' , data : entity, depth : 'entity'} , replace : 'interests' }]);
 					}
-				return yield _s_common.update(result,'listings');
+				else {
+					var update = yield _s_common.update(result,'listings');
+					}
+
+				if(update.failure) return update.failure
+				return { success : { data : result.interests[interest.index].messages } }
+				// return {success : {data :  t }}
 				},
 			status : function*(obj){
 				!obj?obj={}:null;

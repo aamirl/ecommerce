@@ -83,9 +83,11 @@ module.exports = {
 				case 'bathrooms_h':
 					filter = { terms : { 'bathrooms_h' : dets } }
 					break;
-				case 'status':
+				case 's_status':
 					filter = { term : { 'setup.status' : dets } }
 					break;
+				case 'active':
+					filter = { term : { 'setup.active' : dets } } 
 				default : 
 					return;
 					break;

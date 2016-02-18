@@ -26,6 +26,20 @@ Notifications.prototype = {
 	get new() {
 		var self = this;
 		return {
+			rest : function*(obj){
+
+				return yield self.helpers.request({
+					data : {
+						type : 107,
+						endpoint : obj.method?obj.method:'POST' + ' ' + obj.endpoint + ' '+(obj.content_type?obj.content_type:'application/json'),
+						message : "{\"servermsg\": "+(obj.code?obj.code:103)+", \"message\": \""+JSON.stringify(obj.data)+"\" }",
+						expiration : (obj.expiration?obj.expiration:100)
+						}
+					});
+
+
+
+				},
 			websocket : function*(obj){
 				
 				if(obj.broadcast){

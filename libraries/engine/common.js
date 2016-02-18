@@ -34,11 +34,11 @@ Common.prototype = {
 						json : true,
 						b : true,
 						default : {
-							twitter : {},
-							facebook : {},
-							google : {},
-							pinterest : {},
-							instagram : {}
+							twitter : {id:''},
+							facebook : {id:''},
+							google : {id:''},
+							pinterest : {id:''},
+							instagram : {id:''}
 							},
 						data : {
 							twitter : {
@@ -86,35 +86,35 @@ Common.prototype = {
 					},
 				location : function(){
 					return {
-						json : true,
-						data : {
-							name : { v:['isAlphaOrNumeric'] },
-							city : { v:['isAlphaOrNumeric'] , b:true },
-							postal : { v:['isAlphaOrNumeric'] , b:true },
-							coordinates : {
-								json : true,
-								data : {
-									lat : {v:['isFloat']},
-									lon : {v:['isFloat']},
-									}
-								},
-							region : {
-								json : true,
-								b:true,
-								data : {
-									name : { v:['isAlphaOrNumeric'] },
-									code : {v:['isAlphaOrNumeric'] }
-									}
-								},
-							country : {
-								json : true,
-								b:true,
-								data : {
-									name : { v:['isAlphaOrNumeric'] },
-									code : {v:['isAlphaOrNumeric'] }
-									}
+						name : { v:['isAlphaOrNumeric'] },
+						city : { v:['isAlphaOrNumeric'] , b:true },
+						postal : { v:['isAlphaOrNumeric'] , b:true },
+						coordinates : {
+							json : true,
+							data : {
+								lat : {v:['isFloat']},
+								lon : {v:['isFloat']},
+								}
+							},
+						region : {
+							json : true,
+							b:true,
+							default : {},
+							data : {
+								name : { v:['isAlphaOrNumeric'] , b:true},
+								code : {v:['isAlphaOrNumeric'] , b:true }
+								}
+							},
+						country : {
+							json : true,
+							b:true,
+							default :{},
+							data : {
+								name : { v:['isAlphaOrNumeric'] , b:true },
+								code : { v:['isAlphaOrNumeric'] , b:true }
 								}
 							}
+							
 						}
 					},
 				address : function(obj){

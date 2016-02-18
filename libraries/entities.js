@@ -23,6 +23,7 @@ Entities.prototype = {
 					id : { v:['isEntity'] , b:true },
 					q : { v: ['isSearch'] , b:true},
 					entities : { v:['isArray'] , b:true },
+					indices : { in:['t1','t2'] , b:true, default : 't1' },
 					convert : { in:['true','false'] , default : 'true' },
 					include : { v:['isAlphaOrNumeric'], b:true },
 					exclude : { v:['isAlphaOrNumeric'], b:true },

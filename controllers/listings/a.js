@@ -10,6 +10,7 @@ module.exports = {
 		data.entity = _s_entity.object.profile.id();
 		delete data.distance;
 		delete data.type;
+		delete data.active;
 		data.endpoint = true;
 
 		return yield _listings.get(data);
@@ -23,7 +24,7 @@ module.exports = {
 	update : function*(){
 		return yield _listings.update();
 		},
-	'decision/status' : function*(){
+	'interest/status' : function*(){
 		
 		var data = _s_req.validate({
 			id : {v:['isListing']},
@@ -54,7 +55,7 @@ module.exports = {
 				}
 			});
 		},
-	message : function*(){
+	'interest/message' : function*(){
 		return yield _listings.actions.message({ type : 2 });
 		},
 	'orders/get/selling' : function*(){
@@ -66,6 +67,9 @@ module.exports = {
 		data.exclude = 'transactions,key';
 		data.endpoint = true;
 		data.type = 1
+
+		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location,setup.status,setup.active' , convert : 'true' } }];
+
 
 		return yield _orders.get(data);
 		},
@@ -93,7 +97,7 @@ module.exports = {
 		data.endpoint = true;
 		data.type = 1;
 	
-		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location' , convert : 'true' } }];
+		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location,setup.status,setup.active' , convert : 'true' } }];
 
 		return yield _orders.get(data);
 		},
@@ -114,13 +118,12 @@ module.exports = {
 	'order/authorize' : function*(){
 		var data = _s_req.validate({
 			id : { v:['isListing'] },
+			price : { v:['isPrice'] , b:true },						// this is the offer, only accepted if its negotiable
 			quantity : { v:['isInt'] , default : 1, b:true},
-			price : { v:['isPrice'] , b:true },
 			transactions : { v:['isArrayOfObjects'] }
 			})
 		if(data.failure) return data;
 		if(data.transactions.length > 1) return { failure : { msg : 'At this time, Sellyx only supports payment with one method.' , code : 300 } }
-
 
 		// let's first pull up the listing
 		var _listings = _s_load.library('listings');
@@ -133,13 +136,14 @@ module.exports = {
 		if(result.payment_type == 2) return { failure : { msg : 'This listing cannot be purchased through Sellyx.' , code : 300 } }
 		if(result.quantity < data.quantity) return { failure : { msg : 'This listing does not have enough quantity available for purchase at this time.' , code : 300 } }
 		if(result.quantity_mpo < data.quantity) return { failure : { msg : 'This seller does not allow for the purchase of more than ' + result.quantity_mpo + ' item(s) in one order.' , code : 300 } }
-		if(data.price > result.price) return { failure : { msg : "At this time, you cannot denote a larger price than what the item was listed for.", code : 300 } }
 
 		// now let's see what the price needs to be
-		var price = parseFloat(data.price?data.price:result.price) * parseInt(data.quantity);
+		var price = result.p_type == 1 ? parseFloat(result.price) * parseInt(data.quantity) : (data.price?data.price:result.price) * parseInt(data.quantity)
+
 
 		_s_u.each(data.transactions, function(transaction, i){
 			data.transactions[i].capture = "false";
+			data.transactions[i].amount = price
 			})
 
 		// let's charge the payment information
@@ -158,10 +162,7 @@ module.exports = {
 			})
 
 		if(charge.failure) return charge;
-		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : charge.transactions[0].error } }
-
-
-		// if no problem we create the order!
+		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : charge.transactions[0].failure } }
 
 		var crpyto = require('crypto');
 		var start =  Math.random().toString(36).slice(2) + _s_entity.object.profile.id();
@@ -237,13 +238,16 @@ module.exports = {
 			}
 
 		},
-	'order/key/process' : function*(){
+	'order/process' : function*(){
 		var data = _s_req.validate({
 			key : { v:['isListingKey'] }
 			})
 		if(data.failure) return data;
 
-		var order = yield _orders.get(data);
+		var order = yield _orders.get({
+			key : data.key
+			});
+
 		if(!order || order.counter != 1) return { failure : { msg : 'This is not a valid listing order.' , code : 300 } }
 		else{
 			order.data[0].data.id = order.data[0].id,
@@ -278,30 +282,46 @@ module.exports = {
 			})
 
 		if(capture.failure) return capture;
-		if(capture.amounts.requested != capture.amounts.processed) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : capture.transactions[0].error } }
+		if(capture.amounts.requested != capture.amounts.processed) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : capture.transactions[0].failure } }
 
 		order.transactions.push(capture.id);
 
 		// next we then transfer money to the seller account which is the same thing as loading their account
+		// var transfer = yield _s_req.http({
+		// 	url : _s_config.financials + 'load/a/new',
+		// 	method : 'POST',
+		// 	headers : {
+		// 		key : _s_auth_key
+		// 		},
+		// 	data : {
+		// 		id : order.selling.id,
+		// 		amount : capture.amounts.processed,
+		// 		service : 'ecommerce',
+		// 		transactions : [
+		// 			{
+		// 				amount : capture.amounts.processed,
+		// 				type : 'sellyx',
+		// 				capture : 'true'
+		// 				}
+		// 			]
+		// 		}
+		// 	})
+
 		var transfer = yield _s_req.http({
-			url : _s_config.financials + 'load/a/new',
+			url : _s_config.financials + 'transfers/a/new',
 			method : 'POST',
 			headers : {
 				key : _s_auth_key
 				},
 			data : {
-				id : order.selling.id,
+				type : 'sellyx',
+				from : 'sellyx',
+				to : order.selling.id,
 				amount : capture.amounts.processed,
-				service : 'ecommerce',
-				transactions : [
-					{
-						amount : capture.amounts.processed,
-						type : 'sellyx',
-						capture : 'true'
-						}
-					]
+				service : 'ecommerce'
 				}
 			})
+		
 
 		if(transfer.failure){
 			order.setup.status = 54;

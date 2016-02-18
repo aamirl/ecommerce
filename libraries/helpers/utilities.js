@@ -346,7 +346,7 @@ module.exports = {
                     var targ = (v instanceof Object && v.data ? v.data : v);
 
                     if(k=='totals' | k == 'amounts'){
-                        k = _s_currency.convert.array.front({data:v});
+                        k = _s_currency.convert.array.front({data:v,objectify:true});
                         return;
                         }
                     if(_s_util.indexOf(amounts,k) != -1){

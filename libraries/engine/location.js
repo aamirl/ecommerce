@@ -29,14 +29,14 @@ function Location(inp){
 		try{var t =JSON.parse(set_location)}
 		catch(err){var t=set_location}
 
-		var translate = _s_req.validate({data:t,validators:_s_common.validators.location()})
+		var translate = _s_req.validate({data:t,validators:_s_common.helpers.validators.location()})
 		if(translate.failure){
 			maxmind.init(_s_config.paths.geoip + 'GeoLiteCity.dat');
 			this.active.set(maxmind.getLocation(inp))
 			}
 		else{
 			translate.source = 'user_submitted_location';
-			this.active.set(translate);
+			this.data.active = translate;
 			}
 		}
 	else if(set_ip){
@@ -148,7 +148,7 @@ Location.prototype = {
 				},
 			units : function(){
 				var units = _s_dimensions.active.get();
-				if(units==1) return 'mi';
+				if(units=='US') return 'mi';
 				return 'km';
 				}
 			}
@@ -163,7 +163,7 @@ Location.prototype = {
 				// let's translate the info into storables 
 
 				self.data.active = {
-					formatted : obj.city + ' ' + obj.regionName + ' ' + obj.countryName,
+					formatted : (obj.name?obj.name:obj.city + ' ' + obj.regionName + ' ' + obj.countryName),
 					city : obj.city,
 					postal : obj.postalCode,
 					coordinates : {

@@ -242,7 +242,7 @@ module.exports = function(validator){
 		else{
 			if(filter){
 				if(_s_dimensions.active.get() == 'US'){
-					return inp * 1.60934
+					return inp / 1.60934
 					}
 				return inp;
 				}

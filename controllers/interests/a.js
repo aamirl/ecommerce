@@ -13,7 +13,7 @@ module.exports = {
 		return yield _interests.get(data);
 		},
 	new : function*(){
-		return yield _interests.new(r);
+		return yield _interests.new();
 		},
 	status : function*(){
 		

@@ -82,6 +82,15 @@ PUT /orders/_mapping/base
             "listing" : {
                 "type" : "string",
                 "index" : "not_analyzed"
+                },
+            "setup" : {
+                "type" : "object",
+                "properties" : {
+                    "status" : {
+                        "type" : "string",
+                        "index" :"not_analyzed"
+                        }
+                    }
                 }
             }
         }

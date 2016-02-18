@@ -5,7 +5,7 @@ module.exports = {
 
 	get : function*(obj){
 
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('t1,t2', obj);
+		if(obj.id || typeof obj == 'string') return yield _s_db.es.get(obj.indices?obj.indices:'t1', obj);
 		
 		var search = {
 			index : (obj.indices?obj.indices:'t1,t2'),
