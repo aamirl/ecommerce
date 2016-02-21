@@ -115,6 +115,7 @@ module.exports = {
 
 		return yield _orders.get(data);
 		},
+	
 	'order/authorize' : function*(){
 		var data = _s_req.validate({
 			id : { v:['isListing'] },
@@ -128,41 +129,30 @@ module.exports = {
 		// let's first pull up the listing
 		var _listings = _s_load.library('listings');
 
-		var result = yield _listings.get(data.id);
-		if(!result) return { failure : { msg : 'The listing was not found.' , code :300 } }
-		if(result.setup.active == 0) return  { failure : { msg : 'This is not a valid or active listing.' , code : 300 } }
+		var listing = yield _listings.get(data.id);
+
+		if(!listing) return { failure : { msg : 'The listing was not found.' , code :300 } }
+		if(listing.setup.active == 0) return  { failure : { msg : 'This is not a valid or active listing.' , code : 300 } }
 
 		// now let's check the listing payment
-		if(result.payment_type == 2) return { failure : { msg : 'This listing cannot be purchased through Sellyx.' , code : 300 } }
-		if(result.quantity < data.quantity) return { failure : { msg : 'This listing does not have enough quantity available for purchase at this time.' , code : 300 } }
-		if(result.quantity_mpo < data.quantity) return { failure : { msg : 'This seller does not allow for the purchase of more than ' + result.quantity_mpo + ' item(s) in one order.' , code : 300 } }
+		if(listing.payment_type == 2) return { failure : { msg : 'This listing cannot be purchased through Sellyx.' , code : 300 } }
+		if(listing.quantity < data.quantity) return { failure : { msg : 'This listing does not have enough quantity available for purchase at this time.' , code : 300 } }
+		if(listing.quantity_mpo < data.quantity) return { failure : { msg : 'This seller does not allow for the purchase of more than ' + listing.quantity_mpo + ' item(s) in one order.' , code : 300 } }
 
 		// now let's see what the price needs to be
-		var price = result.p_type == 1 ? parseFloat(result.price) * parseInt(data.quantity) : (data.price?data.price:result.price) * parseInt(data.quantity)
+		if(listing.p_type == 1 && data.price != listing.price) return { failure : { msg : 'This is not a negotiable item, therefore there can not be an offer amount.' , code : 300 } }
+		var price = listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) : (data.price?data.price:listing.price) * parseInt(data.quantity)
 
-
-		_s_u.each(data.transactions, function(transaction, i){
-			data.transactions[i].capture = "false";
-			data.transactions[i].amount = price
-			})
-
-		// let's charge the payment information
-		var charge = yield _s_req.http({
-			url : _s_config.financials + 'charges/a/new',
-			method : 'POST',
-			headers : {
-				key : _s_auth_key
-				},
-			data : {
-				id : _s_t1.profile.id(),
-				amount : price,
-				transactions : data.transactions,
-				service : 'ecommerce'
-				}
+		var charge_now = (listing.p_type == 1 ? true : (  data.price >= listing.price ? true : false  ) )
+		var func = (charge_now?'charge':'authorize')
+		var charge = yield _s_load.engine('financials')[func].new({
+			amount : price,
+			transactions : data.transactions
 			})
 
 		if(charge.failure) return charge;
-		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : charge.transactions[0].failure } }
+		else charge = charge.success.data
+		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. ( Error: '+ charge.transactions[0].failure + ' )' , code : 300 } }
 
 		var crpyto = require('crypto');
 		var start =  Math.random().toString(36).slice(2) + _s_entity.object.profile.id();
@@ -170,7 +160,7 @@ module.exports = {
 
 		var order = {
 			buying : _s_entity.object.helpers.data.document(),
-			selling : result.entity,
+			selling : listing.entity,
 			location : _s_loc.active.get(),
 			type : 1,
 			listing : data.id,
@@ -180,7 +170,7 @@ module.exports = {
 			key : key,
 			setup : {
 				active : 1,
-				status : 51,
+				status : (charge_now?51:58),
 				added : _s_dt.now.datetime()
 				}
 			}
@@ -189,8 +179,20 @@ module.exports = {
 		if(r.failure) return r;
 
 		// now we add the order to the listing
-		result.orders.push(r.success.id);
-		var update = yield _s_common.update(result, 'listings', false);
+		listing.orders.push(r.success.id);
+		
+		// if the order is a fixed priced listing or its a obo and the offer is the same as the fixed price
+		if(charge_now){
+			listing.quantity -= data.quantity;
+			
+			// show the listing as being sold if quantity is at 0
+			if(listing.quantity == 0){
+				listing.setup.active = 0;
+				listing.setup.status = 3;
+				}
+			}
+
+		yield _s_common.update(listing, 'listings', false);
 
 		// send push notification to seller
 		// yield _s_load.engine('notifications').new.push({
@@ -200,6 +202,89 @@ module.exports = {
 		// send email notification
 
 		return r;
+		},
+	'order/obo': function*(){
+		var data = _s_req.validate({
+			id : { v:['isListingOrder'] },
+			approve : { in:[true,false] }
+			})
+		if(data.failure) return data;
+
+		var order = yield _orders.get(data);
+		if(!order) return { failure : { msg : 'This is not a valid listing order.' , code : 300 } }
+
+		if(order.type != 1) return { failure : { msg : 'This is not an order that can be picked up in person.' , code : 300 } }
+		if(order.setup.status != 58 && order.setup.status != 60) return { failure : { msg : 'This is not an OBO order that can be accepted or denied.' , code : 300 } }
+
+		// now let's make sure that the person trying to confirm the obo order is the same as the one who started the listing
+		var listing = yield _s_load.library('listings').get(order.listing);
+		if(!listing) return { failure : { msg: 'This listing is not a valid listing anymore.' , code : 300 } }
+		if(listing.setup.active != 1) return { failure : { msg : 'This listing is not an active listing.' , code : 300 } }
+		if(listing.quantity < order.quantity) return { failure : { msg : 'This listing cannot be confirmed because the total quantity available is not enough.' , code : 300 } }
+		if(listing.entity.id != _s_entity.object.profile.id()) return { failure : { msg : 'This listing is not being confirmed by the same entity that listed it - therefore the payment cannot be completed.' , code : 300 } }
+
+		// now let's see what the entity wants to do
+		if(data.approve){
+			// we create the charge
+			var charge = yield _s_load.engine('financials').charge.capture.authorized({
+				transaction : order.transactions[0]
+				})
+
+			if(charge.failure) return charge
+			else charge = charge.success.data			
+			if(charge.setup.status != 1) return { failure : { msg : 'At this time, this payment could not be authorized for later capture. Do you want to cancel this offer request or send a message to the customer and keep this offer active?' , code : 400 } }
+
+			// update the order
+			order.setup.status = 51
+			order.transactions.push(charge.id)
+
+			
+			var r = yield _s_common.update(order, 'orders', false)
+			if(r.failure) return r;
+
+			// update the listing quantity
+			listing.quantity -= order.quantity
+			if(listing.quantity == 0){
+				listing.setup.active = 0
+				listing.setup.status = 3
+				}
+
+			yield _s_common.update(listing,'listings',false)
+
+			// SEND PUSH NOTIFICATIONS
+			return { success : { data : true } }
+			}
+
+		// simple cancel
+		return yield _orders.actions.listing.cancel.single({order : order , authorized : true });
+		},
+	'order/obo/retry' : function*(){
+		var data = _s_req.validate({
+			id : { v:['isListingOrder'] }
+			})
+		if(data.failure) return data;
+
+		var order = yield _orders.get(data);
+		if(!order) return { failure : { msg : 'This is not a valid listing order.' , code : 300 } }
+
+		if(order.type != 1) return { failure : { msg : 'This is not an order that can be picked up in person.' , code : 300 } }
+		if(order.setup.status != 58 && order.setup.status != 60) return { failure : { msg : 'This is not a valid OBO order.' , code : 300 } }
+
+		// now let's make sure that the person trying to confirm the obo order is the same as the one who started the listing
+		var listing = yield _s_load.library('listings').get(order.listing);
+		if(!listing) return { failure : { msg: 'This listing is not a valid listing anymore.' , code : 300 } }
+		if(listing.setup.active != 1) return { failure : { msg : 'This listing is not an active listing.' , code : 300 } }
+		if(listing.quantity < order.quantity) return { failure : { msg : 'This listing cannot be confirmed because the total quantity available is not enough.' , code : 300 } }
+		if(listing.entity.id != _s_entity.object.profile.id()) return { failure : { msg : 'This listing is not being confirmed by the same entity that listed it - therefore the payment cannot be completed.' , code : 300 } }
+
+		// update the order status to 60
+		order.setup.status = 60
+		var r = yield _s_common.update(order, 'orders', false)
+		
+		// send push notifications
+
+		if(r.failure) return r;
+		return { success : { data : true } }
 		},
 	'order/key/check' : function*(){
 		var data = _s_req.validate({
@@ -269,59 +354,21 @@ module.exports = {
 		// it has to be the first transaction in the order
 
 		// let's capture the payment information
-		var capture = yield _s_req.http({
-			url : _s_config.financials + 'charges/a/capture',
-			headers : {
-				key : _s_auth_key
-				},
-			method : 'POST',
-			data : {
-				transaction : order.transactions[0],
-				service : 'ecommerce'
-				}
+		var _financials = _s_load.engine('financials');
+		var charge = yield _financials.charge.capture.processed({
+			transaction : order.transactions[order.transactions.length -1]
 			})
 
-		if(capture.failure) return capture;
-		if(capture.amounts.requested != capture.amounts.processed) return { failure : { msg : 'The transaction failed. Please look at the following transaction messages.' , code : 300, data : capture.transactions[0].failure } }
+		if(charge.failure) return charge;
+		else charge = charge.success.data
+		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. ( Error: '+ charge.transactions[0].failure + ' )' , code : 300 } }
 
-		order.transactions.push(capture.id);
+		order.transactions.push(charge.id);
 
-		// next we then transfer money to the seller account which is the same thing as loading their account
-		// var transfer = yield _s_req.http({
-		// 	url : _s_config.financials + 'load/a/new',
-		// 	method : 'POST',
-		// 	headers : {
-		// 		key : _s_auth_key
-		// 		},
-		// 	data : {
-		// 		id : order.selling.id,
-		// 		amount : capture.amounts.processed,
-		// 		service : 'ecommerce',
-		// 		transactions : [
-		// 			{
-		// 				amount : capture.amounts.processed,
-		// 				type : 'sellyx',
-		// 				capture : 'true'
-		// 				}
-		// 			]
-		// 		}
-		// 	})
-
-		var transfer = yield _s_req.http({
-			url : _s_config.financials + 'transfers/a/new',
-			method : 'POST',
-			headers : {
-				key : _s_auth_key
-				},
-			data : {
-				type : 'sellyx',
-				from : 'sellyx',
-				to : order.selling.id,
-				amount : capture.amounts.processed,
-				service : 'ecommerce'
-				}
+		var transfer = yield _financials.transfer.new({
+			to : order.selling.id,
+			amount: charge.amounts.processed
 			})
-		
 
 		if(transfer.failure){
 			order.setup.status = 54;
@@ -339,38 +386,16 @@ module.exports = {
 				}
 			}
 
-		// now we negate the order quantity first from the listing
-		listing.quantity -= order.quantity;
-
-		var run = function*(){
-			var get = yield _orders.get({ listing : listing.id , status : 51 , quantity : listing.quantity });
-			
-			if(get){
-				// update the quantity
-				if(get.counter){
-					yield _s_util.each(get.data, function*(o,i){
-						if(o.id == order.id) return;
-						o.data.id = o.id;
-						yield _orders.actions.listing.cancel(o.data,56,57);
-						})
-					}
-				else{
-					if(get.id != order.id){
-						yield _orders.actions.listing.cancel(get,56,57);
-						}
-					}
-				}
-			}
-
 		// now we check and see whether we have any other quantity left for this listing
 		if(listing.quantity == 0){
 			listing.setup.active = 0;
 			listing.setup.status = 3;
 			}
 
-		yield run();
 		yield _s_common.update(listing,'listings',false);
-		return yield _s_common.update(order,'orders',false);
+		var t = yield _s_common.update(order,'orders',false);
+		if(t.failure) return t;
+		return { success : { data : true } }
 		},
 	'order/cancel' : function*(){
 		var data = _s_req.validate({
@@ -381,8 +406,8 @@ module.exports = {
 		
 		if(!order) return { failure : { msg : 'This is not a valid listing order.' , code : 300 } }
 		if(order.type != 1) return { failure : { msg : 'This is not an order that can be picked up in person.' , code : 300 } }
-		if(order.setup.status != 51 && order.setup.status != 55) return { failure : { msg : 'This is not an order that can be processed.' , code : 300 } }
+		if(order.setup.status != 51) return { failure : { msg : 'This is not an order that can be cancelled.' , code : 300 } }
 
-		return yield _orders.actions.listing.cancel(order);
+		return yield _orders.actions.listing.cancel.single({order : order});
 		}
 	}

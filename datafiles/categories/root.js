@@ -18,5 +18,6 @@ module.exports = exports = {
 	'14' : 'Industrial',
 	'15' : 'Office / School',
 	'16' : 'Travel',
-	"17" : "Other"
+	"17" : "Tickets",
+	"18" : "Other"
 	}

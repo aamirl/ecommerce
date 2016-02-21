@@ -282,38 +282,47 @@ Orders.prototype = {
 		var self = this;
 		return {
 			listing : {
-				cancel : function*(order, success_status, failure_status, raw){
-					var cancel = yield _s_req.http({
-						url : _s_config.financials + 'reversals/a/new',
-						method : 'POST',
-						headers : {
-							key : _s_auth_key
-							},
-						data : {
-							transaction : order.transactions[0],
-							service : 'ecommerce'
-							}
-						})
+				cancel : {
+					single : function*(obj){
+						if(!obj.authorized){		// means that there was actually a charge created for this item
 
-					if(cancel.failure){order.setup.status = (failure_status?failure_status:55); }
-					else{
-						cancel = cancel.success.data;
+							var cancel =  yield _s_load.library('financials').charge.reversal({
+								transaction : (obj.transaction?obj.transaction:obj.order.transactions[0])
+								})
 
-						if(cancel.setup.status!=1){
-							order.setup.status = (failure_status?failure_status:55);
-							order.transactions.push(cancel.id)
+							if(cancel.failure){
+								obj.order.setup.status = (obj.failure?obj.failure:55)
+								}
+							else{
+								cancel = cancel.success.data;
+
+								if(cancel.setup.status!=1){
+									obj.order.setup.status = (obj.failure?obj.failure:55);
+									obj.order.transactions.push(cancel.id)
+									}
+								else{
+									obj.order.setup.status = (obj.success?obj.success:52);
+									obj.order.transactions.push(cancel.id)
+									}
+
+								}
 							}
 						else{
-							order.setup.status = (success_status?success_status:52);
-							order.transactions.push(cancel.id)
+							obj.order.setup.status = 59
 							}
+
+						obj.order.cancelled = {
+						 	added : _s_dt.now.datetime(),
+						 	by : _s_entity.object.profile.id()
+						 	}
+
+						if(obj.raw) return obj.order;
+						return yield _s_common.update(obj.order,'orders',false);
+						},
+					all : function*(){
+
+
 						}
-
-					order.cancelled = _s_dt.now.datetime();
-					order.cancelled_by = _s_entity.object.profile.id();
-
-					if(raw) return order;
-					return yield _s_common.update(order,'orders',false);
 					}
 				},
 			}

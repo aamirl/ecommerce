@@ -156,6 +156,8 @@ app.use(function*(next){
 
 
 	var func = yield require(path)[target](app);
+
+	console.log(JSON.stringify(func))
 	
 	if(typeof func === 'object'){
 		if(func.body) this.body = JSON.parse(func.body);

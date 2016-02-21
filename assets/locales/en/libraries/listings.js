@@ -19,8 +19,8 @@ var obj = {
 		8 : 'Employment/Careers (Volunteer/Unpaid Internships)',
 		},
 	payment_type : {
-		1 : 'Prepaid',
-		2 : 'In-Person Cash',
+		1 : 'Sellyx Authorized',
+		2 : 'Interest Based',
 		},
 	video : {
 		1 : 'Live Video Auditions Disabled',

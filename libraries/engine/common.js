@@ -86,7 +86,7 @@ Common.prototype = {
 					},
 				location : function(){
 					return {
-						name : { v:['isAlphaOrNumeric'] },
+						formatted : { v:['isAlphaOrNumeric'] },
 						city : { v:['isAlphaOrNumeric'] , b:true },
 						postal : { v:['isAlphaOrNumeric'] , b:true },
 						coordinates : {
