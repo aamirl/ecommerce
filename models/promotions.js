@@ -3,7 +3,7 @@
 
 module.exports = {
 	new : function*(obj, meta){
-		return yield _s_db.es.add({
+		return yield this._s.db.es.add({
 			index : 'promotions',
 			body : obj
 			}, meta);
@@ -16,11 +16,11 @@ module.exports = {
 			merge : true
 			}
 		delete obj.id;
-		return yield _s_db.es.update(doc);
+		return yield this._s.db.es.update(doc);
 		},
 	get : function*(obj){
 		// if we have just an id we just submit that;
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('promotions', obj);
+		if(obj.id || typeof obj == 'string') return yield this._s.db.es.get('promotions', obj);
 
 		var get = {
 			index : 'promotions',
@@ -63,7 +63,7 @@ module.exports = {
 		// obj.seller ? search.body.query.bool.must.push({match:{'seller.id':obj.seller}}) : null;
 		// obj.user ? search.body.query.bool.must.push({match:{'user.id':obj.user}}) : null;
 		// obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : obj.active } }) : null;
-		if(obj.count) return yield _s_db.es.count(get,obj);
-		return yield _s_db.es.search(get, obj)
+		if(obj.count) return yield this._s.db.es.count(get,obj);
+		return yield this._s.db.es.search(get, obj)
 		}
 	}

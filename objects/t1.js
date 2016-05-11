@@ -1,28 +1,53 @@
 // t1 Object
 
-module.exports = function*(data){
-  	if(!(this instanceof T1)) { var r = new T1(data); yield r.init(data); return r; }
-	}
+module.exports = function(){  return new T1(); }
 
 function T1(){}
 T1.prototype = {
-	init : function*(data){
-		if(typeof data != 'object'){
-			// let's load the user from the database
-			var _t1 = _s_load.library('t1');
-			var result = yield _t1.get({ id : data , convert : false, objectify : false });
-			if(!result) { this.failure = { msg : 'The entity could not be found.' , code : 300 }; }
-			else {
-				result.id = data;
-				this.data = result;
+	init : function*(){
+
+		var oAuth_user = yield this._s.req.sellyx({
+			path : 'auth/validate',
+			params : {
+				key : this._s.auth_key
 				}
+		 	})
+			
+		if(oAuth_user.failure){ return { failure : {msg:'Authorization failure.',code:300} }; }
+		else { oAuth_user = oAuth_user.success.data.user; }
+
+		var _t1 = this._s.library('t1')
+		
+		var result = yield _t1.get({ id : oAuth_user.id , convert : false, objectify : false  });
+		if(!result) { 
+			var create_user = yield _t1.new({data:oAuth_user, raw:true});
+			if(create_user.failure || !create_user) return { failure : { msg : 'The entity could not be found or created.' , code : 300 } } 
+			result = create_user.success.data;
 			}
-		else{ this.data = data; }
+
+		if(result.addresses && result.addresses.length > 0) result.country = result.addresses[0].country
+		else result.country = this._s.countries.active.get(); 
+
+		result.email = {
+			id : oAuth_user.email,
+			verified : true
+			}
+		result.reputation = oAuth_user.reputation;
+		result.numbers = [ { number : oAuth_user.telephone , primary : true } ]
+
+		result.oAuth_setup = {
+			status : oAuth_user.status,
+			active : oAuth_user.active,
+			added : oAuth_user.createdAt
+			}
+
+		this.data = result;
+
+		return { success : true }
 		},
-	library : _s_load.library('t1'),
 	key : function(obj){
 		inp = obj.data?obj.data:obj;
-		return _s_util.object.stringed(this.data, inp, false);
+		return this._s.util.object.stringed(this.data, inp, false);
 		},
 	get privileges() {
 		var self = this;
@@ -49,6 +74,17 @@ T1.prototype = {
 				}
 			}
 		},
+	get notifications(){
+		var self = this;
+		return {
+			email : function(){
+				return true
+				},
+			push : function(){
+				return true
+				}
+			}
+		},
 	get entities(){
 		var self = this;
 		return {
@@ -56,9 +92,10 @@ T1.prototype = {
 				return self.data.entities;
 				},
 			check : function(inp){
-				if (inp == _s_cache_id) return true;
+				if (inp == self._s.auth_id) return true;
 				if(self.data.entities.length > 0){
-					var r = _s_util.array.find.object(self.data.entities, 'id', inp, true);
+					console.log(self.data.entities)
+					var r = self._s.util.array.find.object(self.data.entities, 'id', inp, true);
 					if(!r) return false;
 					if(r.object.setup.active != 0) return r;
 					}
@@ -106,7 +143,7 @@ T1.prototype = {
 		var self = this;
 		return {
 			all : function*(convert){
-				if(convert) return yield _s_util.convert.single({ library:'t1',data:_s_util.clone.deep(self.data),label:true })
+				if(convert) return yield self._s.util.convert.single({ library:'t1',data:self._s.util.clone.deep(self.data),label:true })
 				return self.data;
 				},
 			id : function(){
@@ -121,10 +158,10 @@ T1.prototype = {
 					case 2:
 						return self.data.name.last;
 						break;
-					default:
 					case 3:
 						return self.data.name.first+' ' + (self.data.name.middle?self.data.name.middle+' ':'') + self.data.name.last;
 						break;
+					default:
 					case 4:
 						return self.data.name.display;
 						break;
@@ -148,14 +185,14 @@ T1.prototype = {
 				primary : function(){
 					var numbers = self.profile.contact.all();
 					return numbers[0];
-					return _s_util.array.find.object(numbers, 'primary' , true);
+					return self._s.util.array.find.object(numbers, 'primary' , true);
 					}
 				},
 			addresses : {
 				primary : function(){
 					var addresses = self.profile.addresses.all();
 					return addresses[0];
-					// return _s_util.array.find.object(addresses, 'primary' , true);
+					// return this._s.util.array.find.object(addresses, 'primary' , true);
 					},
 				all : function(){
 					return self.data.addresses;
@@ -175,6 +212,12 @@ T1.prototype = {
 				all : function(obj){
 
 					}
+				},
+			followers : {
+				all :function(){
+					if(self.data.follows) return self.data.follows
+					else return false
+					}
 				}
 			}
 		},
@@ -192,8 +235,8 @@ T1.prototype = {
 			convert : {
 				t1 : function*(obj){
 					!obj.id?obj.id = self.profile.id():null;
-					obj.country = _s_util.array.find.object(obj.addresses,'type',1,false).country;
-					return yield _s_util.convert.single({data:obj,label:true,library:'t1',dates:{r:true}});
+					obj.country = self._s.util.array.find.object(obj.addresses,'type',1,false).country;
+					return yield self._s.util.convert.single({data:obj,label:true,library:'t1',dates:{r:true}});
 					}
 				},
 			data : {
@@ -213,7 +256,7 @@ T1.prototype = {
 					return {
 						id : self.profile.id(),
 						name : self.profile.name(4),
-						verified : self.privileges.verification.verified(),
+						type : 't1',
 						}
 					}
 				}

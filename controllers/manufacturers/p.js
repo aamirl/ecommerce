@@ -1,9 +1,14 @@
-var _manufacturers = _s_load.library('manufacturers');
 
 
-module.exports = {
+
+module.exports = function(){  return new Controller(); }
+
+function Controller(){}
+Controller.prototype = {
 	'get' : function*(){
-		var data = _s_req.validate(_manufacturers.helpers.filters());
+		var _manufacturer = this._s.library('manufacturers');
+		
+		var data = this._s.req.validate(_manufacturers.helpers.filters());
 		if(data.failure) return data;
 		
 		data.endpoint = true;

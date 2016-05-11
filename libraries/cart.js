@@ -1,22 +1,22 @@
 
 
 
-function Cart(){
-	if(!_s_cache.key.get('cart', true)) this.empty();
-
-	this.default_cart = {
-		orders : {},
-		promotions : {
-			additional : [],
-			order : {}
-			},
-		totals : {},
-		address : {}
-		}
-
-	}
+function Cart(){}
 
 Cart.prototype = {
+	init : function(){
+		if(!this._s.cache.key.get('cart', true)) this.empty();
+
+		this.default_cart = {
+			orders : {},
+			promotions : {
+				additional : [],
+				order : {}
+				},
+			totals : {},
+			address : {}
+			}
+		},
 	get helpers() {
 		var self = this;
 		return {
@@ -24,7 +24,7 @@ Cart.prototype = {
 				cart : function(){
 					return {
 						json : true,
-						default : _s_util.clone.deep(self.default_cart),
+						default : this._s.util.clone.deep(self.default_cart),
 						data : {
 							orders : {v:['isJSON'] , default : {}},
 							promotions : {
@@ -43,17 +43,17 @@ Cart.prototype = {
 								b:true,
 								default : {}
 								},
-							address : _s_common.helpers.validators.address()
+							address : this._s.common.helpers.validators.address()
 							}
 						}
 					}
 				},
 			validate : function*(obj){
-				var item = yield _s_load.library('products').get(obj.product);
+				var item = yield this._s.library('products').get(obj.product);
 				if(!item) return { failure : { msg : 'This item is not a valid item and listing.' , code : 300 } };
 
 
-				var listing = _s_util.array.find.object(item.sellers, 'id', obj.listing);
+				var listing = this._s.util.array.find.object(item.sellers, 'id', obj.listing);
 				if(item.setup.active == 1 && listing && listing.quantity > 0 && listing.setup.active == 1) {
 
 					if(obj.quantity && listing.quantity < obj.quantity) return { failure : { msg : 'The seller does not have enough quantity.' , code :300 } }
@@ -79,12 +79,12 @@ Cart.prototype = {
 			}
 		},
 	empty : function*(no_session){
-		var r = _s_util.clone.deep(this.default_cart);
+		var r = this._s.util.clone.deep(this.default_cart);
 
 		if(no_session) return r;
 
 		try {
-			yield _s_cache.key.set('cart', r);
+			yield this._s.cache.key.set('cart', r);
 			return true
 			}
 		catch(err){
@@ -96,36 +96,36 @@ Cart.prototype = {
 		var totals = {grand:0};
 		var totals_cache = {grand:0};
 		var error = false;
-		var _taxes = _s_load.engine('taxes');
+		var _taxes = this._s.engine('taxes');
 
 		if(Object.keys(cart.orders).length == 0) return { failure : { msg : 'There are no orders in the cart to be processed.' , code :300 } }
 		
-		yield _s_util.each(cart.orders, function*(order_details, order_seller){
+		yield this._s.util.each(cart.orders, function*(order_details, order_seller){
 			// for each of the orders we send back item totals, item subtotals, shipping calculations, and then the grand total
 
 			// if shipping total hasn't been set, we return errors;
 			if(!order_details.shipping || !order_details.shipping.total){ error = 'Order for ' + order_details.name + ' does not have shipping calculated yet.'; return false; }
 
-			!totals[order_seller] ? totals[order_seller] = {  items : {} , totals : { items : { data : 0, converted : 0 }, shipping : {data:order_details.shipping.total, converted : _s_currency.convert.front(order_details.shipping.total)} } } : null;
+			!totals[order_seller] ? totals[order_seller] = {  items : {} , totals : { items : { data : 0, converted : 0 }, shipping : {data:order_details.shipping.total, converted : this._s.currency.convert.front(order_details.shipping.total)} } } : null;
 			!totals_cache[order_seller] ? totals_cache[order_seller] = {  items : {} , totals : { items : 0, shipping : order_details.shipping.total } } : null;
 
 			totals.grand += order_details.shipping.total;
 			totals_cache.grand += order_details.shipping.total;
 
-			yield _s_util.each(order_details.items, function*(product_details, product_id){
+			yield this._s.util.each(order_details.items, function*(product_details, product_id){
 
 				if(!totals[order_seller].items[product_id]) {
 					totals[order_seller].items[product_id] = {};
 					totals_cache[order_seller].items[product_id] = {};
 					}
 
-				var item = yield _s_load.library('products').get({id:product_id,include:'sellers'});
+				var item = yield this._s.library('products').get({id:product_id,include:'sellers'});
 				if(!item){ error =  'Product ' + product_id + 'does not exist.' ; return false ; }
 
-				yield _s_util.each(product_details.listings, function*(listing_details, listing_id){
+				yield this._s.util.each(product_details.listings, function*(listing_details, listing_id){
 
 
-					var r = _s_util.array.find.object(item.sellers, 'id', listing_id);
+					var r = this._s.util.array.find.object(item.sellers, 'id', listing_id);
 					if(!r){ error = 'Listing ' + listing_id + ' for ' + product_id + ' does not exist.'; return false; }
 
 					var di = (_s_countries.active.get() == r.seller.country ?1:2);
@@ -139,11 +139,11 @@ Cart.prototype = {
 					totals[order_seller].items[product_id][listing_id] = { 
 						item : {
 							data : item_price,
-							converted : _s_currency.convert.front(item_price, false)
+							converted : this._s.currency.convert.front(item_price, false)
 							},
 						item_subtotal : {
 							data : item_subtotal,
-							converted : _s_currency.convert.front(item_subtotal, false)
+							converted : this._s.currency.convert.front(item_subtotal, false)
 							}
 						}
 
@@ -156,7 +156,7 @@ Cart.prototype = {
 		
 			totals.grand += totals[order_seller].totals.items.data;
 			totals_cache.grand += totals[order_seller].totals.items.data;
-			totals[order_seller].totals.items.converted = _s_currency.convert.front(totals[order_seller].totals.items.data, false);
+			totals[order_seller].totals.items.converted = this._s.currency.convert.front(totals[order_seller].totals.items.data, false);
 			})
 		
 		if(error) return { failure : { msg : error, code : 300 } };
@@ -165,14 +165,14 @@ Cart.prototype = {
 		totals_cache.grand = totals.grand;
 		totals.grand = {
 			data : totals.grand,
-			converted : _s_currency.convert.front(totals.grand,false)
+			converted : this._s.currency.convert.front(totals.grand,false)
 			}
 
 		// we set the grand total here
-		yield _s_cache.key.set('cart.totals' , totals_cache);
+		yield this._s.cache.key.set('cart.totals' , totals_cache);
 
 		// we don't let the user change the country so we hardcode it in cache
-		yield _s_cache.key.set('cart.address' , {
+		yield this._s.cache.key.set('cart.address' , {
 			country : _s_countries.active.get(),
 			postal : _s_countries.active.postal.get()
 			})
@@ -183,7 +183,7 @@ Cart.prototype = {
 		var self = this;
 		return {
 			total : function*(){
-				return yield _s_cache.key.get('cart.totals.grand');
+				return yield this._s.cache.key.get('cart.totals.grand');
 				}
 			}
 		},
@@ -197,7 +197,7 @@ Cart.prototype = {
 						var r = obj.cart;
 						}
 					else {
-						var r = yield _s_cache.key.get('cart');
+						var r = yield this._s.cache.key.get('cart');
 						if(!r){
 							yield self.empty();
 							return false;
@@ -207,16 +207,16 @@ Cart.prototype = {
 					if(obj.details && obj.details == false) return r;
 					// this means we want to send the entire cart info back with product listings and details and whatnot
 
-					var _products = _s_load.library('products');
+					var _products = this._s.library('products');
 					var error = false;
 
-					yield _s_util.each(r.orders, function*(dets, seller){
-						yield _s_util.each(dets.items, function*(product_dets, product_id){
+					yield this._s.util.each(r.orders, function*(dets, seller){
+						yield this._s.util.each(dets.items, function*(product_dets, product_id){
 							var item = yield _products.get({id:product_id, include : 'line,name,sellers,combos,images,performance',convert:true});
 							if(!item){ error = 'The product with the product id '+ product_id + ' was not found.'; return false; }
 
-							yield _s_util.each(product_dets.listings, function*(listing_details, listing_id){
-								var b = _s_util.array.find.object(item.sellers, 'id', listing_id);
+							yield this._s.util.each(product_dets.listings, function*(listing_details, listing_id){
+								var b = this._s.util.array.find.object(item.sellers, 'id', listing_id);
 								if(!b){ error = 'The product with the product id '+product_id+' could not find listing ' + listing_id + '.'; return false;  }
 								//let's associate the combos here too
 								var combo = item.combos[b.combo];
@@ -258,7 +258,7 @@ Cart.prototype = {
 				},
 			orders: function*(obj){
 				if(obj && obj.cart) return obj.cart.orders;
-				return yield _s_cache.key.get('cart.orders');
+				return yield this._s.cache.key.get('cart.orders');
 				},
 			order: function*(obj){
 				var orders = yield self.get.orders(obj);
@@ -266,11 +266,11 @@ Cart.prototype = {
 				return false;
 				},
 			promotions : function*(){
-				return yield _s_cache.key.get('cart.promotions');
+				return yield this._s.cache.key.get('cart.promotions');
 				},
 			shipping : {
 				options : function*(seller){
-					return yield _s_cache.key.get('cart.orders.' + seller + '.shipping.options');
+					return yield this._s.cache.key.get('cart.orders.' + seller + '.shipping.options');
 					}
 				}
 			}
@@ -349,7 +349,7 @@ Cart.prototype = {
 	        					obj.cart.orders[id].name = name
 	        					}
 	        				else{
-	        					var _s_o_seller = yield _s_load.object('sellers', v.listing.seller.id);
+	        					var _s_o_seller = yield this._s.object('sellers', v.listing.seller.id);
 	        					if(_s_o_seller.failure) return { failure : { msg : 'The seller does not exist.' , code :300 } };
 	        					}
 
@@ -368,17 +368,17 @@ Cart.prototype = {
 	        			return obj.cart;
 	        			}
 
-	        		var c = yield _s_cache.key.get('cart.orders.' + id + '.items' , true);
+	        		var c = yield this._s.cache.key.get('cart.orders.' + id + '.items' , true);
 	        		if(!c){
 	        			if(id == 'sellyx-1' || id == 'sellyx-2'){
-	        			 	yield _s_cache.key.set('cart.orders.' + id + '.name' , name);
+	        			 	yield this._s.cache.key.set('cart.orders.' + id + '.name' , name);
 	        				}
 	        			else{
 	        				// get seller address
-	        				var _s_o_seller = yield _s_load.object('sellers', v.listing.seller.id);
+	        				var _s_o_seller = yield this._s.object('sellers', v.listing.seller.id);
 	        				if(_s_o_seller.failure) return { failure : { msg : 'The seller does not exist.' , code :300 } };
 
-	        				yield _s_cache.key.set('cart.orders.' + id , {
+	        				yield this._s.cache.key.set('cart.orders.' + id , {
 	        					id : v.listing.seller.id,
 	        					name : v.listing.seller.name,
 	        					items : {},
@@ -387,10 +387,10 @@ Cart.prototype = {
 	        				}
 	        			}
 
-	        		yield _s_cache.key.set('cart.orders.' + id + '.items.' + obj.product + '.listings.' + obj.listing , r);
+	        		yield this._s.cache.key.set('cart.orders.' + id + '.items.' + obj.product + '.listings.' + obj.listing , r);
         			
 	        		// if we had calculated shipping totals for this seller previously, we now need to delete those for recalculation purposes
-	    			yield _s_cache.key.delete('cart.orders.' + id + '.shipping');
+	    			yield this._s.cache.key.delete('cart.orders.' + id + '.shipping');
 	    			return true;
 					}
 	    		catch(err){
@@ -419,17 +419,17 @@ Cart.prototype = {
 						}
 
 
-					var get = yield _s_cache.key.get('cart.orders.' + seller);
+					var get = yield this._s.cache.key.get('cart.orders.' + seller);
 					if(!get) return false;
 
 					if(Object.keys(get.items).length == 1){
-						yield _s_cache.key.delete('cart.orders.'+seller);
+						yield this._s.cache.key.delete('cart.orders.'+seller);
 						}
 					else if(Object.keys(get.items[obj.product].listings).length == 1){
-						yield _s_cache.key.delete('cart.orders.'+seller+'.items.'+obj.product);
+						yield this._s.cache.key.delete('cart.orders.'+seller+'.items.'+obj.product);
 						}
 					else{
-		        		yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing)
+		        		yield this._s.cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing)
 						}
 
 	        		return true;
@@ -463,14 +463,14 @@ Cart.prototype = {
 							}
 
 	            		// check to see its not negotiated
-	            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.negotiated');
+	            		var get = yield this._s.cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.negotiated');
 	            		if(get) return { failure : {msg: 'You cannot update the quantity of a negotiated item.' , code :300 } };
 
 	            		if(obj.quantity && obj.quantity >= 1){
-	            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.quantity' , obj.quantity);
+	            			yield this._s.cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.quantity' , obj.quantity);
 
 	            			// if shipping had been calculated, we need to recalculate, so unset the shipping for this item
-	            			yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+	            			yield this._s.cache.key.delete('cart.orders.' + seller + '.shipping');
 	            			return true;
 	            			}
 	            		else{
@@ -493,8 +493,8 @@ Cart.prototype = {
 							return obj.cart;
 							}
 
-						if(!obj.notes) yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes');
-						else yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes', obj.notes);
+						if(!obj.notes) yield this._s.cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes');
+						else yield this._s.cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.notes', obj.notes);
 
 	            		return true;
 	            		}
@@ -513,7 +513,7 @@ Cart.prototype = {
 						if(obj.cart){
 							if(obj.cart.orders[seller].items[obj.product].listings[obj.listing].negotiated) return { failure : {msg: 'You cannot waive or change the price of a negotiated item.' } , code : 300 } ;
 							if(obj.waive){
-								var results = yield _s_load.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
+								var results = yield this._s.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
 			            		if(!results) return { failure : {msg : 'The seller was not found!' , code : 300 } };
 
 			            		
@@ -533,20 +533,20 @@ Cart.prototype = {
 							return obj.cart;
 							}
 		            	
-	            		var get = yield _s_cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing);
+	            		var get = yield this._s.cache.key.get('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing);
 	            		if(!get) return { failure : {msg : 'That is not a valid cart item.' , code : 300}};
 	            		
 	            		// check to see its not negotiated
 	            		if(get.negotiated) return { failure : {msg: 'You cannot waive or change the price of a negotiated item.' } , code : 300 } ;
 	            		if(obj.waive){
 		            		// get return policy of seller
-		            		var results = yield _s_load.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
+		            		var results = yield this._s.engine('sellers').get({convert: false, id:validate.listing.seller.id, include : 'policy'});
 		            		if(!results) return { failure : {msg : 'The seller was not found!' , code : 300 } };
 
 		            		
 		            		if(results.policy && results.policy[(_s_countries.active.get() == validate.listing.seller.country)?1:2].allowed == 2){
-		            			yield _s_cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived' , true);
-		            			yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+		            			yield this._s.cache.key.set('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived' , true);
+		            			yield this._s.cache.key.delete('cart.orders.' + seller + '.shipping');
 		            			return true;
 		            			}
 		            		else{
@@ -554,8 +554,8 @@ Cart.prototype = {
 		            			}
 		            		}
 		            	else{
-		            		yield _s_cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived');
-		            		yield _s_cache.key.delete('cart.orders.' + seller + '.shipping');
+		            		yield this._s.cache.key.delete('cart.orders.' + seller + '.items.' + obj.product + '.listings.' +obj.listing + '.waived');
+		            		yield this._s.cache.key.delete('cart.orders.' + seller + '.shipping');
 		            		return true;
 		            		}
 		            	}
@@ -567,10 +567,10 @@ Cart.prototype = {
 				
 				shipping : {
 					options : function*(obj){
-	        			yield _s_cache.key.set('cart.orders.' + obj.seller + '.shipping' , {options:obj.options});
+	        			yield this._s.cache.key.set('cart.orders.' + obj.seller + '.shipping' , {options:obj.options});
 						},
 					save : function*(obj){
-						var options = yield _s_cache.key.get('cart.orders.' + obj.seller + '.shipping.options');
+						var options = yield this._s.cache.key.get('cart.orders.' + obj.seller + '.shipping.options');
 						if(!options) return false;
 						
 						switch(obj.seller){
@@ -611,7 +611,7 @@ Cart.prototype = {
 						var go = {};
 						var subtotal = 0;
 
-						yield _s_util.each(obj.selected, function*(selection, id){
+						yield this._s.util.each(obj.selected, function*(selection, id){
 							
 							if(id == 'custom'){
 								var b = Object.keys(selection);
@@ -619,7 +619,7 @@ Cart.prototype = {
 								selection = selection[b[0]];
 								}
 							
-							var check = yield _s_cache.key.get('cart.orders.' + obj.seller + '.shipping.options.' + id  );
+							var check = yield this._s.cache.key.get('cart.orders.' + obj.seller + '.shipping.options.' + id  );
 							console.log(check);
 							check = (check.rates ? check.rates[selection] : check[selection]);
 							if(check) {
@@ -633,8 +633,8 @@ Cart.prototype = {
 
 						if(count != total) return false;
 
-						yield _s_cache.key.set('cart.orders.' + obj.seller + '.shipping.selected' , go);
-						yield _s_cache.key.set('cart.orders.' + obj.seller + '.shipping.total' , subtotal);
+						yield this._s.cache.key.set('cart.orders.' + obj.seller + '.shipping.selected' , go);
+						yield this._s.cache.key.set('cart.orders.' + obj.seller + '.shipping.total' , subtotal);
 						return true;
 						}
 					}
@@ -643,16 +643,16 @@ Cart.prototype = {
 		},
 	separate : function*(obj){
 
-		var cart = _s_util.clone.deep(yield this.get.all());
+		var cart = this._s.util.clone.deep(yield this.get.all());
 
 		if(!cart.totals || !cart.totals.grand){
 			var t = yield this.calculate(cart);
 			console.log(t);
 			if(t.failure) return t;
-			cart = _s_util.clone.deep(yield this.get.all());
+			cart = this._s.util.clone.deep(yield this.get.all());
 			}
 		
-		var _products = _s_load.library('products');
+		var _products = this._s.library('products');
 
 		// let's process the order and separate everything, figure out who is stripe and who is paypal and who is neither here
 
@@ -670,9 +670,9 @@ Cart.prototype = {
 		var quantity_updates = {};
 		var error = false;
 
-		yield _s_util.each(cart.orders, function*(dets,s1){
-			yield _s_util.each(dets.items, function*(item_dets, item_id){
-				yield _s_util.each(item_dets.listings, function*(l_dets, l_Id){
+		yield this._s.util.each(cart.orders, function*(dets,s1){
+			yield this._s.util.each(dets.items, function*(item_dets, item_id){
+				yield this._s.util.each(item_dets.listings, function*(l_dets, l_Id){
 
 					var seller_id = l_dets.listing.seller.id;
 					var selected_shipping = dets.shipping.selected_shipping;
@@ -683,7 +683,7 @@ Cart.prototype = {
 					if(!separated[seller_id]){
 						
 						// load the seller information
-						var _s_o_seller = yield _s_load.object('seller' , seller_id);
+						var _s_o_seller = yield this._s.object('seller' , seller_id);
 						if(_s_o_seller.failure){ error = { msg : 'The seller with the id '+seller_id + ' does not exist.' , code : 300 }; return; }
 
 
@@ -705,7 +705,7 @@ Cart.prototype = {
 							setup : {
 								active : 1,
 								status : 1,
-								added : _s_dt.now.datetime()
+								added : this._s.dt.now.datetime()
 								},
 							transactions : {
 								history : [],
@@ -857,7 +857,7 @@ Cart.prototype = {
 						default:
 							// we check to see if the seller has waived their policy
 							var di = (country == active ? 1 : 2);
-							if(sellers[seller_id].policy[di].allowed == 2 && (di == 1 || (di == 2 && (!sellers[seller_id].policy[di].restricted || _s_util.indexOf(sellers[seller_id].policy[di].restricted , active) == -1 )))) separated[seller_id].policy = sellers[seller_id].policy[di];
+							if(sellers[seller_id].policy[di].allowed == 2 && (di == 1 || (di == 2 && (!sellers[seller_id].policy[di].restricted || this._s.util.indexOf(sellers[seller_id].policy[di].restricted , active) == -1 )))) separated[seller_id].policy = sellers[seller_id].policy[di];
 
 							if(selected_shipping['custom.' + l_Id]) {
 								item.status = 4;
@@ -898,5 +898,5 @@ Cart.prototype = {
 		}
 	}
 
-module.exports = function(){if(!(this instanceof Cart)) { return new Cart(); } }
+module.exports = function(){ return new Cart(); } 
 

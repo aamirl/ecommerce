@@ -1,9 +1,9 @@
-var _products = _s_load.library('products');
+var _products = this._s.library('products');
 
 module.exports = {
 	get : function*(){
 
-		var data = _s_req.validate(_products.helpers.filters());
+		var data = this._s.req.validate(_products.helpers.filters());
 		if(data.failure) return data;
 		var results = yield _products.get(data);
 
@@ -18,12 +18,12 @@ module.exports = {
 		
 		},
 	template : function*(){
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			category : { v:['isCategory'] }
 			})
 		if(data.failure) return data;
 
-		var template = _s_load.template(data.category);
+		var template = this._s.template(data.category);
 
 		if(template) return { success : { data : template } };
 		return { failure : { msg : 'The template was not found.' , code : 300 } };

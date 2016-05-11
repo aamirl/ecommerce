@@ -1,20 +1,25 @@
 
-function DateTime(){
-	this.data = {};
-	this.standards = {
-		dt : "dddd, MMMM Do, YYYY, h:mm A",
-		d : "dddd, MMMM Do, YYYY"
-		};
+function DateTime(){}
+module.exports = function(){ return new DateTime(); }
 
-	this.dt = require('moment');
-	this.dtz = require('moment-timezone');
-
-	var set = _s_req.headers('timezone');
-	if( set && (this.dtz.tz.names()).indexOf(set) ){ this.active.set(set); }
-	else{ this.active.set('America/Los_Angeles'); }
-	}
 
 DateTime.prototype = {
+	init : function(){
+		this.data = {};
+		this.standards = {
+			dt : "dddd, MMMM Do, YYYY, h:mm A",
+			d : "dddd, MMMM Do, YYYY"
+			};
+
+		this.dt = require('moment');
+		this.dtz = require('moment-timezone');
+
+		var set = this._s.req.headers('timezone');
+
+		if( set && (this.dtz.tz.names()).indexOf(set) ){ this.active.set(set); }
+		else{ this.active.set('America/Los_Angeles'); }
+
+		},
 	get active() {
 		var self = this;
 		return {
@@ -119,9 +124,4 @@ DateTime.prototype = {
 		}
 	}
 
-
-
-module.exports = function(){
-  	if(!(this instanceof DateTime)) { return new DateTime(); }
-	}
 

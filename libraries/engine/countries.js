@@ -1,22 +1,19 @@
 
-function Countries(){
-	this.list = _s_load.datafile('countries');
-	this.data = {active:{}};
-	
-	var set = _s_req.headers('country');
-	if( set && (this.list[set]) ){ this.active.set(set); }
-	else{ this.active.set('US'); }
-	
-	var set2 = _s_req.headers('postal');
-	if( set2 ){ this.active.postal.set(set2); }
-	else{ this.active.postal.set('90401'); }
-
-	}
-
-
+function Countries(){}
 
 Countries.prototype = {
-	model :  _s_load.model('countries'),
+	init: function(){
+		this.list = this._s.datafile('countries');
+		this.data = {active:{}};
+		
+		var set = this._s.req.headers('country');
+		if( set && (this.list[set]) ){ this.active.set(set); }
+		else{ this.active.set('US'); }
+		
+		var set2 = this._s.req.headers('postal');
+		if( set2 ){ this.active.postal.set(set2); }
+		else{ this.active.postal.set('90401'); }
+		},
 	get active() {
 		var self = this;
 		return {
@@ -63,7 +60,7 @@ Countries.prototype = {
 		fulfilled : function(countryId){
 			var allowed = ['US','IN'];
 
-			if(_s_util.indexOf(allowed, countryId) !== -1) return true;
+			if(this._s.util.indexOf(allowed, countryId) !== -1) return true;
 			return false;
 			},
 		address : function(countryId){
@@ -98,6 +95,6 @@ Countries.prototype = {
 
 
 module.exports = function(){
-  	if(!(this instanceof Countries)) { return new Countries(); }
+  	return new Countries()
 	}
 

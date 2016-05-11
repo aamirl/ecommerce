@@ -1,12 +1,12 @@
-var _lines = _s_load.library('lines');
+var _lines = this._s.library('lines');
 
 
 module.exports = {
 	'get' : function*(){	
-		var data = _s_req.validate(_lines.helpers.filters());
+		var data = this._s.req.validate(_lines.helpers.filters());
 		if(data.failure) return data;
 	
-		data.entity = _s_entity.engine.profile.id();
+		data.entity = this._s.entity.engine.profile.id();
 		data.endpoint = true;
 		return yield _lines.get(data);
 		},

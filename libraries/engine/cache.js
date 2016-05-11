@@ -1,11 +1,9 @@
  
-
-// var client = require('co-redis')(require('redis').createClient());
-var client = require('co-redis')(require('redis').createClient('9979' , 'authdb.sellyx.com',{}));
-
 function Cache(){
-	
+
+	this.client =  require('co-redis')(require('redis').createClient('9979' , 'authdb.sellyx.com',{}));
 	}
+module.exports = function(){ return new Cache(); }
 
 Cache.prototype = {
 	get key() {
@@ -28,7 +26,7 @@ Cache.prototype = {
 						}
 
 					schema[path[len-1]] = (value?value:obj.value);
-					self.set({ key : (!es_key?'ec-'+_s_cache_id:(typeof es_key == 'object'?'ec-'+es_key.cache_key:es_key)) , value : get });
+					self.set({ key : (!es_key?'ec-'+self._s.auth_id:(typeof es_key == 'object'?'ec-'+es_key.cache_key:es_key)) , value : get });
 					return true;
 					}
 				catch(err){
@@ -36,7 +34,7 @@ Cache.prototype = {
 					}
 				},
 			get : function*(obj, truthy, setter){
-				var get = yield self.get('ec-' + (obj && obj.cache_key?obj.cache_key:(_s_cache_id?_s_cache_id:undefined)));
+				var get = yield self.get('ec-' + (obj && obj.cache_key?obj.cache_key:(self._s.auth_id?self._s.auth_id:undefined)));
 				if(typeof obj !== 'string'){
 					return get;
 					}
@@ -57,7 +55,7 @@ Cache.prototype = {
 				        	}
 				    	}
 
-				    if(truthy) return _s_util.tf(o)
+				    if(truthy) return this._s.util.tf(o)
 				    else return o;
 					}
 				catch (err){
@@ -66,7 +64,7 @@ Cache.prototype = {
 
 				},
 			delete : function*(obj){
-				var es_key = (obj && obj.cache_key?obj.cache_key:(_s_cache_id?_s_cache_id:undefined))
+				var es_key = (obj && obj.cache_key?obj.cache_key:(self._s.auth_id?self._s.auth_id:undefined))
 				var get = yield self.key.get({cache_key:es_key});
 				if(!get) return false;
 
@@ -94,7 +92,7 @@ Cache.prototype = {
 	get : function*(obj){
 		var input = (typeof obj ==  'object' ? obj.key : obj);
 
-		var r = yield client.get(input);
+		var r = yield this.client.get(input);
 
 		if(r && r != undefined) {
 			try{
@@ -107,24 +105,17 @@ Cache.prototype = {
 		},
 	set : function(obj, value){
 		if(value){
-			client.set(obj, JSON.stringify(value));
+			this.client.set(obj, JSON.stringify(value));
 			return;
 			}
-		client.set(obj.key, JSON.stringify(obj.value));
+		this.client.set(obj.key, JSON.stringify(obj.value));
 		},
 	delete : function(obj){
 		if(!obj) {
-			client.flushall();
+			this.client.flushall();
 			return;
 			}
 		var input = (typeof obj ==  'object' ? obj.key : obj);
-		client.del(input);
+		this.client.del(input);
 		}
 	}
-
-
-
-module.exports = function(){
-  	if(!(this instanceof Cache)) { return new Cache(); }
-	}
-

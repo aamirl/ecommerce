@@ -1,8 +1,6 @@
-module.exports = function(validator){
+module.exports = function(validator, _s){
   	
 	validator.extend('isAlphaOrNumeric', function(str){
-
-		console.log('here')
 		return true;
 		if(typeof str != 'string') return false;
 
@@ -100,6 +98,9 @@ module.exports = function(validator){
 	validator.extend('isReturn',function(){
 		return true;
 		})
+	validator.extend('isReview',function(){
+		return true;
+		})
 	validator.extend('isUser',function(){
 		return true;
 		})
@@ -158,13 +159,13 @@ module.exports = function(validator){
 		return false;
 		})
 	validator.extend('isCountries',function(inp, filter){
-		// var all = _s_load.library('countries')().get();
+		// var all = _s.library('countries')().get();
 		var i = 0;
 		var len = 0;
 		var countries = inp.split(',');
 		// var len = countries.length;
 		// _s_u.each(countries, function(country, ind){
-		// 	if(_s_util.indexOf(all, country ) !== -1) i++;
+		// 	if(_s.util.indexOf(all, country ) !== -1) i++;
 		// 	})
 		if(len==i){
 			if(filter) return countries;
@@ -228,7 +229,7 @@ module.exports = function(validator){
 			}
 		else{
 			if(filter){
-				return _s_dimensions.convert.back('length',inp);
+				return _s.dimensions.convert.back('length',inp);
 				}
 			else{
 				return true;
@@ -241,8 +242,8 @@ module.exports = function(validator){
 			}
 		else{
 			if(filter){
-				if(_s_dimensions.active.get() == 'US'){
-					return inp / 1.60934
+				if(_s.dimensions.active.get() == 'US'){
+					return (inp * 1.60934).toFixed(2)
 					}
 				return inp;
 				}
@@ -257,7 +258,7 @@ module.exports = function(validator){
 			}
 		else{
 			if(filter){
-				return _s_dimensions.convert.back('weight',inp);
+				return _s.dimensions.convert.back('weight',inp);
 				}
 			else{
 				return true;
@@ -271,7 +272,7 @@ module.exports = function(validator){
 			}
 		else{
 			if(filter){
-				return _s_currency.convert.back(inp);
+				return _s.currency.convert.back(inp);
 				}
 			else{
 				return true;
@@ -299,9 +300,9 @@ module.exports = function(validator){
 
 	// datetime validation
 	validator.extend('isDate',function(inp, filter){
-		if(_s_dt.valid.date(inp)){
+		if(_s.dt.valid.date(inp)){
 			if(filter){
-				return _s_dt.convert.date.input(inp);
+				return _s.dt.convert.date.input(inp);
 				}
 			else{
 				return true;
@@ -311,9 +312,9 @@ module.exports = function(validator){
 		})
 	validator.extend('isDateTime',function(inp, filter){
 		return true;
-		if(_s_dt.valid.datetime(inp)){
+		if(_s.dt.valid.datetime(inp)){
 			if(filter){
-				return _s_dt.convert.datetime.input(inp);
+				return _s.dt.convert.datetime.input(inp);
 				}
 			else{
 				return true;
@@ -325,7 +326,8 @@ module.exports = function(validator){
 	validator.extend('isCurrency',function(){
 		return true;
 		})
-	validator.extend('isCategory',function(){
+	validator.extend('isCategory',function(inp){
+		if(["01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19"].indexOf(inp) == -1) return false; 
 		return true;
 		})
 	validator.extend('isCondition',function(inp){

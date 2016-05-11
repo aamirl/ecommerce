@@ -3,7 +3,7 @@
 
 module.exports = {
 	new : function*(obj, meta){
-		return yield _s_db.es.add({
+		return yield this._s.db.es.add({
 			index : 'products',
 			body : obj
 			}, meta);
@@ -16,12 +16,12 @@ module.exports = {
 			}
 
 		delete doc.data.id;
-		return yield _s_db.es.update(doc);
+		return yield this._s.db.es.update(doc);
 		},
 	get : function*(obj){
 
 
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('products', obj);
+		if(obj.id || typeof obj == 'string') return yield this._s.db.es.get('products', obj);
 		
 		var search = {
 			total : true,
@@ -112,7 +112,7 @@ module.exports = {
 
 		console.log(JSON.stringify(search));
 
-		if(obj.count) return yield _s_db.es.count(search,obj);
-		return yield _s_db.es.search(search, obj)
+		if(obj.count) return yield this._s.db.es.count(search,obj);
+		return yield this._s.db.es.search(search, obj)
 		}
 	}

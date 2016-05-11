@@ -1,9 +1,12 @@
 
 
-module.exports = {
+function Model(){}
+module.exports = function(){ return new Model(); }
+
+Model.prototype = {
 
 	new : function*(obj, meta){
-		return yield _s_db.es.add({
+		return yield this._s.db.es.add({
 			index : 't2',
 			body : obj
 			}, meta);
@@ -12,7 +15,7 @@ module.exports = {
 		// if we are just submitting the id, we are simply updating the information here
 		if(obj.doc){
 			obj.index = 't2';
-			return yield _s_db.es.update(doc);
+			return yield this._s.db.es.update(doc);
 			}
 		
 		var doc = {
@@ -26,13 +29,13 @@ module.exports = {
 
 		try{
 			
-			yield _s_db.es.update(doc);
+			yield this._s.db.es.update(doc);
 
 
 			// after we update this information, we need to update the products with the new product information
 			obj.id = id;
 
-			yield _s_db.es.update({
+			yield this._s.db.es.update({
 				index : 'products,lines,users',
 				body : {
 					query :{
@@ -54,7 +57,7 @@ module.exports = {
 		},
 	get : function*(obj){
 		// if we have just an id we just submit that;
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('t2', obj);
+		if(obj.id || typeof obj == 'string') return yield this._s.db.es.get('t2', obj);
 
 		var search = {
 			index : 't2',
@@ -71,7 +74,7 @@ module.exports = {
 
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
 		
-		if(obj.count) return yield _s_db.es.count(search,obj);
-		return yield _s_db.es.search(search, obj)
+		if(obj.count) return yield this._s.db.es.count(search,obj);
+		return yield this._s.db.es.search(search, obj)
 		}
 	}

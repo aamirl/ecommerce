@@ -11,10 +11,12 @@
 var esearch = require('elasticsearch').Client({
 	// host : 'http://localhost:9200/',
 	host : 'http://authdb.sellyx.com:9980',
+	// host : 'http://45.55.72.242:9980',
 	// log : 'trace'
 	})
 
 function Database(){ }
+module.exports = function() { return new Database(); }
 
 Database.prototype = {
 	get sql() {
@@ -36,7 +38,7 @@ Database.prototype = {
 				},
 			add : function(obj){
 				
-				obj.data.added = _s_dt.now.datetime();
+				obj.data.added = self._s.dt.now.datetime();
 				
 				var deferred = _s_q.defer();
 				mysql.query("INSERT INTO `" + obj.table + "` SET ?" , obj.data , deferred.makeNodeResolver());
@@ -91,8 +93,8 @@ Database.prototype = {
 					obj.body.setup = {
 						active : 1,
 						status : 1,
-						added : _s_dt.now.datetime(),
-						by : _s_t1.profile.id(),
+						added : self._s.dt.now.datetime(),
+						by : self._s.t1.profile.id(),
 						}
 					}
 				
@@ -103,14 +105,8 @@ Database.prototype = {
 					}
 
 				if(meta){
-					if(meta.seller){
-						obj.body.seller = {
-							id : _s_seller.profile.id(),
-							name : _s_seller.profile.name()
-							}
-						}
 					if(meta.user){
-						obj.body.user = _s_t1.helpers.data.document()
+						obj.body.user = self._s.t1.helpers.data.document()
 						}
 					}
 
@@ -126,7 +122,6 @@ Database.prototype = {
 
 					return false;
 					} , function(err){
-						console.log(err);
 						})
 				},
 			update : function*(obj, meta){
@@ -327,6 +322,7 @@ Database.prototype = {
 				return false;
 				},
 			search : function*(obj, meta){
+				console.log("getting es query")
 				if(meta){
 					if(meta.exclude){
 						!obj.body._source ? obj.body._source = {} : null;
@@ -371,23 +367,28 @@ Database.prototype = {
 				esearch.search(obj, deferred.makeNodeResolver());
 				var data = yield deferred.promise.then(function(data){
 					return data;
-					})
+					}, function(error){
+						console.log(error)
+						return error;
+						})
 
-				if(data[0].hits.total > 0){
-
-					if (!meta.counter) return {  counter : data[0].hits.total , data : self.es.helpers.process(data[0].hits.hits)  }
-					else return self.es.helpers.process(data[0].hits.hits);
+				if(data.status && (data.status == '404' || data.status == '400')){
+					return false
 					}
-				else{
-					return false;
+
+				if(data && data[0]){
+					if(data[0].hits.total > 0){
+
+						if (!meta.counter) return {  counter : data[0].hits.total , data : self.es.helpers.process(data[0].hits.hits)  }
+						else return self.es.helpers.process(data[0].hits.hits);
+						}
+					else{
+						return false;
+						}
 					}
 
 				}
 			}
 		}
 
-	}
-
-module.exports = function(){
-  	if(!(this instanceof Database)) { return new Database(); }
 	}

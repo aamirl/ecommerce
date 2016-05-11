@@ -1,11 +1,15 @@
 
 // Catalog Models
 
-var _location = _s_load.library('location');
+var _location = this._s.library('location');
 
-module.exports = {
+function Model(){}
+module.exports = function(){ return new Model(); }
+
+Model.prototype = {
+
 	new : function*(obj, meta){
-		return yield _s_db.es.add({
+		return yield this._s.db.es.add({
 			index : 'lines',
 			body : obj
 			}, meta);
@@ -14,7 +18,7 @@ module.exports = {
 		// if we are just submitting the id, we are simply updating the information here
 		if(obj.doc){
 			obj.index = 'lines';
-			return yield _s_db.es.update(doc);
+			return yield this._s.db.es.update(doc);
 			}
 		
 		var doc = {
@@ -28,13 +32,13 @@ module.exports = {
 
 		try{
 			
-			yield _s_db.es.update(doc);
+			yield this._s.db.es.update(doc);
 
 
 			// after we update this information, we need to update the products as well with the new product information
 			obj.id = id;
 
-			yield _s_db.es.update({
+			yield this._s.db.es.update({
 				index : 'products',
 				body : {
 					query :{
@@ -57,7 +61,7 @@ module.exports = {
 		},
 	get : function*(obj){
 		// if we have just an id we just submit that;
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('lines', obj);
+		if(obj.id || typeof obj == 'string') return yield this._s.db.es.get('lines', obj);
 
 		var search = {
 			index : 'lines',
@@ -88,7 +92,7 @@ module.exports = {
 		// obj.approvals ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
 		obj.active ? search.body.query.bool.must.push({ match : { 'setup.active' : 1 } }) : null;
 		
-		if(obj.count) return yield _s_db.es.count(search,obj);
-		return yield _s_db.es.search(search, obj)
+		if(obj.count) return yield this._s.db.es.count(search,obj);
+		return yield this._s.db.es.search(search, obj)
 		}
 	}

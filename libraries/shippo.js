@@ -72,7 +72,7 @@ Shippo.prototype = {
 				})
 		
 		if(data.object_created && data.object_status == 'SUCCESS' && data.rates_list.length > 0){
-			var _currency = _s_load.engine('currency');
+			var _currency = this._s.engine('currency');
 			var send = {};
 			_s_u.each(data.rates_list, function(rate,i){
 				
@@ -84,7 +84,7 @@ Shippo.prototype = {
 							provider : rate.provider,
 							label : rate.servicelevel_name
 							},
-						// rate : (_s_currency.convert.fromto(rate.amount,rate.currency,'USD')).toFixed(2),
+						// rate : (this._s.currency.convert.fromto(rate.amount,rate.currency,'USD')).toFixed(2),
 						rate : (rate.currency == 'USD'?rate.amount:(rate.currency_local == 'USD'?rate.amount_local:(_s_currencies.convert.fromto(rate.amount,rate.currency,'USD')).toFixed(2))),
 						transit : rate.days,
 						image : rate.provider_image_75,

@@ -1,9 +1,9 @@
-var _promotions = _s_load.library('promotions');
+var _promotions = this._s.library('promotions');
 
 module.exports = {
 	'get' : function*(){
 
-		var data = _s_req.validate(_promotions.helpers.filters());
+		var data = this._s.req.validate(_promotions.helpers.filters());
 
 		if(data.failure) return data;
 		data.endpoint = true;

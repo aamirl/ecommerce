@@ -1,8 +1,11 @@
-var _entities = _s_load.library('entities');
 
-module.exports = {
+
+module.exports = function(){  return new Controller(); }
+
+function Controller(){}
+Controller.prototype = {
 	get : function*(){
-		var t = _s_util.clone.deep(yield _s_entity.object.profile.all(true));
+		var t = this._s.util.clone.deep(yield this._s.entity.object.profile.all(true));
 
 		delete t.faq;
 		delete t.enrollment;
@@ -11,20 +14,40 @@ module.exports = {
 
 		return { success : { data : t } };
 		},
+	'notifications/get' : function*(){
+		var _notifications = this._s.engine('notifications')
+
+		return yield _notifications.get({ entity :  this._s.entity.object.profile.id() })
+		},
+	'notifications/get/count' : function*(){
+		var _notifications = this._s.engine('notifications')
+
+		return yield _notifications.get({ entity :  this._s.entity.object.profile.id() }, true)
+		},
+	'notifications/clear' : function*(){
+		var _notifications = this._s.engine('notifications')
+		var get = yield this._s.model('notifications').get(this._s.entity.object.profile.id())
+
+		if(!get) return { failure : { msg : 'This is not a valid notification status.' , code : 300 } }
+
+		get.notifications = []
+		return yield this._s.model('notifications').update(get)
+
+		},
 	'get/faq' : function*(){
-		var key = _s_entity.object.key('faq');
+		var key = this._s.entity.object.key('faq');
 		if(!key) return { failure : { msg : 'There was no FAQ information for this entity.' , code : 300 } }
 		return { success : { data : key } };
 		},
 	existing : function*(){
-		if(_s_entity.type != 't1') return { failure : { msg : 'This option is only valid for individuals users at this time.' , code : 300 } }
+		if(this._s.entity.type != 't1') return { failure : { msg : 'This option is only valid for individuals users at this time.' , code : 300 } }
 
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			id : { v:['isAlphaOrNumeric'] }
 			})
 		if(data.failure) return data;
 
-		var get = yield _s_load.library('entities').get({entities:[data.id]});
+		var get = yield this._s.library('entities').get({entities:[data.id]});
 		if(!get||get.counter > 1) return { failure : { msg : 'The entity you are trying to join does not exist.' , code : 300 } }
 		else get = get.data[0].data;
 
@@ -34,29 +57,29 @@ module.exports = {
 		if(!get.enrollment) get.enrollment = [];
 
 		// check if this entity tried to enroll
-		var r = _s_util.array.find.object(get.enrollment, 'id', _s_t1.profile.id(), true);
+		var r = this._s.util.array.find.object(get.enrollment, 'id', this._s.t1.profile.id(), true);
 		if(r) return { failure : { msg : 'You have already submitted an active request to enroll in this entity. Please wait for the entity administration to respond.' , code :300} }
 			
 
-		var t = _s_entity.object.helpers.data.document();
+		var t = this._s.entity.object.helpers.data.document();
 		t.setup = {
 			status : 1,
 			active : 1,
-			added : _s_dt.now.datetime()
+			added : this._s.dt.now.datetime()
 			}
 
 
 		get.enrollment.push(t)
 
 		get.id = data.id;
-		var update = yield _s_common.update(get, get.type, false, true);
+		var update = yield this._s.common.update(get, get.type, false, true);
 		if(update.failure) return update;
 		return { success : true }
 		},
 	new : function*(){
 		var type = 't2';
 
-		var _t = _s_load.library(type);
+		var _t = this._s.library(type);
 		var data = yield _t.new({ validate_only:true });
 		if(data.failure) return data;
 
@@ -71,7 +94,7 @@ module.exports = {
 			}
 
 	
-		var time = _s_dt.epoch();
+		var time = this._s.dt.epoch();
 		var send = {
 			"data" : {
 				"id":"MA$N8l80:/GW793e6o{l",
@@ -82,7 +105,7 @@ module.exports = {
 				"NotBefore":time,
 				"Destination":_s_config.oAuth + "ev",
 				"Data":converted_data,
-				"OAuthKey":_s_auth_key,
+				"OAuthKey":this._s.auth_key,
 				"OriginalData":data
 				}	
 			}
@@ -103,8 +126,8 @@ module.exports = {
 		},
 	confirm : function*(){
 		
-		var token = _s_req.get('token');
-		var request = yield _s_req.sellyx({
+		var token = this._s.req.get('token');
+		var request = yield this._s.req.sellyx({
 			path : 'evalidate/verify',
 			params : {
 				token:token,
@@ -119,81 +142,70 @@ module.exports = {
 		decrypted.data.OriginalData.id = request.id;
 
 		var type = 't2';
-		var _t = _s_load.library(type);
+		var _t = this._s.library(type);
 
 		var result = yield _t.new({ data : decrypted.data.OriginalData , raw:true, validate:false});
 		if(result.failure) return result;
 		else result = result.success.data;
 
-		GLOBAL._s_entity = {
-			id: request.id,
-			library : _s_load.library(type),
-			object : yield _s_load.object(type, result)
-			}
 
-		if(_s_entity.object.failure) return { failure : _s_entity.object.failure };
+		var t = yield this._s.update.yieldable('temp', 'object', 't2', request.id)
+		if(t.failure) return { failure : t.failure }
 
-		var g = _s_t1.entities.all();
-		var u = _s_entity.object.helpers.data.document();
+		var g = this._s.t1.entities.all();
+		var u = this._s.temp.helpers.data.document();
 		u.role = 'superadmin';
 		u.setup = {
 			active : 1,
 			status : 1,
-			added : _s_dt.now.datetime()
+			added : this._s.dt.now.datetime()
 			}
 		g.push(u);
 
-		// update _s_t1
-		var result = yield _s_t1.library.update({
+		var result = yield this._s.library('t1').update({
 			data : {
 				entities : g
 				},
-			id : _s_t1.profile.id(),			
+			id : this._s.t1.profile.id(),			
 			})
 
 		if(!result) return { failure : { msg : 'Updating the entity data failed.' , code : 300 } }
-		
-		// set in cache
-		yield _s_t1.library.helpers.cached(result,_s_cache_id);
-		// update object for the last step
-		_s_t1 = yield _s_load.object('t1',result);
-
-		return { status: 302, headers :{ 'Location' : _s_req.get('redirect') ||'www.google.com?&q=Grandmas+Are+The+Best' } }
+		return { status: 302, headers :{ 'Location' : this._s.req.get('redirect') ||'www.google.com?&q=Grandmas+Are+The+Best' } }
 		},
 	'update/basic' : function*(){
-		var data = _s_req.validate(_s_entity.library.helpers.validators.base({update:true}));
+		var data = this._s.req.validate(this._s.library(this._s.entity.type).helpers.validators.base({update:true}));
 		if(data.failure) return data;
 
-		return  yield _s_entity.library.update({data:data , result : _s_entity.object.data});
+		return  yield this._s.library(this._s.entity.type).update({data:data , result : this._s.entity.object.data});
 		},
 	'update/faq' : function*(){
-		var data = _s_req.validate(_s_load.library('entities').helpers.validators.faq());
+		var data = this._s.req.validate(this._s.library('entities').helpers.validators.faq());
 		if(data.failure) return data;
 
-		var result = _s_entity.object.data;
+		var result = this._s.entity.object.data;
 
 		if(data.id){
-			var object = _s_util.array.find.object(result.faq, 'id', data.id, true);
+			var object = this._s.util.array.find.object(result.faq, 'id', data.id, true);
 			if(!object) return { failure : { msg : 'We could not find the question you are trying to modify.' , code : 300 } }
 
 			if(data.a) result.faq[object.index].a = data.a; 
 			else result.faq.splice(object.index , 1);
 			}
-		else result.faq.push(_s_entity.library.actions.new.faq(data));
+		else result.faq.push(this._s.library(this._s.entity.type).actions.new.faq(data));
 
-		return  yield _s_entity.library.update({data:{} , result : result , return_target : 'faq'});
+		return  yield this._s.library(this._s.entity.type).update({data:{} , result : result , return_target : 'faq'});
 		},
 	'update/address' : function*(){
-		var s = _s_common.helpers.validators.address({required:true,json:false});
+		var s = this._s.common.helpers.validators.address({required:true,json:false});
 		s.index = { v:['isInt'] , b:true };
-		var data = _s_req.validate(s)
+		var data = this._s.req.validate(s)
 		if(data.failure) return data;
 
 		// next we are going to see whether the inputted address exists in the address book
-		var addresses = _s_entity.object.profile.addresses.all();
-		if(_s_util.array.compare.objects(addresses , data)) return {  failure : { msg : 'You already have this address on file.' , code : 300 } };
+		var addresses = this._s.entity.object.profile.addresses.all();
+		if(this._s.util.array.compare.objects(addresses , data)) return {  failure : { msg : 'You already have this address on file.' , code : 300 } };
 		
-		var result = _s_entity.object.data;
+		var result = this._s.entity.object.data;
 
 		// let's see if we are adding this or updating something
 		if(data.index || data.index == 0){
@@ -203,75 +215,80 @@ module.exports = {
 			}
 		else result.addresses.push(data);			
 		
-		return  yield _s_entity.library.update({data:data , result : result , return_target : 'addresses'});
+		return  yield this._s.library(this._s.entity.type).update({data:data , result : result , return_target : 'addresses'});
 		},
 	'update/address/delete' : function*(){
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			index : { v:['isInt'] , b:true }
 			})
 		if(data.failure) return data;
 
-		var result = _s_entity.object.data;
+		var result = this._s.entity.object.data;
 		result.addresses.splice(data.index,1);
 
-		return  yield _s_entity.library.update({data:data , result : result , return_target : 'addresses'});
+		return  yield this._s.library(this._s.entity.type).update({data:data , result : result , return_target : 'addresses'});
 		},
 	follow : function*(){
-		var data = _s_req.validate({
+		var _listings = this._s.library('listings');
+		var data = this._s.req.validate({
 			id : { v:['isAlphaOrNumeric'] },
-			type : { in:['t1','t2'] , b:true, default:'t1'}
+			type : { in:['t1','t2'] , b:true, default:'t1'},
+			add : { in:[true,false], b:true }
 			})
 		if(data.failure) return data;
 
-		if(data.id == _s_entity.object.profile.id()) return { failure : { msg : 'Unfortunately, at this time you cannot follow yourself on Sellyx!' , code : 300 } }
-
-		var result = yield _s_load.library(data.type).get(data.id);
+		if(data.id == this._s.entity.object.profile.id()) return { failure : { msg : 'You cannot follow yourself on Sellyx!' , code : 300 } }
+		var result = yield this._s.library(data.type).get(data.id);
 		if(!result) return { failure : { msg : 'This is not a valid entity.' , code : 300 } }
+		if(!result.follows) result.follows = []
 
-		// check result follows
+		var t = this._s.util.array.find.object(result.follows, "id", this._s.entity.object.profile.id(), true)
+		var self = this
+		var _notifications = self._s.engine('notifications')
 
-		if(_s_util.array.find.object(result.follows, 'id', _s_entity.object.profile.id())) { return { success : { msg : 'You were already a follower of this entity!' , code : 300 } } }
-		result.follows.push(_s_entity.object.helpers.data.document());
+		if(!t && data.add){
+			result.follows.push(this._s.entity.object.helpers.data.document())
 
-		var update = yield _s_common.update(result, data.type, false, true);
+			yield _notifications.new.push({
+				entity : data.id,
+				type : "603",
+				title : self._s.entity.object.profile.name()  + " just followed you!",
+				body : self._s.entity.object.profile.name() + " has followed you. Anytime you go live with a listing, they will be able to watch. So go live now!",
+				data : {
+					id : this._s.entity.object.profile.id(),
+					image : {
+						data : this._s.entity.object.profile.id(),
+						type : 'entity'
+						}
+					},
+				add : true
+				})
+			var msg = "You were added to the follow list for this entity."
+			}
+		else if(t && !data.add){
+			result.follows.splice(t.index, 1)
+			var msg = "You were removed from the follow list for this entity."
+			}
+
+		var update = yield this._s.common.update(result, data.type, false, true);
 		if(update.failure) return update;
-		return { success : { msg : 'You were added to the follow list for this entity.', code : 300 } }
-		},
-	unfollow : function*(){
-		var data = _s_req.validate({
-			id : { v:['isAlphaOrNumeric'] },
-			type : { in:['t1','t2'] , b:true, default:'t1'}
-			})
-		if(data.failure) return data;
-
-		var result = yield _s_load.library(data.type).get(data.id);
-		if(!result) return { failure : { msg : 'This is not a valid entity.' , code : 300 } }
-
-		// check result follows
-
-		var r = _s_util.array.find.object(result.follows, 'id', _s_entity.object.profile.id(), true);
-		if(!r) { return { success : { msg : 'You never were a follower of this entity!' , code : 300 } } }
-		
-		result.follows.splice(r.index,1);
-
-		var update = yield _s_common.update(result, data.type, false, true);
-		if(update.failure) return update;
-		return { success : { msg : 'You were removed from the follow list for this entity.', code : 300 } }
+		return { success : { msg : msg, code : 300 } }
 		},
 	'get/active' : function*(){
+		var _entities = this._s.library('entities');
 		var check = _entities.privileges.check();
 		if(check.failure) return check;
 		
-		var get = yield _s_load.library('t1').get({entity:_s_entity.object.profile.id() });
+		var get = yield this._s.library('t1').get({entity:this._s.entity.object.profile.id() });
 		if(!get || get.counter == 1) return { failure : { msg : 'No objects matched your query.' , code : 300 } }
 
 		var send = [];
 
 		_s_u.each(get.data, function(o,i){
 
-			var r = _s_util.array.find.object(o.data.entities, 'id', _s_entity.object.profile.id());
+			var r = this._s.util.array.find.object(o.data.entities, 'id', this._s.entity.object.profile.id());
 
-			if(o.id == _s_t1.profile.id()) return;
+			if(o.id == this._s.t1.profile.id()) return;
 
 			send.push({
 				id : o.id,
@@ -281,11 +298,11 @@ module.exports = {
 					active : r.setup.active,
 					status : {
 						data : r.setup.status,
-						converted : _s_l.info('status',r.setup.status,_s_entity.type, 'entity')
+						converted : this._s.l.info('status',r.setup.status,this._s.entity.type, 'entity')
 						},
 					added : {
 						data : r.setup.added,
-						converted : _s_dt.convert.datetime.output(r.setup.added)
+						converted : this._s.dt.convert.datetime.output(r.setup.added)
 						}
 					}
 				})
@@ -295,16 +312,17 @@ module.exports = {
 		return { success : { data : send } }
 		},
 	'privileges/status' : function*(){
+		var _entities = this._s.library('entities');
 		var check = _entities.privileges.check();
 		if(check.failure) return check;
 		
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			id : {v:['isAlphaOrNumeric']},
 			status : { in:['1','2','3',1,2,3] }
 			});
 		if(data.failure) return data;
 
-		var r  = yield _s_common.check({
+		var r  = yield this._s.common.check({
 			id : data.id,
 			library : 't1',
 			label : 'user',
@@ -317,7 +335,7 @@ module.exports = {
 			deep : {
 				array : 'entities',
 				property : 'id',
-				value : _s_entity.object.profile.id(),
+				value : this._s.entity.object.profile.id(),
 				status : {
 					allowed : [1,'1'],
 					change : data.status
@@ -332,32 +350,36 @@ module.exports = {
 			active : r.setup.active,
 			status : {
 				data : r.setup.status,
-				converted : _s_l.info('status',r.setup.status,_s_entity.type, 'entity')
+				converted : this._s.l.info('status',r.setup.status,this._s.entity.type, 'entity')
 				},
 			added : {
 				data : r.setup.added,
-				converted : _s_dt.convert.datetime.output(r.setup.added)
+				converted : this._s.dt.convert.datetime.output(r.setup.added)
 				}
 			} } }};
 
 		},
 
 	'privileges/check' : function*(){
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			id : { v:['isAlphaOrNumeric'] }
 			})
 		if(data.failure) return data;
 
 		// check to see if the supplied company credentials are okay for access by the user
-		var r = _s_t1.entities.check(data.id);
+		var r = this._s.t1.entities.check(data.id);
 		if(!r) return { failure : { msg : 'This user is not authorized.' , code : 300 } }
 		return { success : { msg : 'This user is valid.' , code : 300 } }
 		},
 	'get/enrollment' : function*(){
+		var _entities = this._s.library('entities');
 		var check = _entities.privileges.check();
 		if(check.failure) return check;
+
+
+		var self = this
 		
-		var get = yield _s_load.library(_s_entity.type).get(_s_entity.object.profile.id());
+		var get = yield this._s.library(this._s.entity.type).get(this._s.entity.object.profile.id());
 		if(!get || get.enrollment.length == 0) return { failure : { msg : 'No objects matched your query.' , code : 300 } }
 		
 		var send = [];
@@ -371,11 +393,11 @@ module.exports = {
 					active : o.setup.active,
 					status : {
 						data : o.setup.status,
-						converted : _s_l.info('status', o.setup.status,_s_entity.type, 'enrollment')
+						converted : self._s.l.info('status', o.setup.status,self._s.entity.type, 'enrollment')
 						},
 					added : {
 						data : o.setup.added,
-						converted : _s_dt.convert.datetime.output(o.setup.added)
+						converted : self._s.dt.convert.datetime.output(o.setup.added)
 						}
 					}
 				})
@@ -385,18 +407,28 @@ module.exports = {
 		return { success : { data : send } }
 		},
 	'enrollment/status' : function*(){
+		var _entities = this._s.library('entities');
 		var check = _entities.privileges.check();
 		if(check.failure) return check;
 		
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			id : {v:['isAlphaOrNumeric']},
 			status : { in:['2','3',2,3] }
 			});
 		if(data.failure) return data;
 
-		var r  = yield _s_common.check({
-			id : _s_entity.object.profile.id(),
-			library : _s_entity.type,
+		var _s_o_t1 = yield this._s.yieldable('t1', 'object', data.id)
+
+		console.log(_s_o_t1)
+
+		if(_s_o_t1.failure) { this.body = { failure : t.failure } ; return; }
+
+		// check and make sure the entity doesnt already exist
+		if(_s_o_t1.entities.check(this._s.entity.object.profile.id())) return { failure : { msg : 'This user was already added to this entity.' , code : 300 } };
+
+		var r  = yield this._s.common.check({
+			id : this._s.entity.object.profile.id(),
+			library : this._s.entity.type,
 			label : 'user',
 			send : 'object',
 			raw : true,
@@ -422,36 +454,32 @@ module.exports = {
 			active : r.setup.active,
 			status : {
 				data : r.setup.status,
-				converted : _s_l.info('status',r.setup.status,_s_entity.type, 'enrollment')
+				converted : this._s.l.info('status',r.setup.status,this._s.entity.type, 'enrollment')
 				},
 			added : {
 				data : r.setup.added,
-				converted : _s_dt.convert.datetime.output(r.setup.added)
+				converted : this._s.dt.convert.datetime.output(r.setup.added)
 				}
 			} } }};
 
 		// now if status is 4, we go ahead and add the user document
 		if(data.status != 3) return r;
 
-		var _s_o_t1 = yield _s_load.object('t1',data.id);
-		if(!_s_o_t1) return { failure : { msg : 'The user was not found.' , code : 300 } };
-
-		// check and make sure the entity doesnt already exist
-		if(_s_o_t1.entities.check(_s_entity.object.profile.id())) return { failure : { msg : 'This user was already added to this entity.' , code : 300 } };
+		
 
 		var i = _s_o_t1.data;
-		var s = _s_entity.object.helpers.data.document();
+		var s = this._s.entity.object.helpers.data.document();
 		s.role = 'superadmin';
 		s.setup = {
 			status : 1,
 			active : 1,
-			added : _s_dt.now.datetime()
+			added : this._s.dt.now.datetime()
 			};
 
 		i.entities.push(s);
 		i.id = data.id;
 
-		var update = yield _s_common.update(i,'t1');
+		var update = yield this._s.common.update(i,'t1');
 		if(update.failure) return update;
 
 		return r

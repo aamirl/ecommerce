@@ -4,7 +4,7 @@ function Promotions(){}
 
 Promotions.prototype = {
 
-	model : _s_load.model('promotions'),
+	model : this._s.model('promotions'),
 	helpers : {
 		filters : function(){
 			return {
@@ -106,37 +106,37 @@ Promotions.prototype = {
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 'promotions');
+		return yield this._s.common.get(obj, 'promotions');
 		},
 	new : function*(obj){
 		!obj?obj={}:null;
 		// this is the new function for the promotion library
 		// we can validate informtion here and then based on the flag add other things if needed
 
-		if(obj.data) var data = _s_req.validate({ data : obj.data, validators : this.helpers.validators() })
-		else var data = _s_req.validate(this.helpers.validators());
+		if(obj.data) var data = this._s.req.validate({ data : obj.data, validators : this.helpers.validators() })
+		else var data = this._s.req.validate(this.helpers.validators());
 		if(data.failure) return data;
 
 		if(data.start){
 			// first we make sure that the start date is after now
-			if(!_s_dt.compare.after(data.start, 'now')) return { failure : {msg : 'Your start date is before or at the current time and date. Please make sure that your promotion begins in the future.' , code : 300 } };
+			if(!this._s.dt.compare.after(data.start, 'now')) return { failure : {msg : 'Your start date is before or at the current time and date. Please make sure that your promotion begins in the future.' , code : 300 } };
 			}
 		else{
-			data.start = _s_dt.now.datetime();
+			data.start = this._s.dt.now.datetime();
 			}
 
 		// then we make sure that the end date is after start
-		// if(!_s_dt.compare.before(data.start, data.end)) return { failure : 'Your end date occurs before your start date. Please make sure that your promotion ends after it begins.'};
+		// if(!this._s.dt.compare.before(data.start, data.end)) return { failure : 'Your end date occurs before your start date. Please make sure that your promotion ends after it begins.'};
 
 		data.seller = _s_seller.profile.id();
-		return yield _s_common.new(data,'promotions', true);
+		return yield this._s.common.new(data,'promotions', true);
 		},
 	update : function*(obj){
 		if(obj.data){var data = obj.data; } 
 		else{
 			var r = this.helpers.validators();
 			r.id = {  v:['isPromotion'] };
-			var data = _s_req.validate(r);
+			var data = this._s.req.validate(r);
 			}
 
 		if(data.failure) return data;
@@ -146,7 +146,7 @@ Promotions.prototype = {
 		if(!result) return { failure : { msg : 'No promotion was found.' , code: 300 } };
 		if(result.seller != obj.seller) return { failure : { msg : 'You are not authorized to change this promotion.' , code : 300 } }
 
-		return yield _s_common.update(data, 'promotions');
+		return yield this._s.common.update(data, 'promotions');
 		},
 	get actions() {
 		var self = this;
@@ -160,7 +160,7 @@ Promotions.prototype = {
 					}
 
 
-				var data = _s_req.validate(r);
+				var data = this._s.req.validate(r);
 				if(data.failure) return data;
 
 				r = {
@@ -176,7 +176,7 @@ Promotions.prototype = {
 					active : (obj.active?obj.active:[1])
 					}
 
-				return yield _s_common.check(r);
+				return yield this._s.common.check(r);
 				}
 			}
 		}

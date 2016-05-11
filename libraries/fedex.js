@@ -111,12 +111,12 @@ Fedex.prototype = {
                     Minor : '0'
                     }
 
-                data = _s_util.merge(data, {
+                data = this._s.util.merge(data, {
                     ReturnTransitAndCommit : true,
                     RequestedShipment : {
                         DropoffType : obj.dropoff ? obj.dropoff : 'REGULAR_PICKUP',
                         // ShipTimestamp : '2015-06-22T10:56:46-06:00',
-                        // ShipTimestamp : obj.date ? obj.date : _s_dt.now.date(),
+                        // ShipTimestamp : obj.date ? obj.date : this._s.dt.now.date(),
                         // PackagingType : obj.packaging ? obj.packaging : 'YOUR_PACKAGING',
                         // TotalInsuredValue : {
                         //     Amount : (obj.insured ? obj.insured : 100),

@@ -3,55 +3,9 @@
 function T2(){}
 
 T2.prototype = {
-	model : _s_load.model('t2'),
 	get helpers(){
 		var self = this;
 		return {
-			cached : function*(result, key, oAuth_entity , return_both){
-				if(typeof result != 'object'){
-					result = yield self.get({id:result, convert:false});
-					if(!result) return { failure :  { msg : 'This entity was not found' , code : 300 } }
-					}
-
-				if(result.addresses.length > 0) result.country = result.addresses[0].country
-				else result.country = _s_countries.active.get(); 
-
-				if(!oAuth_entity){
-					oAuth_entity = yield _s_req.sellyx({
-						path : 'auth/validate',
-						params : {
-							key : _s_auth_key
-							}
-					 	})
-					
-					if(oAuth_entity.failure){ return { failure : {msg:'Authorization failure.',code:300} }; }
-					else { oAuth_entity = oAuth_entity.success.data.user; }
-					}
-
-				result.email = {
-					id : oAuth_entity.email,
-					verified : true
-					}
-				result.reputation = oAuth_entity.reputation;
-				result.numbers = [ { id : oAuth_entity.telephone } ]
-
-				result.oAuth_setup = {
-					status : oAuth_entity.status,
-					active : oAuth_entity.active,
-					added : oAuth_entity.createdAt
-					}
-
-				converted = yield _s_util.convert.single({data:_s_util.clone.deep(result),label:true,library:'t2',dates:{r:true}});
-
-				if(key) {
-					if(typeof key !==  'string') key = _s_cache_id;
-					yield _s_cache.key.set({ cache_key: key, key : 'entity' , value : converted });
-					}
-
-				if(return_both) return { converted : converted, raw : result }
-				return converted;
-				
-				},
 			validators : {
 				base : function(obj){
 					!obj?obj={}:null;
@@ -72,7 +26,7 @@ T2.prototype = {
 							},
 						website : { v:['isWebsite'] , b:true},
 						description : { v:['isAlphaOrNumeric'] , b:true, default : 'I am a new seller on Sellyx!' },
-						social : _s_common.helpers.validators.social(),
+						social : self._s.common.helpers.validators.social(),
 						faq : { 
 							aoo : true,
 							data : {
@@ -81,7 +35,7 @@ T2.prototype = {
 								}, 
 							default : [] 
 							},
-						addresses : _s_common.helpers.validators.address({aoo:true}),
+						addresses : self._s.common.helpers.validators.address({aoo:true}),
 						enrollment : {
 							v :['isArray'],
 							default : [],
@@ -122,16 +76,16 @@ T2.prototype = {
 							default : "t2"
 							},
 						detailed_type : {in:[1] , b:true, default: 1},
-						policy : _s_load.library('entities').helpers.validators.policy(),
-						master : { v:['isUser'] , default : _s_t1.profile.id(), b:true },
+						policy : self._s.library('entities').helpers.validators.policy(),
+						master : { v:['isUser'] , default : self._s.t1.profile.id(), b:true },
 						setup : {
 							json : true,
 							b:true,
-							default:{ active : 1, status : 1, added : _s_dt.now.datetime() },
+							default:{ active : 1, status : 1, added : self._s.dt.now.datetime() },
 							data : {
 								active : { in:[0,1] , b:true, default : 1 },
 								status : { in:[0,1,2,3,4,5,6,7] , b:true, default : 1 },
-								added : { v:['isDateTime'] , default : _s_dt.now.datetime() }
+								added : { v:['isDateTime'] , default : self._s.dt.now.datetime() }
 								}
 							}
 						}
@@ -141,7 +95,7 @@ T2.prototype = {
 							contact : { v:['isPhone'] },
 							website : { v:['isWebsite'] , b:true},
 							description : { v:['isAlphaOrNumeric'] , b:true, default : 'I am a seller on Sellyx!' },
-							social : _s_common.helpers.validators.social(),
+							social : self._s.common.helpers.validators.social(),
 							}
 						}
 
@@ -151,14 +105,14 @@ T2.prototype = {
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 't2');
+		return yield this._s.common.get(obj, 't2');
 		},
 	new : function*(obj){
 		!obj?obj={}:null;
 
 		if(!obj.validate && obj.validate != false){
 		
-			var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : _s_req.validate(this.helpers.validators.base()) );
+			var data = ( obj.data ? this._s.req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : this._s.req.validate(this.helpers.validators.base()) );
 			if(data.failure) return data; 
 			}
 		else{
@@ -166,17 +120,17 @@ T2.prototype = {
 			}
 
 		if(obj.validate_only) return data;
-		return yield _s_common.new(data,'t2', (obj.raw?obj.raw:false) , (obj.id?false:true));
+		return yield this._s.common.new(data,'t2', (obj.raw?obj.raw:false) , (obj.id?false:true));
 		},
 	update : function*(obj , result){
 		!obj?obj={}:null;
 		// this is the update function for the t2 library for basic information
 		// we are going to supply the information being updated here 
-		var data = ( obj.data ? obj.data : _s_req.validate(this.helpers.validators.base({update:true})) );
+		var data = ( obj.data ? obj.data : this._s.req.validate(this.helpers.validators.base({update:true})) );
 		if(data.failure) return data;
 
 		if(obj.id){
-			obj.result = yield _s_load.library('t2').get(obj.id);
+			obj.result = yield this._s.library('t2').get(obj.id);
 			if(obj.result.failure) return obj.result.failure
 			}
 		
@@ -187,7 +141,7 @@ T2.prototype = {
 
 		delete obj.result.oAuth_setup;
 
-		var r = yield _s_common.update(_s_util.merge(obj.result,data) , 't2');
+		var r = yield this._s.common.update(this._s.util.merge(obj.result,data) , 't2');
 
 		if(r.failure) return r;
 		if(obj.return_target) return { success : { data : r.success.data[obj.return_target] } }
@@ -196,10 +150,10 @@ T2.prototype = {
 	actions : {
 		new : {
 			faq : function(obj){
-				var r = _s_dt.now.datetime();
+				var r = this._s.dt.now.datetime();
 				var t = {
 					q : obj.q||"Blank Question!",
-					id :  _s_common.helpers.generate.id(),
+					id :  this._s.common.helpers.generate.id(),
 					added :  r,
 					}
 
@@ -215,6 +169,4 @@ T2.prototype = {
 	}
 
 
-module.exports = function(){
-  	if(!(this instanceof T2)) { return new T2(); }
-	}
+module.exports = function(){ return new T2(); }

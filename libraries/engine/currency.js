@@ -1,14 +1,17 @@
-function Currency(){
-	this.data = {};
-	}
+function Currency(){}
+module.exports = function(){ return new Currency(); }
 
 Currency.prototype = {
 	init : function*(){
+		this.data = {};
 		// get the cached currencies
-		var currencies = yield _s_cache.get('currencies');
+		console.log('getting cache')
+		var currencies = yield this._s.cache.get('currencies');
+		console.log('seeing cache')
 		if(!currencies){
-			var c = _s_load.datafile('currencies');
-			var get = yield _s_req.http({
+			console.log("Adadasdasdasd")
+			var c = this._s.datafile('currencies');
+			var get = yield this._s.req.http({
 				url : 'https://openexchangerates.org/api/latest.json?app_id=611363b371cc4a34833286b6cfb961c1'
 				})
 			if(get.rates){
@@ -16,7 +19,7 @@ Currency.prototype = {
 					c[k].rate = get.rates[k]
 					})
 
-				_s_cache.set('currencies', c);
+				this._s.cache.set('currencies', c);
 				this.data.currencies = c;
 				}
 			}
@@ -24,7 +27,7 @@ Currency.prototype = {
 			this.data.currencies = currencies;
 			}
 
-		var set = _s_req.headers('currency');
+		var set = this._s.req.headers('currency');
 		if( set && this.data.currencies[set] ){ this.active.set(set); }
 		else{ this.active.set('USD'); }
 		},
@@ -98,15 +101,5 @@ Currency.prototype = {
 				}
 			}
 		}
-	}
-
-
-
-module.exports = function*(){
-  	if(!(this instanceof Currency)) { 
-  		var c = new Currency(); 
-  		yield c.init()
-  		return c; 
-  		}
 	}
 

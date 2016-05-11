@@ -16,8 +16,9 @@ module.exports = exports = {
 	'12' : 'Sports / Outdoors',
 	'13' : 'Automotive',
 	'14' : 'Industrial',
-	'15' : 'Office / School',
-	'16' : 'Travel',
-	"17" : "Tickets",
-	"18" : "Other"
+	'15' : 'Animals / Pets',
+	'16' : 'Office / School',
+	'17' : 'Travel',
+	"18" : "Tickets",
+	"19" : "Other"
 	}

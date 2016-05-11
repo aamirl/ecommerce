@@ -23,7 +23,7 @@ Session.prototype = {
 		        	}
 		    	}
 
-		    if(truthy !== undefined && truthy) return _s_util.tf(o)
+		    if(truthy !== undefined && truthy) return this._s.util.tf(o)
 		    else return o;
 			}
 		},
@@ -64,7 +64,7 @@ Session.prototype = {
 		},
 	update : function(path, data){
 		try{
-			this.info[path] = _s_util.merge(this.info[path], data, true);
+			this.info[path] = this._s.util.merge(this.info[path], data, true);
 			return { success : true };
 			}
 		catch(err){
@@ -73,6 +73,4 @@ Session.prototype = {
 		}
 	}
 
-module.exports = function(sess){
-  	if(!(this instanceof Session)) { return new Session(sess); }
-	}
+module.exports = function(sess){  return new Session(sess); }

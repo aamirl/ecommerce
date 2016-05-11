@@ -3,12 +3,12 @@ var validator = require('validator'),
 	url = require('url'),
 	parser = require('querystring');
 
-require(_s_config.paths.helpers+'extenders.js')(validator);
+
 
 function Request(req){
 	this.request = req;
-	// this.ip = this.request.ip;
-	this.current_ip = '72.21.92.59';
+	this.ip = this.request.ip;
+	// this.current_ip = '72.21.92.59';
 	this.GET_PARAMS = this.POST_PARAMS = [];
 
 	var method = this.request.req.method;
@@ -16,11 +16,15 @@ function Request(req){
 	if (method == 'GET') var params = this.request.query;
 	else if(method == 'POST') var params = this.request.body;
 	this[method + '_PARAMS'] = params;
-	console.log(params);
+	console.log(params)
 	}
 
 Request.prototype = {
-	
+	init : function(){
+
+		
+		require(_s_config.paths.helpers+'extenders.js')(validator, this._s);
+		},
 	http : function*(obj, raw){
 		var r = require('koa-request');
 
@@ -38,6 +42,7 @@ Request.prototype = {
 			}
 
 		var j = yield r(obj);
+
 		if(raw) return JSON.parse(j);
 		try{
 			j= JSON.parse(j).body;
@@ -58,7 +63,7 @@ Request.prototype = {
 		!obj.headers?obj.headers={}:null;
 		!obj.method?obj.method='GET':null;
 		!obj.form?obj.form={}:null;
-		!obj.url?obj.url=_s_config.oAuth+obj.path:null;
+		!obj.url?obj.url=_s_config.oAuth+obj.path:(obj.path?obj.url+=obj.path:null)
 		if(obj.data) obj.form = obj.data;
 
 		if(obj.params){
@@ -68,21 +73,22 @@ Request.prototype = {
 				})
 			}
 
-		obj.time = _s_dt.epoch();
+		obj.time = this._s.dt.epoch()
 
 		if(obj.type == 'urlquery'){
 			(!obj.params?obj.url+='?':null);
-			obj.url+= '&time=' + obj.time + '&token=' + _s_req.hash(obj);
+			obj.url+= '&time=' + obj.time + '&token=' + this.hash(obj);
 			obj.form = JSON.stringify(obj.form);
 			}
 		else{
-			obj.headers.authorization = 'SYX ' + _s_req.hash(obj);
+			obj.headers.authorization = 'SYX ' + this.hash(obj);
 			obj.headers['sellyx-time'] = obj.time;
 			}
 
 		obj.rejectUnauthorized = false;
 
 		var j = yield r(obj);
+		
 		if(raw) return JSON.parse(j);
 		try{
 			j= JSON.parse(j).body;
@@ -121,6 +127,7 @@ Request.prototype = {
 		},
 	validate : function(obj , tang){
 		var data = (obj.validators?obj.validators:obj);
+		var self = this;
 	
 		if(obj.get) { var all_data = this.get(); }
 		else if(obj.data){
@@ -139,9 +146,9 @@ Request.prototype = {
 				do{
 					eon_counter++;
 					if(i_data[eon_counter]){
-						var tangent = _s_req.validate({ validators : i_data[eon_counter] , data: all_data , tangent : true });
+						var tangent = self.validate({ validators : i_data[eon_counter] , data: all_data , tangent : true });
 						if(!tangent.failure) {
-							send = _s_util.merge(send,tangent);
+							send = self._s.util.merge(send,tangent);
 							done = true;
 							} 
 						}
@@ -149,7 +156,7 @@ Request.prototype = {
 					}
 				while(!done && !errors['eon']);
 				}
-			else if(all_data[i] && _s_util.indexOf(abnorms, all_data[i]) === -1){
+			else if(all_data[i] && self._s.util.indexOf(abnorms, all_data[i]) === -1){
 
 				if(i_data.v){
 					var total  = i_data.v.length , count = 0 , json = false , filter = false, sub_errors = []
@@ -163,8 +170,7 @@ Request.prototype = {
 								}
 							}
 						else{
-							console.log(flag);
-							_s_util.indexOf(autoFilters, flag) !== -1 ? filter = flag : null;
+							self._s.util.indexOf(autoFilters, flag) !== -1 ? filter = flag : null;
 							validator[flag](all_data[i]) ? count++ : sub_errors.push(flag)
 							}						
 						});
@@ -199,7 +205,7 @@ Request.prototype = {
 					if(all_data[i].value && i_data.extra.values[all_data[i].value]){
 						if(i_data.extra.values[all_data[i].value] == 'none'){ send[i] = { value : all_data[i].value } }
 						else {
-							var tangent = _s_req.validate({ validators : { extra : i_data.extra.values[all_data[i].value] } , data : all_data[i] , tangent:true })
+							var tangent = self.validate({ validators : { extra : i_data.extra.values[all_data[i].value] } , data : all_data[i] , tangent:true })
 							tangent.failure ? errors[i] = { msg : 'The accompanying value submitted did not meet the requirements.' , accepted : Object.keys(i_data.extra.values) } : send[i] = { value : all_data[i].value , extra : tangent.extra }
 							}
 						}
@@ -227,7 +233,7 @@ Request.prototype = {
 									}
 
 								// we validate each object separately with the data
-								var tangent = _s_req.validate({ validators : i_data.data , data: obj , tangent : true });
+								var tangent = self.validate({ validators : i_data.data , data: obj , tangent : true });
 								
 								if(tangent.failure){
 									!errors[i] ? errors[i] = {} : null;
@@ -278,7 +284,7 @@ Request.prototype = {
 						else errors[i] = { msg : 'This was not submitted at all.' }
 						}
 					else{
-						var tangent = _s_req.validate({
+						var tangent = self.validate({
 							validators : i_data.data,
 							data : s, 
 							tangent : true 
@@ -301,10 +307,10 @@ Request.prototype = {
 					if(i_data.data[all_data[i]]  || i_data.default ){
 						var tester = ( i_data.data[all_data[i]] || i_data.default )
 						if(tester != 'none'){
-							var tangent = _s_req.validate({validators : tester, data : all_data , tangent : true });
+							var tangent = self.validate({validators : tester, data : all_data , tangent : true });
 							if(tangent.failure){  errors[i] = tangent.failure }
 							else {
-								send = _s_util.merge(send, tangent);
+								send = self._s.util.merge(send, tangent);
 								send[i] = all_data[i];
 								}
 							}
@@ -316,10 +322,10 @@ Request.prototype = {
 			else{
 				if(i_data.dependency){
 					if(i_data.b){
-						var tangent = _s_req.validate({validators : i_data.b.data, data : all_data, tangent : true });
+						var tangent = self.validate({validators : i_data.b.data, data : all_data, tangent : true });
 						if(tangent.failure) errors[i] = tangent.failure;
 						else{
-							send = _s_util.merge(send, tangent);
+							send = self._s.util.merge(send, tangent);
 							send[i] = i_data.b.default;
 							}
 						}
@@ -331,6 +337,12 @@ Request.prototype = {
 					else if(i_data.default || i_data.default == 0){send[i] = i_data.default }
 					else if(i_data.b){ return; }
 					else errors[i] = { msg : 'This was not submitted at all.' }
+					}
+				else if(i_data.csv_in){
+					if((i_data.csv_in).indexOf(all_data[i]) !== -1) send[i] = [all_data[i]]
+					else if(i_data.default || i_data.default == 0){send[i] = i_data.default }
+					else if(i_data.b){ return; }
+					else errors[i] = { msg : 'The submitted data was not in the range of accepted values for this property.' , data : all_data[i] , accepted : i_data.csv_in } ;
 					}
 				else{
 					if(i_data.b){
@@ -353,6 +365,4 @@ Request.prototype = {
 	}
 
 
-module.exports = function(req){
-	if(!(this instanceof Request)) { return new Request(req); }
-	}
+module.exports = function(req){ return new Request(req); }

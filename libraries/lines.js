@@ -4,7 +4,6 @@ function Lines(){}
 
 Lines.prototype = {
 
-	model : _s_load.model('lines'),
 	helpers : {
 		filters : function(){
 			return {
@@ -38,15 +37,15 @@ Lines.prototype = {
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 'lines');
+		return yield this._s.common.get(obj, 'lines');
 		},
 	new : function*(obj){
 		!obj?obj={}:null;
-		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : _s_req.validate(this.helpers.validators.base()) );
+		var data = ( obj.data ? this._s.req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : this._s.req.validate(this.helpers.validators.base()) );
 		if(data.failure) return data;
 
 		// now we want to load the manufacturer data 
-		var manufacturer_result = yield _s_load.library('manufacturers').get(data.manufacturer);
+		var manufacturer_result = yield this._s.library('manufacturers').get(data.manufacturer);
 		if(!manufacturer_result) return { failure : { msg : 'The manufacturer was not found.' } , code : 300 }
 		
 		// now we want to add the information from the manufacturer_result to the new document.
@@ -54,11 +53,11 @@ Lines.prototype = {
 		delete manufacturer_result.setup;
 		data.manufacturer = manufacturer_result;
 
-		return yield _s_common.new(data,'lines', true);
+		return yield this._s.common.new(data,'lines', true);
 		},
 	update : function*(obj){
 		!obj?obj={}:null;
-		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base({update:true}), data : obj.data }) : _s_req.validate(this.helpers.validators.base({update:true})) );
+		var data = ( obj.data ? this._s.req.validate({ validators : this.helpers.validators.base({update:true}), data : obj.data }) : this._s.req.validate(this.helpers.validators.base({update:true})) );
 		if(data.failure) return data;
 
 		// first we want to load the line information
@@ -74,7 +73,7 @@ Lines.prototype = {
 				// this means the manufacturer isn't the same 
 
 				// we want to load the manufacturer data 
-				var manufacturer_result = yield _s_load.library('manufacturers').get(data.manufacturer);
+				var manufacturer_result = yield this._s.library('manufacturers').get(data.manufacturer);
 				if(!manufacturer_result) return { failure : { msg : 'The manufacturer was not found.' , code : 300} }
 				
 				// now we want to add the information from the manufacturer_result to the new document.
@@ -87,12 +86,10 @@ Lines.prototype = {
 				}
 			}
 
-		result = _s_util.merge(result,data);
-		return yield _s_common.update(results,'lines');
+		result = this._s.util.merge(result,data);
+		return yield this._s.common.update(results,'lines');
 		}
 	
 	}
 
-module.exports = function(){
-  	if(!(this instanceof Lines)) { return new Lines(); }
-	}
+module.exports = function(){ return new Lines(); }

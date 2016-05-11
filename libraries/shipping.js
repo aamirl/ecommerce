@@ -1,8 +1,6 @@
 // Shipping
 
-function Shipping(){
-	
-	}
+function Shipping(){}
 
 Shipping.prototype = {
 	get helpers() {
@@ -44,7 +42,7 @@ Shipping.prototype = {
 				domestic : function(obj){
 					// now we iterate over the categories and get the pricings
 					var send = {};
-					var file = _s_load.datafile('shipping/sellyx/domestic/' + obj.country);
+					var file = this._s.datafile('shipping/sellyx/domestic/' + obj.country);
 					if(!file) return { failure : { msg : 'This country does not have a domestic Sellyx service.' , code :300 } }
 					
 					_s_u.each(obj.categories, function(id, ind){
@@ -57,7 +55,7 @@ Shipping.prototype = {
 							if(!send[service]){
 								send[service] = {
 									service : {
-										label : 'Sellyx ' + _s_l.info('service', service, 'shipping'),
+										label : 'Sellyx ' + this._s.l.info('service', service, 'shipping'),
 										id : service
 										},
 									packaging : {
@@ -79,7 +77,7 @@ Shipping.prototype = {
 					var send = {};
 					var dimensions = obj.dimensions;
 					var quantity = obj.quantity;
-					var file = _s_load.datafile('shipping/sellyx/international/' + obj.origin);
+					var file = this._s.datafile('shipping/sellyx/international/' + obj.origin);
 					if(!file) return { failure : { msg : 'This country does not have an international Sellyx service.' , code :300 } }
 
 					// calculate based off a pallet that is 48 inches by 48 inches by 64 inches
@@ -95,7 +93,7 @@ Shipping.prototype = {
 					_s_u.each(file[_s_countries.active.get()], function(dets, service){
 						send[service] = {
 							service : {
-								label : 'Sellyx ' + _s_l.info('service', service, 'shipping'),
+								label : 'Sellyx ' + this._s.l.info('service', service, 'shipping'),
 								id : service
 								},
 							packaging : {
@@ -112,13 +110,13 @@ Shipping.prototype = {
 			services : {
 				country : function(countryId){
 					var country = (countryId ? countryId : _s_countries.active.get());
-					return _s_load.datafile('shipping/country/' + country);
+					return this._s.datafile('shipping/country/' + country);
 					// return file;
 					}
 				},
 			api : function*(obj){
 				if(obj.dimensions.s_weight > 0){
-					var _shippo = _s_load.engine('shippo');
+					var _shippo = this._s.engine('shippo');
 					var rates = yield _shippo.calculate(obj);
 					if(!rates) rates = {};
 					// if(rates) return rates;
@@ -186,7 +184,7 @@ Shipping.prototype = {
 				var dimensions = obj.dimensions;
 
 				if(listing.shipping_rates == 1){
-					var t =  _s_util.array.find.object(item.combos,'id',listing.combo);
+					var t =  this._s.util.array.find.object(item.combos,'id',listing.combo);
 					dimensions = self.helpers.dimensions.min({
 						quantity : details.quantity,
 						item : (item.attributes.s_length ? item.attributes :t),
@@ -203,7 +201,7 @@ Shipping.prototype = {
 						if((di==1 && service >= 7) || (di==2 && service < 7)) return;
 						send.custom[id][service] = {
 							service : {
-								label : _s_l.info('service', service, 'shipping'),
+								label : this._s.l.info('service', service, 'shipping'),
 								id : service
 								},
 							packaging : {
@@ -263,15 +261,15 @@ Shipping.prototype = {
 				var categories = [];
 				var quantity = 0;
 
-				yield _s_util.each(obj.order.items, function*(dets, id){
+				yield this._s.util.each(obj.order.items, function*(dets, id){
 
 					// here we want to iterate over the items, and get the category and quantities being bought for each item. afterwards we will apply the proper pricing based on the accumulated data
 
 					// get the item first
-					var result = yield _s_load.library('products').get({id:id,include:'combos,attributes,sellers'});
+					var result = yield this._s.library('products').get({id:id,include:'combos,attributes,sellers'});
 					if(!result) {p_errors.push(id); return false;}
 
-					if(_s_util.indexOf(categories, result.line.category) == -1) categories.push(result.line.category);
+					if(this._s.util.indexOf(categories, result.line.category) == -1) categories.push(result.line.category);
 					
 					_s_u.each(dets.listings, function(details, listing){
 						quantity += parseInt(details.quantity);
@@ -306,16 +304,16 @@ Shipping.prototype = {
 
 				var fulfilled = _s_countries.fulfillment.fulfilled(_s_countries.active.get())
 
-				yield _s_util.each(obj.order.items, function*(dets, id){
+				yield this._s.util.each(obj.order.items, function*(dets, id){
 
 					// get the item first
-					var result = yield _s_load.library('products').get({id:id,include:'combos,attributes,sellers'});
+					var result = yield this._s.library('products').get({id:id,include:'combos,attributes,sellers'});
 					if(!result) {p_errors.push(id); return false;}
 
 					
 					_s_u.each(dets.listings, function(details,listing){
 
-						var r = _s_util.array.find.object(result.sellers, 'id',listing);
+						var r = this._s.util.array.find.object(result.sellers, 'id',listing);
 						if(!r) { l_errors.push({ product : id, listing : listing  }); return false;  }
 
 						// first we need to see whether it needs a leg 1
@@ -325,7 +323,7 @@ Shipping.prototype = {
 								types.l1[r.seller.id] = { 
 									total : 0 , 
 									send : { grouped : [] , custom : {} } , 
-									dimensions : _s_util.merge({},dimensions) , 
+									dimensions : this._s.util.merge({},dimensions) , 
 									origin : { 
 										name : r.seller.name,
 										address : {
@@ -362,7 +360,7 @@ Shipping.prototype = {
 						// if the destination country is fulfilled, then that means that we will have a leg 3
 						if(fulfilled){
 							// get leg3 stuff setup
-							if(_s_util.indexOf(types.l3.categories, result.line.category) == -1) types.l3.categories.push(result.line.category);
+							if(this._s.util.indexOf(types.l3.categories, result.line.category) == -1) types.l3.categories.push(result.line.category);
 							types.l3.quantity += details.quantity;
 
 							// now add the dimensions of the fulfilled item to the country it's originating from
@@ -374,11 +372,11 @@ Shipping.prototype = {
 							var t = 'l2d';
 							}
 
-						!types[t][r.seller.country] ? types[t][r.seller.country] = { dimensions : _s_util.merge({},dimensions) , send : {} } : null;
+						!types[t][r.seller.country] ? types[t][r.seller.country] = { dimensions : this._s.util.merge({},dimensions) , send : {} } : null;
 
 						types[t][r.seller.country].dimensions = self.helpers.dimensions.min({
 							quantity : details.quantity,
-							item : (result.attributes.s_length ? result.attributes : _s_util.array.find.object(result.combos,'id',r.combo)),
+							item : (result.attributes.s_length ? result.attributes : this._s.util.array.find.object(result.combos,'id',r.combo)),
 							dimensions : types[t][r.seller.country].dimensions
 							})
 
@@ -395,7 +393,7 @@ Shipping.prototype = {
 				if(Object.keys(types.l1).length > 0){
 					// for each seller that needs to get their product to origin country fulfillment center, if there are dimensions, we need to get rates
 
-					yield _s_util.each(types.l1, function*(seller_shipping, seller){
+					yield this._s.util.each(types.l1, function*(seller_shipping, seller){
 						types.l1[seller] = {
 							custom : types.l1[seller].send.custom,
 							grouped : yield self.helpers.api(seller_shipping)
@@ -486,16 +484,16 @@ Shipping.prototype = {
 
 				var total = 0;
 
-				yield _s_util.each(obj.order.items, function*(dets, id){
+				yield this._s.util.each(obj.order.items, function*(dets, id){
 
 
 					// get the item first
-					var result = yield _s_load.library('products').get({id:id,include:'combos,attributes,sellers'});
+					var result = yield this._s.library('products').get({id:id,include:'combos,attributes,sellers'});
 					if(!result) {p_errors.push(id); return false;}
 
 					_s_u.each(dets.listings, function(details, listing){
 
-						var r = _s_util.array.find.object(result.sellers, 'id',listing);
+						var r = this._s.util.array.find.object(result.sellers, 'id',listing);
 						if(!r) { l_errors.push({ product : id, listing : listing  }); return false;  }
 
 						var vals = self.helpers.autocalculate({

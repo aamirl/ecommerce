@@ -3,7 +3,6 @@
 function Orders(){}
 
 Orders.prototype = {
-	model : _s_load.model('orders'),
 	helpers : {
 		filters : function(){
 			return {
@@ -13,7 +12,6 @@ Orders.prototype = {
 				product : { v:['isProduct'] , b:true },
 				user : { v:['isUser'] , b:true },
 				seller : { v:['isSeller'] , b:true },
-				s_status : {csv_in:["50","51","52","53","54","55","56","57",50,51,52,53,54,55,56,57] , b:true },
 				convert : { in:['true','false'] , default : 'true' },
 				include : { v:['isAlphaOrNumeric'], b:true },
 				exclude : { v:['isAlphaOrNumeric'], b:true },
@@ -21,13 +19,14 @@ Orders.prototype = {
 				x : { v:['isInt'] , b:true , default : 0 },
 				y : { v:['isInt'] , b:true , default : 10 },
 				count : { in:['true','false',true,false], b:true, default:false },
-				// this is the parameter to denote whether we need to bring back the listing information with the order as well
+				s_status : {csv_in:["50","51","52","53","54","55","56","57","58","59","60",50,51,52,53,54,55,56,57,58,59,60] , b:true },
+				s_active : { csv_in:[1,0,"0","1"], b:true, default :[1] },
 				full : { in:['true','false',true,false], b:true, default:false }
 				};
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 'orders');
+		return yield this._s.common.get(obj, 'orders');
 		},
 	get new() {
 		var self  = this;
@@ -42,7 +41,7 @@ Orders.prototype = {
 					items : { v:['isArrayOfObjects'] , default : []},
 					gift : { in : ['1','2',1,2] , default : 1 },
 					type : { in : ['1','2',1,2] , default : 2 },
-					address : _s_common.helpers.validators.address(),
+					address : this._s.common.helpers.validators.address(),
 					promotions : { v:['isArray'] , b:true },
 					user : { v:['isUser'] , b:true },
 					offers : { v:['isJSON'] , b:true },
@@ -63,11 +62,11 @@ Orders.prototype = {
 					}
 
 
-				var data = ( obj.data ? _s_req.validate({ validators : c, data : obj.data }) : _s_req.validate(c) );
+				var data = ( obj.data ? this._s.req.validate({ validators : c, data : obj.data }) : this._s.req.validate(c) );
 				if(data.failure) return data; 
 
 				// first we add a user to the document
-				var _o_user = (data.user?yield _s_load.object('users',data.user):_s_user);
+				var _o_user = (data.user?yield this._s.object('users',data.user):_s_user);
 				if(_o_user.failure) return _o_user;
 
 				data.user = _o_user.helpers.data.document();
@@ -85,7 +84,7 @@ Orders.prototype = {
 				var errors = null;	
 				var seller = false;
 
-				yield _s_util.each(data.items, function*(o,i){
+				yield this._s.util.each(data.items, function*(o,i){
 					o.country = data.address.country;
 					var r = yield self.new.item({data : o });
 
@@ -110,7 +109,7 @@ Orders.prototype = {
 
 				// then we add the seller info
 				// any of the items in the listing has the seller id at the end of it
-				var _o_seller = yield _s_load.object('sellers',seller);
+				var _o_seller = yield this._s.object('sellers',seller);
 				if(_o_seller.failure) return _o_seller;
 				data.seller = _o_seller.helpers.data.document();			
 
@@ -119,11 +118,11 @@ Orders.prototype = {
 				data.setup = {
 					active : 1,
 					status : 1,
-					added : _s_dt.now.datetime()
+					added : this._s.dt.now.datetime()
 					}
 				data.policy = _o_seller.profile.policy((data.address.country==_o_seller.profile.country()?1:2));
 				
-				if(create) return yield _s_common.new(data,'orders', true);
+				if(create) return yield this._s.common.new(data,'orders', true);
 				return data;
 				},
 			item : function*(obj){
@@ -174,11 +173,11 @@ Orders.prototype = {
 						}
 					}
 
-				var data = ( obj.data ? _s_req.validate({ validators : c, data : obj.data }) : _s_req.validate(c) );
+				var data = ( obj.data ? this._s.req.validate({ validators : c, data : obj.data }) : this._s.req.validate(c) );
 				if(data.failure) return data; 
 
 				// we want to verify this listing exists for this product first
-				var _o_product = yield _s_load.object('products', data.item);
+				var _o_product = yield this._s.object('products', data.item);
 				if(_o_product.failure) return _o_product;
 
 				data.item = {
@@ -265,14 +264,14 @@ Orders.prototype = {
 
 
 				// let's check to make sure that the order belongs to the current user				
-				var _o_user = (data.user?yield _s_load.object('users',data.user):_s_user);
+				var _o_user = (data.user?yield this._s.object('users',data.user):_s_user);
 				if(_o_user.profile.id() != get.user.id) return { failure : { msg : 'User not authorized to add items to the current order.' , code : 300 } }
 
 				get.items.push(data);
 
 				var update = self.model.update({id:order, doc : get});
 				if(!update) return { failure : { msg : 'The order could not be updated successfully.' , code : 300 } };
-				else return { success : { data : yield _s_common.helpers.convert(get, 'orders' ) } };
+				else return { success : { data : yield this._s.common.helpers.convert(get, 'orders' ) } };
 				}
 			}	
 		},
@@ -286,11 +285,12 @@ Orders.prototype = {
 					single : function*(obj){
 						if(!obj.authorized){		// means that there was actually a charge created for this item
 
-							var cancel =  yield _s_load.library('financials').charge.reversal({
-								transaction : (obj.transaction?obj.transaction:obj.order.transactions[0])
+							var cancel =  yield self._s.engine('financials').charge.reversal({
+								transaction : (obj.transaction?obj.transaction:obj.order.transactions[obj.order.transactions.length-1])
 								})
 
 							if(cancel.failure){
+								return cancel;
 								obj.order.setup.status = (obj.failure?obj.failure:55)
 								}
 							else{
@@ -312,12 +312,12 @@ Orders.prototype = {
 							}
 
 						obj.order.cancelled = {
-						 	added : _s_dt.now.datetime(),
-						 	by : _s_entity.object.profile.id()
+						 	added : self._s.dt.now.datetime(),
+						 	entity : self._s.entity.object.helpers.data.document()
 						 	}
 
 						if(obj.raw) return obj.order;
-						return yield _s_common.update(obj.order,'orders',false);
+						return yield self._s.common.update(obj.order,'orders',false);
 						},
 					all : function*(){
 
@@ -329,6 +329,4 @@ Orders.prototype = {
 		}
 	}
 
-module.exports = function(){
-  	if(!(this instanceof Orders)) { return new Orders(); }
-	}
+module.exports = function(){ return new Orders(); }

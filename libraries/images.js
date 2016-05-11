@@ -231,9 +231,7 @@ Images.prototype = {
 	
 	}
 
-module.exports = function(){
-  	if(!(this instanceof Images)) { return new Images(); }
-	}
+module.exports = function(){return new Images(); }
 
 
 

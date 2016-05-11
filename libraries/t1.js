@@ -1,9 +1,8 @@
 // t1 Library
 
-function T1(){}
+function T1(){ }
 
 T1.prototype = {
-	model : _s_load.model('t1'),
 	get helpers(){
 		var self = this;
 		return {
@@ -20,54 +19,6 @@ T1.prototype = {
 					y : { v:['isInt'] , b:true , default : 10 },
 					count : { in:['true','false',true,false], b:true, default:false }
 					}
-				},
-			cached : function*(result , key, oAuth_user, return_both){
-				if(typeof result != 'object'){
-					var result = yield self.get({id:result, convert:false, exclude:'reviews,follows'});
-					if(!result) return { failure :  { msg : 'This user was not found' }}
-					}
-
-				if(result.addresses && result.addresses.length > 0) result.country = result.addresses[0].country
-				else result.country = _s_countries.active.get(); 
-
-				if(!oAuth_user){
-					oAuth_user = yield _s_req.sellyx({
-						path : 'auth/validate',
-						params : {
-							key : _s_auth_key
-							}
-					 	})
-					
-					if(oAuth_user.failure){ return { failure : {msg:'Authorization failure.',code:300} }; }
-					else { oAuth_user = oAuth_user.success.data.user; }
-					}
-
-				result.email = {
-					id : oAuth_user.email,
-					verified : true
-					}
-				result.reputation = oAuth_user.reputation;
-				result.numbers = [ { number : oAuth_user.telephone , primary : true } ]
-
-				if(result.entities && result.entities.length > 0){
-
-					}
-
-				result.oAuth_setup = {
-					status : oAuth_user.status,
-					active : oAuth_user.active,
-					added : oAuth_user.createdAt
-					}
-				
-				converted = yield _s_util.convert.single({data:_s_util.clone.deep(result),label:true,library:'t1',dates:{r:true}});
-
-				if(key) {
-					if(typeof key !==  'string') key = _s_cache_id;
-					yield _s_cache.key.set({ cache_key: key, key : 't1' , value : converted });
-					}
-
-				if(return_both) return { converted : converted, raw : result }
-				return converted;
 				},
 			validators : {
 				base : function(){
@@ -112,10 +63,10 @@ T1.prototype = {
 								}, 
 							default : [] 
 							},
-						social : _s_common.helpers.validators.social(),
-						currency : { in:_s_currency.helpers.valid(), b:true, default:'USD' },
+						social : self._s.common.helpers.validators.social(),
+						currency : { in:self._s.currency.helpers.valid(), b:true, default:'USD' },
 						standard : { in:['US','MT'], b:true, default:'MT' },
-						addresses : _s_common.helpers.validators.address({aoo:true}),
+						addresses : self._s.common.helpers.validators.address({aoo:true}),
 						verifications : {
 							json : true,
 							b : true,
@@ -128,11 +79,11 @@ T1.prototype = {
 						setup : {
 							json : true,
 							b:true,
-							default:{ active : 1, status : 1, added : _s_dt.now.datetime() },
+							default:{ active : 1, status : 1, added : self._s.dt.now.datetime() },
 							data : {
 								active : { in:[0,1] , b:true, default : 1 },
 								status : { in:[0,1,2,3,4,5,6,7] , b:true, default : 1 },
-								added : { v:['isDateTime'] , b:true, default : _s_dt.now.datetime() }
+								added : { v:['isDateTime'] , b:true, default : self._s.dt.now.datetime() }
 								}
 							}
 						}
@@ -141,25 +92,25 @@ T1.prototype = {
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 't1');
+		return yield this._s.common.get(obj, 't1');
 		},
 	new : function*(obj){
 		!obj?obj={}:null;
 
-		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : _s_req.validate(this.helpers.validators.base()) );
+		var data = ( obj.data ? this._s.req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : this._s.req.validate(this.helpers.validators.base()) );
 		if(data.failure) return data; 
 
-		return yield _s_common.new(data,'t1', (obj.raw?false:true) , (obj.id?false:true));
+		return yield this._s.common.new(data,'t1', (obj.raw?false:true) , (obj.id?false:true));
 		},
 	update : function*(obj){
 		!obj?obj={}:null;
 		// this is the update function for the t1 library for basic information
 		// we are going to supply the information being updated here 
-		var data = ( obj.data ? obj.data : _s_req.validate(this.helpers.validators.base({update:true})) );
+		var data = ( obj.data ? obj.data : this._s.req.validate(this.helpers.validators.base({update:true})) );
 		if(data.failure) return data;
 
 		if(obj.id){
-			obj.result = yield _s_load.library('t1').get(obj.id);
+			obj.result = yield this._s.library('t1').get(obj.id);
 			if(obj.result.failure) return obj.result.failure
 			}
 		
@@ -170,34 +121,35 @@ T1.prototype = {
 
 		delete obj.result.oAuth_setup;
 
-		var r = yield _s_common.update(_s_util.merge(obj.result,data) , 't1');
+		var r = yield this._s.common.update(this._s.util.merge(obj.result,data) , 't1');
 		if(r.failure) return r;
 
 		if(obj.return_target) return { success : { data : r.success.data[obj.return_target] } }
 		return r;
 		},
-	actions : {
-		new : {
-			faq : function(obj){
-				var r = _s_dt.now.datetime();
-				var t = {
-					q : obj.q||"Blank Question!",
-					id :  _s_common.helpers.generate.id(),
-					added :  r,
-					}
+	get actions() {
+		var self = this;
+		return {
+			new : {
+				faq : function(obj){
+					var r = this._s.dt.now.datetime();
+					var t = {
+						q : obj.q||"Blank Question!",
+						id :  self._s.common.helpers.generate.id(),
+						added :  r,
+						}
 
-				if(obj.a){
-					t.a = obj.a;
-					t.updated = r
-					}
+					if(obj.a){
+						t.a = obj.a;
+						t.updated = r
+						}
 
-				return t;
+					return t;
+					}
 				}
 			}
 		}
 	}
 
 
-module.exports = function(){
-  	if(!(this instanceof T1)) { return new T1(); }
-	}
+module.exports = function(){ return new T1(); }

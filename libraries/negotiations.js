@@ -5,12 +5,10 @@ function Negotiations(){
 	}
 
 Negotiations.prototype = {
-
-	model : _s_load.model('negotiations'),
 	helpers : {
 		convert : function*(obj){
 
-			var r = yield _s_common.helpers.convert(obj , 'negotiations', { 'offers' : 'negotiations.offers' });
+			var r = yield this._s.common.helpers.convert(obj , 'negotiations', { 'offers' : 'negotiations.offers' });
 
 			return r;
 			},
@@ -42,7 +40,7 @@ Negotiations.prototype = {
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 'negotiations');
+		return yield this._s.common.get(obj, 'negotiations');
 		},
 	update : function(){
 
@@ -57,7 +55,7 @@ Negotiations.prototype = {
 					redemption : {
 						redeemed : false
 						},
-					added : _s_dt.now.datetime(),
+					added : this._s.dt.now.datetime(),
 					price : obj.price,
 					by : obj.by,
 					expiration : obj.expiration,
@@ -81,7 +79,7 @@ Negotiations.prototype = {
 
 					obj.corporate ? r.status = { in:[0,1,2,'0','1','2'] } : null;
 
-					var data = _s_req.validate(r);
+					var data = this._s.req.validate(r);
 					if(data.failure) return data;
 
 					var v = {
@@ -99,7 +97,7 @@ Negotiations.prototype = {
 						}
 
 					obj.corporate ? v.status = [0,1,2] : null;
-					return yield _s_common.check(v);
+					return yield this._s.common.check(v);
 					},
 				offer : function*(obj){
 					!obj?obj={}:null;
@@ -111,7 +109,7 @@ Negotiations.prototype = {
 
 					obj.corporate ? r.status = { in:[0,1,2,'0','1','2'] } : null;
 
-					var data = _s_req.validate(r);
+					var data = this._s.req.validate(r);
 					if(data.failure) return data;
 
 					var v = {
@@ -139,7 +137,7 @@ Negotiations.prototype = {
 						}
 
 					obj.corporate ? v.status = [0,1,2] : null;
-					return yield _s_common.check(v);
+					return yield this._s.common.check(v);
 					}
 				}
 			}

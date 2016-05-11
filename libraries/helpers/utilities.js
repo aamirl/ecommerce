@@ -1,7 +1,6 @@
 var non = ['null', 'undefined', undefined, null];
 
-
-
+function Utilities(){}
 
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
@@ -33,7 +32,7 @@ Object.prototype.sum = function() {
     };
 
 
-module.exports = {
+Utilities.prototype = {
     round : function(value,exp){
         if (typeof exp === 'undefined' || +exp === 0)
         return Math.round(value);
@@ -64,79 +63,82 @@ module.exports = {
             }
         return obj3;
         },
-    object : {
-        stringed : function(obj, path, truthy){
-            if(path == undefined || Object.keys(obj).length == 0 ) return false;
-            else {
-                var o = obj;
-                path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
-                path = path.replace(/^\./, '');           // strip a leading dot
-                var a = path.split('.');
-                while (a.length) {
-                    var n = a.shift();
-                    if (n in o) {
-                        o = o[n];
-                        } 
-                    else {
-                        return;
+    get object() {
+        var self = this
+        return {
+            stringed : function(obj, path, truthy){
+                if(path == undefined || Object.keys(obj).length == 0 ) return false;
+                else {
+                    var o = obj;
+                    path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+                    path = path.replace(/^\./, '');           // strip a leading dot
+                    var a = path.split('.');
+                    while (a.length) {
+                        var n = a.shift();
+                        if (n in o) {
+                            o = o[n];
+                            } 
+                        else {
+                            return;
+                            }
                         }
+
+                    if(truthy !== undefined && truthy) return this.tf(o)
+                    else return o;
+                    }
+                },
+            // if they are the same object it will return true;
+            same : function(source, tester){
+                if(Object.keys(source).length != Object.keys(tester).length) return false;
+
+                var same = true;
+                _s_u.each(tester, function(v,k){
+                    if(source[k] != v) {
+                        same = false;
+                        return false;
+                        }
+                    })
+                return same;
+                },
+            values : function(obj){
+                var arr = [];
+                _s_u.each(obj, function(v,k){
+                    arr.push(v);
+                    })
+                return arr;
+                },
+            delete : function(obj){
+                var data = self._s.util.clone.deep(obj.data);
+                if(obj.delete){
+                    _s_u.each(obj.delete, function(o,i){
+                        if(data[o]) delete data[o]
+                        })
+                    }
+                if(obj.keep){
+                    _s_u.each(obj.keep, function(o,i){
+                        if(!data[o]) delete data[o];
+                        })
+                    }
+                return data;
+                },
+            extract : function(obj){
+                var send = {};
+
+                if(obj.exclude){
+                    var tester = obj.exclude.split(',');
+                    _s_u.each(obj.data,function(v,k){
+                        if(self._s.util.indexOf(tester, k)==-1) send[k] = v;
+                        })
+                    }
+                if(obj.include){
+                    var tester = obj.include.split(',');
+                    _s_u.each(obj.data,function(v,k){
+                        if(self._s.util.indexOf(tester, k)!=-1) send[k] = v;
+                        })
                     }
 
-                if(truthy !== undefined && truthy) return this.tf(o)
-                else return o;
+                return send;
                 }
-            },
-        // if they are the same object it will return true;
-        same : function(source, tester){
-            if(Object.keys(source).length != Object.keys(tester).length) return false;
-
-            var same = true;
-            _s_u.each(tester, function(v,k){
-                if(source[k] != v) {
-                    same = false;
-                    return false;
-                    }
-                })
-            return same;
-            },
-        values : function(obj){
-            var arr = [];
-            _s_u.each(obj, function(v,k){
-                arr.push(v);
-                })
-            return arr;
-            },
-        delete : function(obj){
-            var data = _s_util.clone.deep(obj.data);
-            if(obj.delete){
-                _s_u.each(obj.delete, function(o,i){
-                    if(data[o]) delete data[o]
-                    })
-                }
-            if(obj.keep){
-                _s_u.each(obj.keep, function(o,i){
-                    if(!data[o]) delete data[o];
-                    })
-                }
-            return data;
-            },
-        extract : function(obj){
-            var send = {};
-
-            if(obj.exclude){
-                var tester = obj.exclude.split(',');
-                _s_u.each(obj.data,function(v,k){
-                    if(_s_util.indexOf(tester, k)==-1) send[k] = v;
-                    })
-                }
-            if(obj.include){
-                var tester = obj.include.split(',');
-                _s_u.each(obj.data,function(v,k){
-                    if(_s_util.indexOf(tester, k)!=-1) send[k] = v;
-                    })
-                }
-
-            return send;
             }
         },
     get array() {
@@ -211,10 +213,11 @@ module.exports = {
                         }
                     return false;
                     },
-                objects : function(arr, key, value, index, indexes_only){
+                objects : function(arr, key, value, index, indexes_only, type){
                     var send = [];
                     for (var i = 0; i < arr.length; i++) {
-                        if (arr[i][key] == value) {
+                        var test = (type?arr[i][type][key]:arr[i][key])
+                        if (test == value) {
                             if(indexes_only){
                                 send.push(i);
                                 }
@@ -319,7 +322,7 @@ module.exports = {
             single : function*(obj){
                 var data = (obj.data ? obj.data : obj);
                 
-                var countries = _s_countries.get();
+                var countries = self._s.countries.get();
                 // load options
 
                 var label = (obj.label ? obj.label : false);
@@ -332,12 +335,14 @@ module.exports = {
                 // load validator strings
                 var amounts = ['total','amount','price','subtotal','msrp','sale','standard1','standard2','sale1','sale2','return1','return2','sreturn1','sreturn2','local','requested','processed','refunded','authorized'];
                 var csvs = 'restricted|categories';
-                var dates = 'added|deleted|modified|submitted|start|end|expiration|cancelled|rejected|requested|approved|denied|withdrawn';
+                var dates = ["added","deleted","modified","submitted","start","end","expiration","rejected","requested","approved","denied","withdrawn","on"]
+                // var dates = 'added|deleted|modified|submitted|start|end|expiration|rejected|requested|approved|denied|withdrawn|on';
                 var countries_t = 'origin|country';
                 var dimensions = 's_length|s_width|s_height|s_weight';
 
-                yield _s_util.each(data, function*(v,k){
+                yield self._s.util.each(data, function*(v,k){
                     // here if  see that if the value is an object, that means that we have a sellyx object, which has a label and a data attribute. we wil add to that sellyx object a 'converted' property. otherwise, we just have a simple k,v pair that we are converting
+
 
 
                     if(obj.exclude && obj.exclude.search(k) !== -1 ) return;
@@ -345,17 +350,17 @@ module.exports = {
                     var targ = (v instanceof Object && v.data ? v.data : v);
 
                     if(k=='totals' | k == 'amounts'){
-                        k = _s_currency.convert.array.front({data:v,objectify:true});
+                        k = self._s.currency.convert.array.front({data:v,objectify:true});
                         return;
                         }
-                    if(_s_util.indexOf(amounts,k) != -1){
-                        var converted =  _s_currency.convert.front(targ, false);
+                    if(self._s.util.indexOf(amounts,k) != -1){
+                        var converted =  self._s.currency.convert.front(targ, false);
                         }
-                    else if(k == 'address'){
+                    else if(k == 'address' || k == 'messages'){
                         if(v.constructor == Array){
-                            var go = _s_util.clone.shallow(obj);
+                            var go = self._s.util.clone.shallow(obj);
                             !go.data ? go = v : go.data = v ;
-                            data[k] = yield _s_util.convert.multiple(go);
+                            data[k] = yield self._s.util.convert.multiple(go);
                             return;
                             }
                         else if(v.country){
@@ -363,11 +368,11 @@ module.exports = {
                             return;
                             }
                         }
-                    else if(new RegExp(dates).test(k)){
-                        var c = (obj.dates && obj.dates.d ? _s_dt.convert.date.output(targ) : _s_dt.convert.datetime.output(targ) );
+                    else if(self._s.util.indexOf(dates,k) != -1){
+                        var c = (obj.dates && obj.dates.d ? self._s.dt.convert.date.output(targ) : self._s.dt.convert.datetime.output(targ) );
                         if(obj.dates && obj.dates.r) var converted = c;
                         // else var converted = c;
-                        else var converted = {readable:c , timeago : _s_dt.timeago(targ) }
+                        else var converted = {readable:c , timeago : self._s.dt.timeago(targ) }
                         }
                     else if(new RegExp(csvs).test(k)){
                         try{
@@ -381,32 +386,32 @@ module.exports = {
                         var converted = countries[targ].name;
                         }
                     else if(new RegExp(dimensions).test(k)){
-                        var converted = _s_dimensions.convert.front(k, targ, label);
+                        var converted = self._s.dimensions.convert.front(k, targ, label);
                         }
                     else if(k == 'condition'){
-                        var converted = _s_l.info('condition' , targ);
+                        var converted = self._s.l.info('condition' , targ);
                         }
                     else if(k == 'category'){
                         if(v instanceof Object) return;
                         // else var converted = 'CATEGORY NAME';
-                        else var converted = _s_sf.categories.name(v);
+                        else var converted = self._s.sf.categories.name(v);
                         }
                     else if((library == 'orders' && k == 'items')){
-                        var go = _s_util.clone.shallow(obj);
+                        var go = self._s.util.clone.shallow(obj);
                         !go.data ? go = v : go.data = v ;
                         go.library = k;
-                        data[k] = yield _s_util.convert.multiple(go);
+                        data[k] = yield self._s.util.convert.multiple(go);
                         return;
                         }
-                    else if(k == 'setup' || k == 'pricing' || k == 'manufacturer' || k=='line' || (k=='seller' && library == 'inventory') ){
-                        var go = _s_util.clone.shallow(obj);
+                    else if(k == 'setup' || k == 'pricing' || k == 'manufacturer' || k=='line' || (k=='seller' && library == 'inventory') || k == 'cancelled' || k == 'process_history' ){
+                        var go = self._s.util.clone.shallow(obj);
                         !go.data ? go = v : go.data = v
-                        data[k] = yield _s_util.convert.single(go);
+                        data[k] = yield self._s.util.convert.single(go);
                         return;
                         }
                     else if(k=='images'){
                         if(obj.images && v.length > 0 ){
-                            data[k] = _s_load.engine('images').get.set({
+                            data[k] = self._s.engine('images').get.set({
                                 path : obj.images.path,
                                 images : v
                                 })
@@ -420,7 +425,7 @@ module.exports = {
                         return;
                         }
                     else{
-                        var converted = _s_l.info(k, targ, library, type);
+                        var converted = self._s.l.info(k, targ, library, type);
                         }
 
                     // now we figure out what we want to do with the converted value
@@ -501,3 +506,8 @@ module.exports = {
             }
         }
     }
+
+
+
+module.exports = function(){ return new Utilities(); }
+

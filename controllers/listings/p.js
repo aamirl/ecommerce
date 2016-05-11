@@ -1,12 +1,20 @@
-var _listings = _s_load.library('listings');
+module.exports = function(){  return new Controller(); }
 
-module.exports = {
+function Controller(){}
+Controller.prototype = {
 	get : function*(){
+		var _listings = this._s.library('listings');
 
-		var data = _s_req.validate(_listings.helpers.filters());
+		var data = this._s.req.validate(_listings.helpers.filters());
 		if(data.failure) return data;
 		data.endpoint = true;
 
 		return yield _listings.get(data);
+		},
+	test : function*(){
+
+		return { success : true }
+		
+
 		}
 	}

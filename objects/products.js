@@ -10,7 +10,7 @@ Products.prototype = {
 
 		if(typeof data != 'object'){
 			// let's load the product from the database
-			var _product = _s_load.library('products');
+			var _product = this._s.library('products');
 			var result = yield _product.get({ id : data , convert : false, objectify : false });
 			if(!result) { this.failure = { msg : 'The product could not be found.' , code : 300 }; }
 			else {
@@ -22,7 +22,7 @@ Products.prototype = {
 		else{ this.data = data; }
 
 		},
-	library : _s_load.library('products'),
+	library : this._s.library('products'),
 	document : function(){
 		return data;
 		},
@@ -33,13 +33,13 @@ Products.prototype = {
 		listing : function(obj){
 			// returns an object and an index for data.sellers
 
-			if(obj.seller) return _s_util.array.find.object(data.sellers, 'id' , obj.seller , true , 'seller' );
-			else if(obj.id) return _s_util.array.find.object(data.sellers, 'id' , obj.id , true );
+			if(obj.seller) return this._s.util.array.find.object(data.sellers, 'id' , obj.seller , true , 'seller' );
+			else if(obj.id) return this._s.util.array.find.object(data.sellers, 'id' , obj.id , true );
 			}
 		},
 	actions : {
 		update : function*(obj){
-			// var c = (obj.merge?_s_util.merge(data,doc):data);
+			// var c = (obj.merge?this._s.util.merge(data,doc):data);
 
 			// var update = yield self.library.update(c);
 			// if(update){

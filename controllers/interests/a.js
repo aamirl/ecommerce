@@ -1,23 +1,28 @@
-var _interests = _s_load.library('interests');
 
 
-module.exports = {
+module.exports = function(){  return new Controller(); }
+
+function Controller(){}
+Controller.prototype = {
 	get : function*(){
+		var _interests = this._s.library('interests');
+		
 		// for this get we only want to return the information for the currently logged in user
-		var data = _s_req.validate(_interests.helpers.filters());
+		var data = this._s.req.validate(_interests.helpers.filters());
 		if(data.failure) return data;
 
-		data.entity = _s_entity.object.profile.id();
+		data.entity = this._s.entity.object.profile.id();
 		data.endpoint = true;
 
-		return yield _interests.get(data);
+		return  yield _interests.get(data);
 		},
 	new : function*(){
+		var _interests = this._s.library('interests');
 		return yield _interests.new();
 		},
 	status : function*(){
 		
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			id : {v:['isListing']},
 			status : { in:['1','2',1,2] },
 			extra : { v:['isAlphaOrNumeric'] },
@@ -34,7 +39,7 @@ module.exports = {
 				},
 			deep : {
 				entity : {
-					id : _s_entity.object.profile.id(),
+					id : this._s.entity.object.profile.id(),
 					target : true
 					},
 				library : 'interests',
@@ -48,9 +53,9 @@ module.exports = {
 				}
 			}
 
-		return yield _s_common.check(x);
+		return yield this._s.common.check(x);
 		},
 	message : function*(){
-		return yield _s_load.library('listings').actions.message({type:1});
+		return yield this._s.library('listings').actions.message({type:1});
 		}
 	}

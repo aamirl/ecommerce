@@ -1,7 +1,11 @@
 
 // Orders Model
 
-module.exports = {
+function Model(){}
+module.exports = function(){ return new Model(); }
+
+Model.prototype = {
+
 	update : function*(obj){
 		var doc = {
 			id : obj.id,
@@ -10,14 +14,14 @@ module.exports = {
 			merge : true
 			}
 		delete obj.id;
-		return yield _s_db.es.update(doc);
+		return yield this._s.db.es.update(doc);
 		},
 	get new() {
 		var self = this;
 		return {
 			negotiation : function*(obj, meta){
 				
-				return yield _s_db.es.add({
+				return yield this._s.db.es.add({
 					index : 'negotiations',
 					body : obj
 					}, meta);
@@ -46,12 +50,12 @@ module.exports = {
 					}
 				}
 
-			return yield _s_db.es.search(get, obj);
+			return yield this._s.db.es.search(get, obj);
 			}
 		},
 	get : function*(obj){
 		
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('negotiations', obj);
+		if(obj.id || typeof obj == 'string') return yield this._s.db.es.get('negotiations', obj);
 		
 		var get = {
 			index : 'negotiations',
@@ -72,7 +76,7 @@ module.exports = {
 
 		obj.active ? get.body.query.bool.must.push({ match : { 'setup.active' : obj.active } }) : null;
 
-		if(obj.count) return yield _s_db.es.count(get,obj);
-		return yield _s_db.es.search(get, obj)
+		if(obj.count) return yield this._s.db.es.count(get,obj);
+		return yield this._s.db.es.search(get, obj)
 		}
 	}

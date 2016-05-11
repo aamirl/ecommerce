@@ -35,18 +35,15 @@ var static_vars = {
 	}
 
 
-function Dimensions(){
-
-	this.data = {};
-	var set = _s_req.headers('standard');
-	if( set && (set=='US'||set=='MT') ){ this.active.set(set); }
-	else{ this.active.set('MT'); }
-
-	}
-
-
+function Dimensions(){}
 
 Dimensions.prototype = {
+	init : function(){
+		this.data = {};
+		var set = this._s.req.headers('standard');
+		if( set && (set=='US'||set=='MT') ){ this.active.set(set); }
+		else{ this.active.set('MT'); }
+		},
 	get active() {
 		var self = this;
 		return {
@@ -113,6 +110,6 @@ Dimensions.prototype = {
 
 
 module.exports = function(){
-  	if(!(this instanceof Dimensions)) { return new Dimensions(); }
+  	return new Dimensions()
 	}
 

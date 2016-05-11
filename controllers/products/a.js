@@ -1,20 +1,20 @@
-var _products = _s_load.library('products');
+var _products = this._s.library('products');
 
 module.exports = {
 	'get' : function*(){
-		var data = _s_req.validate(_products.helpers.filters());
+		var data = this._s.req.validate(_products.helpers.filters());
 		if(data.failure) return data;
 
-		data.entity = _s_entity.object.profile.id();
+		data.entity = this._s.entity.object.profile.id();
 		data.endpoint = true;
 
 		return yield _products.get(data);
 		},
 	'get/summary' : function*(){
 		return yield _products.actions.summary({
-			entity : _s_entity.object.profile.id(),
+			entity : this._s.entity.object.profile.id(),
 			combined : true, 
-			type : _s_req.post('type')
+			type : this._s.req.post('type')
 			});
 		},
 	new : function*(){
@@ -25,8 +25,8 @@ module.exports = {
 		return yield _products.update.product();
 		},
 	'images/update' : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		var data = _s_req.validate({
+		if(!_s_seller) return this._s.l.error(101);
+		var data = this._s.req.validate({
 			product : { v:['isProduct'] },
 			images : { v:['isArray'] },
 			segmentor : { 
@@ -50,7 +50,7 @@ module.exports = {
 		if(result.setup.seller != _s_seller.profile.id() || (result.locked && result.locked == 2) ) return { failure : { msg : 'This product cannot be modified.' , code : 300 } };
 
 		// get template for product
-		var template = yield _s_load.template(result.line.category);
+		var template = yield this._s.template(result.line.category);
 		if(!template) return { failure : { msg : 'The product template could not be loaded.' , code :300 } };
 
 		if(template.setup.images && !data.segmentor) return { failure : { msg : 'This product variation requires segmentors.' , code : 300 } };
@@ -68,7 +68,7 @@ module.exports = {
 			// load all the segmentors and look for this one
 			if(result.segmented[data.segmentor.id]){
 				// now remove all the images from before
-				result.images = _s_util.array.splicem({ array :result.images , remove :  _s_util.array.find.objects(result.images, 'segmented', data.segmentor.id, false, true)})
+				result.images = this._s.util.array.splicem({ array :result.images , remove :  this._s.util.array.find.objects(result.images, 'segmented', data.segmentor.id, false, true)})
 				}
 
 			result.segmented[data.segmentor.id] = {
@@ -82,13 +82,13 @@ module.exports = {
 			result.images = data.images;
 			}
 
-		var r =  yield _s_common.update(result, 'products');
+		var r =  yield this._s.common.update(result, 'products');
 		if(r.failure) return r;
 		return { success : true }
 		},
 	'segmentor/delete' : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		var data = _s_req.validate({
+		if(!_s_seller) return this._s.l.error(101);
+		var data = this._s.req.validate({
 			product : { v:['isProduct'] },
 			segmentor : { v:['isAlphaOrNumeric'] }
 			})
@@ -104,24 +104,24 @@ module.exports = {
 		if(!result.segmented[data.segmentor]) return { failure : { msg : 'The segmentor was not found for this product variation.' , code :300 } };
 
 		// get template for product
-		var template = yield _s_load.template(result.line.category);
+		var template = yield this._s.template(result.line.category);
 		if(!template) return { failure : { msg : 'The product template could not be loaded.' , code :300 } };
 		if(!template.setup.images) return { failure : { msg : 'This product does not have segmentors.' , code : 300 } };
 
 		// now look and make sure that no combination is being sold that uses this segmentor
-		var combo = _s_util.array.find.object(result.combos, template.setup.images, data.segmentor);
+		var combo = this._s.util.array.find.object(result.combos, template.setup.images, data.segmentor);
 		if(combo) return { failure : { msg : 'You cannot delete this '+template.setup.images+' because the combination labeled ' + (combo.label||combo.id) + ' uses this '+template.setup.images+'. Please delete that combination first before deleting this.' , code : 300} }
 
-		result.images = _s_util.array.splicem({ array :result.images , remove :  _s_util.array.find.objects(result.images, 'segmented', data.segmentor, false, true)})
+		result.images = this._s.util.array.splicem({ array :result.images , remove :  this._s.util.array.find.objects(result.images, 'segmented', data.segmentor, false, true)})
 		delete result.segmented[data.segmentor];
 
-		var r =  yield _s_common.update(result, 'products');
+		var r =  yield this._s.common.update(result, 'products');
 		if(r.failure) return r;
 		return { success : true }
 		},
 	'combination/delete' : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		var data = _s_req.validate({
+		if(!_s_seller) return this._s.l.error(101);
+		var data = this._s.req.validate({
 			combo : { v:['isCombination'] },
 			product : { v:['isProduct'] }
 			})
@@ -134,13 +134,13 @@ module.exports = {
 		if(result.setup.seller != _s_seller.profile.id() || (result.locked && result.locked == 2) ) return { failure : { msg : 'This product cannot be modified, and this combination cannot be deleted.' , code : 300 } };
 
 		// first check to see if there is actually a combination in the product
-		var combo = _s_util.array.find.object(result.combos, 'id', data.combo, true);
+		var combo = this._s.util.array.find.object(result.combos, 'id', data.combo, true);
 		if(!combo) return { failure : { msg : 'This combination does not exist for this product.' , code : 300 } };
 
 		if(data.combo == 1) return { failure : { msg : 'A product cannot exist without a combination. Please modify the current combination to a new combination instead of deleting it.' , code : 300 } }
 
 		// check to see if this combination is being used by any other seller
-		var objects = _s_util.array.find.objects(result.sellers, 'combo' , data.combo, true);
+		var objects = this._s.util.array.find.objects(result.sellers, 'combo' , data.combo, true);
 		
 
 		var error = false;
@@ -158,7 +158,7 @@ module.exports = {
 
 		if(error) return { failure : { msg : 'This combination cannot be deleted because other sellers are selling this combination.' , code : 300 } };
 
-		result.sellers = _s_util.array.splicem({
+		result.sellers = this._s.util.array.splicem({
 			array : result.sellers,
 			remove : to_delete
 			})
@@ -168,13 +168,13 @@ module.exports = {
 
 		// next get rid of all the listings that the seller had for that combination
 		
-		var r = yield _s_common.update(result, 'products');
+		var r = yield this._s.common.update(result, 'products');
 		if(r.failure) return r;
 		return { success : true }
 		},
 	'combination/upsert' : function*(){
-		if(!_s_seller) return _s_l.error(101);
-		var data = _s_req.validate({
+		if(!_s_seller) return this._s.l.error(101);
+		var data = this._s.req.validate({
 			combo : { v:['isCombination'] , b:true },
 			product : { v:['isProduct'] }
 			})
@@ -188,10 +188,10 @@ module.exports = {
 
 		if(data.combo){
 			// means we are updating an existing combination
-			var combo = _s_util.array.find.object(result.combos, 'id', data.combo, true);
+			var combo = this._s.util.array.find.object(result.combos, 'id', data.combo, true);
 			if(combo){
 				// means we found the combination and it's supposed to be an update
-				var objects = _s_util.array.find.objects(result.sellers, 'combo' , data.combo, true);
+				var objects = this._s.util.array.find.objects(result.sellers, 'combo' , data.combo, true);
 				if(objects){
 					var found = false;
 					_s_u.each(objects, function(object,i){
@@ -204,14 +204,14 @@ module.exports = {
 				}
 			}
 
-		var template = _s_load.template(result.line.category);
+		var template = this._s.template(result.line.category);
 		if(!template) return { failure : {msg:'This template could not be found.', code:300 }}
 
 		if(combo && (!objects || (combo && objects && !found))){
 			//passed all checks so let's just update
 			var w = yield _products.helpers.validators.combinations(result.line.category, result.line.custom);
 			if(w.failure) return w;
-			var info = _s_req.validate(w);
+			var info = this._s.req.validate(w);
 			if(info.failure) return info;
 
 
@@ -239,7 +239,7 @@ module.exports = {
 			result.combos.push(u);
 			}
 
-		var r = yield _s_common.update(result, 'products');
+		var r = yield this._s.common.update(result, 'products');
 		if(r.failure) return r;
 		return { success : true }
 		},

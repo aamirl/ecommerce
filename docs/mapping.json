@@ -133,6 +133,10 @@ PUT /messages/_mapping/base
             "messages" : {
                 "type":"nested"    
                 },
+            "listing" : {
+                "type" : "string",
+                "index" : "not_analyzed"
+                },
             "read" : {
                 "type" : "string",
                 "index" : "not_analyzed"
@@ -158,6 +162,31 @@ PUT /listings/_mapping/base
     "base": {
         "properties" : {
             "interests" : {
+                "type":"nested"    
+                },
+             "questions" : {
+                "type":"nested"    
+                },
+            "location" : {
+                "properties" : {
+                    "coordinates" : {
+                        "type" : "geo_point"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+PUT /listings/_mapping/base
+{
+    "base": {
+        "properties" : {
+            "interests" : {
+                "type":"nested"    
+                },
+            "favorites" : {
                 "type":"nested"    
                 },
              "questions" : {

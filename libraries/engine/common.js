@@ -1,8 +1,8 @@
 // common.js is the file for the most commonly used functions
 
 // Common Library
-
-function Common(){ }
+function Common(){}
+module.exports = function(){ return new Common(); }
 
 Common.prototype = {
 	get helpers() {
@@ -12,7 +12,7 @@ Common.prototype = {
 
 				if(deep_convert){
 
-					yield _s_util.each(deep_convert , function*(o_lib, o_key){
+					yield self._s.util.each(deep_convert , function*(o_lib, o_key){
 						if(obj[o_key]) {
 							obj[o_key] = yield self.helpers.convert(obj[o_key] , o_lib);
 							}
@@ -20,8 +20,8 @@ Common.prototype = {
 
 					}
 
-				if(obj.constructor == Array) return yield _s_util.convert.multiple({ data:obj, label:true, library:library });
-				return yield _s_util.convert.single({ data:obj, label:true, library:library });
+				if(obj.constructor == Array) return yield self._s.util.convert.multiple({ data:obj, label:true, library:library });
+				return yield self._s.util.convert.single({ data:obj, label:true, library:library });
 				},
 			generate : {
 				id : function(obj){
@@ -128,8 +128,8 @@ Common.prototype = {
 								street2 : { v:['isStreet'] , b:true },
 								city : { v:['isCity']  },
 								state : { v:['isAlphaOrNumeric'] , b:true },
-								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								postal : { v:['isPostal'] , b:true, default :  self._s.countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  self._s.countries.active.get()},
 								lat : { v:['isFloat'] },
 								lon : { v:['isFloat'] }
 								}
@@ -141,8 +141,8 @@ Common.prototype = {
 								street2 : { v:['isStreet'] , b:true },
 								city : { v:['isCity'] , b:true },
 								state : { v:['isAlphaOrNumeric'] , b:true },
-								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								postal : { v:['isPostal'] , b:true, default :  self._s.countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  self._s.countries.active.get()},
 								lat : { v:['isFloat'] },
 								lon : { v:['isFloat'] }
 								}
@@ -158,8 +158,8 @@ Common.prototype = {
 								street2 : { v:['isStreet'] , b:true },
 								city : { v:['isCity']  },
 								state : { v:['isAlphaOrNumeric'] , b:true },
-								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()}
+								postal : { v:['isPostal'] , b:true, default :  self._s.countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  self._s.countries.active.get()}
 								}
 							}
 						}
@@ -187,8 +187,8 @@ Common.prototype = {
 								street2 : { v:['isStreet'] , default : "" , b:true },
 								city : { v:['isCity'] },
 								state : { v:['isAlphaOrNumeric'] , b:true },
-								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get() },
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								postal : { v:['isPostal'] , b:true, default :  self._s.countries.active.postal.get() },
+								country : { v:['isCountry'] , b:true, default :  self._s.countries.active.get()},
 								lat : { v:['isFloat'] },
 								lon : { v:['isFloat'] }
 								}
@@ -204,8 +204,8 @@ Common.prototype = {
 								street2 : { v:['isStreet'] , b:true },
 								city : { v:['isCity']  },
 								state : { v:['isAlphaOrNumeric'] , b:true },
-								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								postal : { v:['isPostal'] , b:true, default :  self._s.countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  self._s.countries.active.get()},
 								lat : { v:['isFloat'] },
 								lon : { v:['isFloat'] }
 								}
@@ -221,8 +221,8 @@ Common.prototype = {
 								street2 : { v:['isStreet'] , b:true },
 								city : { v:['isCity']  },
 								state : { v:['isAlphaOrNumeric'] , b:true },
-								postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-								country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+								postal : { v:['isPostal'] , b:true, default :  self._s.countries.active.postal.get()},
+								country : { v:['isCountry'] , b:true, default :  self._s.countries.active.get()},
 								lat : { v:['isFloat'] },
 								lon : { v:['isFloat'] }
 								}
@@ -233,8 +233,8 @@ Common.prototype = {
 					return {
 						json : true,
 						default : {
-							postal : _s_countries.active.postal.get(),
-							country :  _s_countries.active.get()
+							postal : self._s.countries.active.postal.get(),
+							country :  self._s.countries.active.get()
 							},
 						data : {
 							label : { v:['isAlphaOrNumeric'] , b:true, default : 'No Label' },
@@ -242,8 +242,8 @@ Common.prototype = {
 							street2 : { v:['isStreet'] , b:true },
 							city : { v:['isCity'] , b:true },
 							state : { v:['isAlphaOrNumeric'] , b:true },
-							postal : { v:['isPostal'] , b:true, default :  _s_countries.active.postal.get()},
-							country : { v:['isCountry'] , b:true, default :  _s_countries.active.get()},
+							postal : { v:['isPostal'] , b:true, default :  self._s.countries.active.postal.get()},
+							country : { v:['isCountry'] , b:true, default :  self._s.countries.active.get()},
 							lat : { v:['isFloat'] },
 							lon : { v:['isFloat'] }
 							}
@@ -254,10 +254,11 @@ Common.prototype = {
 		},
 	get : function*(obj , library ,func){
 
-		var _controller = _s_load.library(library);
-		if(!_controller) _controller = _s_load.engine(library);
+		var _controller = this._s.library(library);
+		if(!_controller) _controller = this._s.engine(library);
 
-		var results = yield _controller.model.get(obj);
+		var results = yield this._s.model(library).get(obj)
+
 		var self = this;
 
 		if(results){
@@ -270,11 +271,11 @@ Common.prototype = {
 					var send = [];
 					// means we are returning total too
 
-					yield _s_util.each(results.data, function*(o,i){
+					yield this._s.util.each(results.data, function*(o,i){
 						o.data.id = o.id;
 
 						if(obj.deep_convert){
-							yield _s_util.each(obj.deep_convert , function*(o_lib, o_key){
+							yield self._s.util.each(obj.deep_convert , function*(o_lib, o_key){
 								if(o.data[o_key]) {
 									o.data[o_key] = yield self.helpers.convert(o.data[o_key] , o_lib);
 									}
@@ -282,14 +283,14 @@ Common.prototype = {
 							}
 
 						if(obj.full && obj.full != "true" && obj.full != "false"){
-							yield _s_util.each(obj.full ,function*(o2,i2){
+							yield self._s.util.each(obj.full ,function*(o2,i2){
 
 								if(o.data[o2.key]){
 
 									var t = (o2.obj?o2.obj:{});
 									t.id = o.data[o2.key];
 
-									var get_small = yield _s_common.get(t , o2.index);
+									var get_small = yield self.get(t , o2.index);
 									if(!get_small) return;
 
 									o.data[o2.key] = get_small;
@@ -303,7 +304,7 @@ Common.prototype = {
 							}
 
 
-						if(func) o.data = func(o.data);
+						if(func) o.data = func(o.data, self._s);
 
 						if(typeof _controller.helpers.convert == 'function') send.push(yield _controller.helpers.convert(o.data))
 						else send.push(yield self.helpers.convert(o.data , library));
@@ -320,14 +321,35 @@ Common.prototype = {
 					}
 
 				
-				if(func) results = func(results);	
+				if(func) results = func(results, self._s);	
 
 				if(obj.deep_convert){
-					yield _s_util.each(obj.deep_convert , function*(o_lib, o_key){
+					yield this._s.util.each(obj.deep_convert , function*(o_lib, o_key){
 						if(results[o_key]) results[o_key] = yield self.helpers.convert(results[o_key] , o_lib);
 						})
 	
 					delete obj.deep_convert;
+					}
+
+				if(obj.full && obj.full != "true" && obj.full != "false"){
+					yield self._s.util.each(obj.full ,function*(o2,i2){
+
+						if(results[o2.key]){
+
+							var t = (o2.obj?o2.obj:{});
+							t.id = results[o2.key];
+
+							var get_small = yield self.get(t , o2.index);
+							if(!get_small) return;
+
+							results[o2.key] = get_small;
+
+							}
+
+						})
+
+
+
 					}
 
 				if(obj.endpoint){
@@ -339,7 +361,7 @@ Common.prototype = {
 				else return yield self.helpers.convert(results , library);
 				}
 			
-			if(func) results = func(results);	
+			if(func) results = func(results, self._s);	
 			
 			if(obj.endpoint) return { success : { data : results } }
 			return results;
@@ -353,10 +375,11 @@ Common.prototype = {
 		},
 	new : function*(data, library, convert, raw_not_id){
 		var self = this;
-		var _controller = _s_load.library(library);
-		if(!_controller) _controller = _s_load.engine(library);
+		var _controller = this._s.library(library);
+		if(!_controller) _controller = this._s.engine(library);
 
 		var results = yield _controller.model.new(data);
+		
 		if(results) {
 			data.id = results.id;
 
@@ -369,10 +392,11 @@ Common.prototype = {
 		return { failure : { msg : 'The '+library.substring(0,library.length-1)+' was not added at this time.' , code : 300 } }
 		},
 	update : function*(data, library, type, raw){
+		var self = this
 		var id = data.id;
 
-		var _controller = _s_load.library(library);
-		if(!_controller) _controller = _s_load.engine(library);
+		var _controller = this._s.library(library);
+		if(!_controller) _controller = this._s.engine(library);
 
 		var results = yield _controller.model.update(data);
 
@@ -383,7 +407,7 @@ Common.prototype = {
 
 				_s_u.each(type , function(o,i){
 
-					var r = _s_util.array.find.object(data[o.replace] , o.target.id , o.target.data , false, o.target.depth);
+					var r = self._s.util.array.find.object(data[o.replace] , o.target.id , o.target.data , false, o.target.depth);
 					if(!r) return;
 					else {
 						data[o.insert] = r;
@@ -400,14 +424,14 @@ Common.prototype = {
 		},
 	check : function*(obj){
 
-		var lib = _s_load.library(obj.library);
+		var lib = this._s.library(obj.library);
 		if(obj.type && typeof lib.model.get[obj.type] == 'function') var result = yield lib.model.get[obj.type](obj);
 		else var result = yield lib.model.get(obj);
 
 		if(!result) return { failure : { msg:'There was no data found with that information.' , code:300 }};
 
 		if(obj.deep){
-			var object = _s_util.array.find.object(result[obj.deep.array] , obj.deep.property , obj.deep.value , true, (obj.deep.obj||null) );
+			var object = this._s.util.array.find.object(result[obj.deep.array] , obj.deep.property , obj.deep.value , true, (obj.deep.obj||null) );
 			if(!object) return { failure : {msg:'The initial '+obj.label+' could not be found.' , code : 300 }  };
 			}
 		
@@ -436,7 +460,7 @@ Common.prototype = {
 					var t = check.entity.id;
 					break;
 				default : 
-					var object = _s_util.array.find.object(result[target] , 'id' , id , true, 'entity' );
+					var object = this._s.util.array.find.object(result[target] , 'id' , id , true, 'entity' );
 					if(!object) return { failure : 'The entity could not be found.' };
 					else var t = check.entity.id;
 					break;
@@ -445,7 +469,7 @@ Common.prototype = {
 			if(t != id) return { failure : { msg: 'Oops! It looks like you do not have control over this particular '+obj.label+'.' , code : 300}};
 			if(result.setup.active == 0 && result.setup.status == 0 ) return { failure : { msg: 'This '+obj.label+' is no longer active. Please contact Sellyx if you feel this message is in error.' , code:300 } };
 			if(result.setup.locked == 1 ) return { failure : { msg : 'This '+obj.label+' has been locked by Sellyx. In order to make changes to this item, please contact Sellyx directly.' , code : 300} };
-			if(_s_util.indexOf(obj.status.allowed , result.setup.status) == -1 ) return { failure : {msg: "The action you are trying to perform is not allowed on this "+obj.label+"." , code : 300 } };
+			if(this._s.util.indexOf(obj.status.allowed , result.setup.status) == -1 ) return { failure : {msg: "The action you are trying to perform is not allowed on this "+obj.label+"." , code : 300 } };
 			}
 
 		if(obj.deep && obj.deep.additional_checks){
@@ -479,7 +503,7 @@ Common.prototype = {
 				else if(object.object.setup && object.object.setup.status == 1) (object.object.setup ? object.object.setup.active = 1 : object.object.active = 1)
 				}
 			else{
-				if(_s_util.indexOf(obj.deep.active, (object.object.setup?object.object.setup.status:object.object.status)) == -1) (object.object.setup?object.object.setup.active = 0:object.object.active=0)
+				if(this._s.util.indexOf(obj.deep.active, (object.object.setup?object.object.setup.status:object.object.status)) == -1) (object.object.setup?object.object.setup.active = 0:object.object.active=0)
 				else (object.object.setup?object.object.setup.active = 1:object.object.active = 1);
 				}
 			}
@@ -492,11 +516,11 @@ Common.prototype = {
 			else if(result.setup.status == 1) result.setup.active = 1;
 			}
 		else{
-			if(_s_util.indexOf(obj.active, result.setup.status) == -1 ) result.setup.active = 0
+			if(this._s.util.indexOf(obj.active, result.setup.status) == -1 ) result.setup.active = 0
 			else result.setup.active = 1
 			}
 
-		if(obj.additional) result = _s_util.merge(result,obj.additional);
+		if(obj.additional) result = this._s.util.merge(result,obj.additional);
 		if(obj.type && typeof lib.model.update[obj.type] == 'function' ) var update = yield lib.model.update[obj.type](result);
 		else var update = yield lib.model.update(result);
 
@@ -507,7 +531,7 @@ Common.prototype = {
 			if(obj.send && obj.send == 'object' && object) result = object.object;
 			if(obj.raw) return result;
 
-			if(obj.deep && obj.deep.library) lib = _s_load.library(obj.deep.library);
+			if(obj.deep && obj.deep.library) lib = this._s.library(obj.deep.library);
 
 
 			if(obj.type && typeof lib.helpers.convert[obj.type] == 'function'){
@@ -521,8 +545,4 @@ Common.prototype = {
 		
 		return { failure : { msg :'The request could not be completed at this time and the '+obj.label+' could not be modified.' , code : 300 }  };
 		}
-	}
-
-module.exports = function(){
-  	if(!(this instanceof Common)) { return new Common(); }
 	}

@@ -3,8 +3,6 @@
 function Manufacturers(){}
 
 Manufacturers.prototype = {
-
-	model : _s_load.model('manufacturers'),
 	helpers : {
 		filters : function(){
 			return {
@@ -35,26 +33,24 @@ Manufacturers.prototype = {
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 'manufacturers');
+		return yield this._s.common.get(obj, 'manufacturers');
 		},
 	new : function*(obj){
 		!obj?obj={}:null;
-		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : _s_req.validate(this.helpers.validators.base()) );
+		var data = ( obj.data ? this._s.req.validate({ validators : this.helpers.validators.base(), data : obj.data }) : this._s.req.validate(this.helpers.validators.base()) );
 		if(data.failure) return data;
-		return yield _s_common.new(data,'manufacturers', true);
+		return yield this._s.common.new(data,'manufacturers', true);
 		},
 	update : function*(obj){
 		!obj?obj={}:null;
-		var data = ( obj.data ? _s_req.validate({ validators : this.helpers.validators.base({update:true}), data : obj.data }) : _s_req.validate(this.helpers.validators.base({update:true})) );
+		var data = ( obj.data ? this._s.req.validate({ validators : this.helpers.validators.base({update:true}), data : obj.data }) : this._s.req.validate(this.helpers.validators.base({update:true})) );
 		if(data.failure) return data;
-		return yield _s_common.update(data, 'manufacturers');
+		return yield this._s.common.update(data, 'manufacturers');
 		}
 	
 	}
 
-module.exports = function(){
-  	if(!(this instanceof Manufacturers)) { return new Manufacturers(); }
-	}
+module.exports = function(){eturn new Manufacturers(); }
 
 
 

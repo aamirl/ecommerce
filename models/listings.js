@@ -1,7 +1,12 @@
 
 // Listings Model
 
-module.exports = {
+
+function Model(){}
+module.exports = function(){ return new Model(); }
+
+Model.prototype = {
+
 	update : function*(obj){
 		var doc = {
 			id : obj.id,
@@ -10,19 +15,20 @@ module.exports = {
 			merge : true
 			}
 		delete obj.id;
-		return yield _s_db.es.update(doc);
+		return yield this._s.db.es.update(doc);
 		},
 	new : function*(obj, meta){
-		return yield _s_db.es.add({
+		return yield this._s.db.es.add({
 			index : 'listings',
 			body : obj
 			}, meta);
 		},
 	get : function*(obj){
 
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('listings', obj);
+		if(obj.id || typeof obj == 'string') return yield this._s.db.es.get('listings', obj);
 		
-		var location = _s_loc.active.get();
+
+		var location = this._s.loc.active.get();
 		var search = {
 			total : true,
 			index : 'listings',
@@ -38,6 +44,11 @@ module.exports = {
 				}
 			}
 
+		if(obj.ids) {
+			search.body.query.bool.must.push({ ids : { values : obj.ids } }) 
+			return yield this._s.db.es.search(search,obj);
+			}
+
 		_s_u.each(obj, function(dets, index){
 			var filter = false;
 			var query = false;
@@ -47,9 +58,25 @@ module.exports = {
 					query = { 
 						multi_match : { 
 							query : dets , 
-							fields: [ 'title^3', 'description' ],
-							fuzziness : 2.0
+							fields: [ 'title^3', 'description','entity.name' ],
+							fuzziness : "AUTO",
+							prefix_length : 2
 							}
+						}
+					break;
+				case 'favorites':
+					query = {
+						nested : {
+							path : 'favorites', 
+							query : {
+								bool : {
+									must : [
+										{match : {'favorites.id' : obj.favorites } } 
+										],
+									filter : []
+									} 
+								} 
+							} 
 						}
 					break;
 				case 'categories':
@@ -58,6 +85,9 @@ module.exports = {
 					break;
 				case 'entity' :
 					filter = { term : { 'entity.id' : dets } }
+					break;
+				case 'entity_type':
+					filter = { terms : { 'entity.type' : dets } }
 					break;
 				case 'conditions':
 					filter = { terms : { 'condition' : dets } }
@@ -74,6 +104,9 @@ module.exports = {
 				case 'p_type':
 					filter = { term : { 'p_type' : dets } }
 					break;
+				case 'htype':
+					filter = { terms : { 'htype' : dets } }
+					break;
 				case 'rooms':
 					filter = { terms : { 'rooms' : dets } }
 					break;
@@ -84,10 +117,11 @@ module.exports = {
 					filter = { terms : { 'bathrooms_h' : dets } }
 					break;
 				case 's_status':
-					filter = { term : { 'setup.status' : dets } }
+					filter = { terms : { 'setup.status' : dets } }
 					break;
-				case 'active':
-					filter = { term : { 'setup.active' : dets } } 
+				case 's_active':
+					filter = { terms : { 'setup.active' : dets } }
+					break;
 				default : 
 					return;
 					break;
@@ -130,9 +164,9 @@ module.exports = {
 				}
 			}
 
-		console.log(JSON.stringify(search));
-
-		if(obj.count) return yield _s_db.es.count(search,obj);
-		return yield _s_db.es.search(search, obj);
+		console.log(JSON.stringify(search))
+		
+		if(obj.count) return yield this._s.db.es.count(search,obj);
+		return yield this._s.db.es.search(search, obj);
 		}
 	}

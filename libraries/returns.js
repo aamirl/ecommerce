@@ -1,12 +1,12 @@
 // Returns Library
 
-var _currency = _s_load.library('currency');
+var _currency = this._s.library('currency');
 
 function Returns(){}
 
 Returns.prototype = {
 
-	model : _s_load.model('returns'),
+	model : this._s.model('returns'),
 	helpers : {
 		// check to see whether item is eligible for a return
 		check : function(obj , policy){
@@ -27,16 +27,16 @@ Returns.prototype = {
 				if(message) return { failure : 'This item has already been returned or is pending a return. Please check the return table for more details' }
 				else return false;
 				}
-			if(_s_util.indexOf([7,16], item.status) == -1){
+			if(this._s.util.indexOf([7,16], item.status) == -1){
 				if(message) return { failure : "This item is not eligible for a return." }
 				else return false;
 				}
 			if(item.status == 7) {
-				var date = _s_dt.add( (item.shipping.service ? item.shipping.service.tracking.added : item.shipping.services.l3.tracking.added ) , '30' , 'days' )
+				var date = this._s.dt.add( (item.shipping.service ? item.shipping.service.tracking.added : item.shipping.services.l3.tracking.added ) , '30' , 'days' )
 				}
 			else {
 				if(policy){
-					var date = _s_dt.add(item.shipping.service.tracking.added , policy.duration, 'days');
+					var date = this._s.dt.add(item.shipping.service.tracking.added , policy.duration, 'days');
 					}
 				else{
 					if(message) return { failure : 'At the time of purchase, the seller did not have an active return policy that allowed for returns. For more information, please contact the seller directly.' }
@@ -45,9 +45,9 @@ Returns.prototype = {
 				}
 
 
-			if(_s_dt.compare.after(date,'now')){
+			if(this._s.dt.compare.after(date,'now')){
 				if(message) return true
-				else return _s_dt.convert.datetime.output(date)
+				else return this._s.dt.convert.datetime.output(date)
 				}
 			return false;
 			},
@@ -77,36 +77,36 @@ Returns.prototype = {
 			},
 		convert : {
 			return : function*(s,type){
-				s.policy = _s_l.convert({ array : s.policy, library : 'returns' });
+				s.policy = this._s.l.convert({ array : s.policy, library : 'returns' });
 				s.item.totals = _currency.convert.array.front(s.item.totals);
 
-				if(s.processed) s.processed = yield _s_util.convert.single({ data:s.processed , library : 'returns' })
-				if(s.shipped) s.shipped.added = _s_dt.convert.datetime.output(s.shipped.added);
-				if(s.received) s.received.added = _s_dt.convert.datetime.output(s.received.added);
+				if(s.processed) s.processed = yield this._s.util.convert.single({ data:s.processed , library : 'returns' })
+				if(s.shipped) s.shipped.added = this._s.dt.convert.datetime.output(s.shipped.added);
+				if(s.received) s.received.added = this._s.dt.convert.datetime.output(s.received.added);
 
-				return yield _s_util.convert.single({ data : s , library : 'returns' , type : type , label:'setup|reason' });
+				return yield this._s.util.convert.single({ data : s , library : 'returns' , type : type , label:'setup|reason' });
 				}
 			}
 		},
 	get : function*(obj){
-		return yield _s_common.get(obj, 'returns');
+		return yield this._s.common.get(obj, 'returns');
 		},
 	new : function*(obj){
 		if(obj && obj.data){var data = obj.data; } 
 		else{
-			var data = _s_req.validate(this.helpers.validators());
+			var data = this._s.req.validate(this.helpers.validators());
 			}
 
 		if(data.failure) return data;
 
-		var order = _s_load.library('orders').model.get(data.id);
+		var order = this._s.library('orders').model.get(data.id);
 		if(!order) return { failure : { msg : 'There was no order found with that id.' , code : 300 } };
 		if(obj.user && obj.user != order.user.id) return { failure : { msg : 'This return cannot be completed because this order is not under your control.' , code : 300} };
 
 		
 
 
-		return yield _s_common.new(data,'returns', true);
+		return yield this._s.common.new(data,'returns', true);
 		}
 	
 	}

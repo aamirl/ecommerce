@@ -2,9 +2,9 @@
 
 module.exports = {
 	cache : function*(){
-		return yield _s_cache.key.get();
+		return yield this._s.cache.key.get();
 		},
 	'delete/cache' : function*(){
-		yield _s_cache.delete();
+		yield this._s.cache.delete();
 		}
 	}

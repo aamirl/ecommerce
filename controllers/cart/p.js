@@ -1,9 +1,9 @@
 
-var _cart = _s_load.library('cart');
+var _cart = this._s.library('cart');
 
 module.exports = {
 	get : function*(){
-		var data = _s_req.validate({cart:{v:['isJSON']}})
+		var data = this._s.req.validate({cart:{v:['isJSON']}})
 		if(data.failure) return data;
 
 		var r = yield _cart.get.all(data);
@@ -20,7 +20,7 @@ module.exports = {
 		},
 	'item/add' : function*(){
 
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			cart : _cart.helpers.validators.cart(),
 			listing : { v:['isListing'] },
 			product : { v:['isProduct'] },
@@ -34,7 +34,7 @@ module.exports = {
 		return { success : { data : r} };
 		},
 	'item/quantity' : function*(){
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			cart : _cart.helpers.validators.cart(),
 			listing : {v:['isListing']},
 			product : {v:['isProduct']},
@@ -48,7 +48,7 @@ module.exports = {
 		return { success : { data : r } };
 		},
 	'item/notes' : function*(){
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			cart : _cart.helpers.validators.cart(),
 			listing : {v:['isListing']},
 			product : {v:['isProduct']},
@@ -62,7 +62,7 @@ module.exports = {
 		return { success : {data:r} };
 		},
 	'item/waive' : function*(){
-		var data = _s_req.validate({
+		var data = this._s.req.validate({
 			cart : _cart.helpers.validators.cart(),
 			listing : {v:['isListing']},
 			product : {v:['isProduct']},

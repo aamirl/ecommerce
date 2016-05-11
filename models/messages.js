@@ -1,9 +1,13 @@
 // messages models
 
 
-module.exports = {
+function Model(){}
+module.exports = function(){ return new Model(); }
+
+Model.prototype = {
+
 	new : function*(obj, meta){
-		return yield _s_db.es.add({
+		return yield this._s.db.es.add({
 			index : 'messages',
 			body : obj
 			}, meta);
@@ -16,11 +20,11 @@ module.exports = {
 			merge : true
 			}
 		delete obj.id;
-		return yield _s_db.es.update(doc);
+		return yield this._s.db.es.update(doc);
 		},
 	get : function*(obj){
 		// if we have just an id we just submit that;
-		if(obj.id || typeof obj == 'string') return yield _s_db.es.get('messages', obj);
+		if(obj.id || typeof obj == 'string') return yield this._s.db.es.get('messages', obj);
 
 		var search = {
 			index : 'messages',
@@ -30,15 +34,58 @@ module.exports = {
 						must : [
 							
 							],
-						must_not : []
+						must_not : [],
+						filter : []
+						},
+					},
+				sort:[
+				{
+					"setup.updated" : { 
+						order : 'desc'
 						}
 					}
+				]
 				}
 			};
 
+		if(obj.listing){
+			search.body.query.bool.filter.push({ term : { listing : obj.listing } })
+
+			if(obj.entities){
+
+				_s_u.each(obj.entities , function(id,ind){
+					search.body.query.bool.must.push({
+						nested : {
+							path : 'entities',
+							query : {
+								bool : {
+									must : [
+										{
+											match : {
+												'entities.id' : id
+												}
+											},
+										{
+											match : {
+												'entities.active' : 1
+												}
+											}
+										]
+									}
+								}
+							}
+						})
+					})
+				}
+
+			console.log(JSON.stringify(search))
+
+			return yield this._s.db.es.search(search,obj);
+			}
+
 		if(obj.ids) {
 			search.body.query.bool.must.push({ ids : { values : obj.ids } }) 
-			return yield _s_db.es.search(search,obj);
+			return yield this._s.db.es.search(search,obj);
 			}
 
 
@@ -107,8 +154,8 @@ module.exports = {
 
 
 
-		if(obj.count) return yield _s_db.es.count(search,obj);
-		return yield _s_db.es.search(search, obj)
+		if(obj.count) return yield this._s.db.es.count(search,obj);
+		return yield this._s.db.es.search(search, obj)
 		}
 	
 	}

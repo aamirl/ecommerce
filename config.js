@@ -6,7 +6,7 @@ module.exports = {
 	// financials : 'http://localhost:8000/',
 	financials : 'https://ec.sellyx.com/payments/',
 	// dashboard : 'http://localhost:8090/',
-	dashboard : 'http://dashboard.sellyx.com/',
+	dashboard : 'http://dashboard.sellyx.com/#/',
 	certs : {
 		// issuer : '10.0.1.3',
 		issuer : 'ec.sellyx.com',

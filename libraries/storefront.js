@@ -1,15 +1,13 @@
 
-function Storefront(){
-	this.root = _s_load.datafile('categories/root');
-	this.detailed = _s_load.datafile('categories/detailed');
-	}
-
-
+function Storefront(){}
 
 Storefront.prototype = {
-	model : _s_load.model('storefront'),
+	init : function(){
+		this.root = this._s.datafile('categories/root');
+		this.detailed = this._s.datafile('categories/detailed');
+		},
 	condition : function(cid){
-		return _s_l.info('condition', cid);
+		return this._s.l.info('condition', cid);
 		},
 	get categories() {
 		var self = this;
@@ -42,7 +40,5 @@ Storefront.prototype = {
 
 
 
-module.exports = function(){
-  	if(!(this instanceof Storefront)) { return new Storefront(); }
-	}
+module.exports = function(){return new Storefront(); }
 

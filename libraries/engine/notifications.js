@@ -1,13 +1,20 @@
 // notifications
 
+var _grandma = require('grandma');
+_grandma.config('Yp^$p8*jK.d8&QF79%3vcD!4KrP$m49tY/s')
+
 function Notifications(){}
 
 Notifications.prototype = {
 	get helpers(){
 		return{
+			// convert : function*(obj){
+			// 	return yield self._s.util.convert.multiple({ data:obj, label:true, library:library });
+
+			// 	},
 			request : function*(obj){
 
-				var r = yield _s_req.sellyx({
+				var r = yield this._s.req.sellyx({
 					new_key : 'Yp^$p8*jK.d8&QF79%3vcD!4KrP$m49tY/s',
 					method : 'POST',
 					type : 'urlquery',
@@ -23,9 +30,52 @@ Notifications.prototype = {
 				}
 			}
 		},
+	get : function*(obj, count){
+
+		var get = yield this._s.model('notifications').get({id:obj.entity, include:'notifications'})
+		if(!get) return { failure : { msg : 'No results.' , code : 300 } }
+
+		get.notifications = yield this._s.util.convert.multiple({ data:get.notifications, label:true });
+
+		if(count) return { success : { data : get.notifications.length } }
+
+		return { success : { data : get } }
+		},
+	upsert : function*(obj){
+
+		var notification = this._s.util.clone.deep(obj);
+		notification.added = this._s.dt.now.datetime()
+		notification.read = false
+		notification.id = this._s.common.helpers.generate.id()
+		delete notification.add
+		delete notification.entity
+
+		var get = yield this._s.model('notifications').get(obj.entity)
+
+		if(!get){
+			var doc = {
+				id : obj.entity,
+				notifications : [notification],
+				setup : {
+					added :  this._s.dt.now.datetime(),
+					active : 1,
+					status : 1
+					}
+				}
+
+			// add the document
+			return yield this._s.model('notifications').new(doc)
+			}
+			
+		// update the document
+		get.notifications.push(notification)
+		return yield this._s.model('notifications').update(get)
+		},
 	get new() {
 		var self = this;
 		return {
+
+
 			rest : function*(obj){
 
 				return yield self.helpers.request({
@@ -41,44 +91,17 @@ Notifications.prototype = {
 
 				},
 			websocket : function*(obj){
-				
-				if(obj.broadcast){
-
-					}
-
-				return yield self.helpers.request({
-					data : {
-						type : 105,
-						endpoint : (obj.broadcast?obj.user+'.'+obj.key:obj.user+"."),
-						message : "{\"servermsg\": "+(obj.code?obj.code:103)+", \"message\": \""+obj.message+"\" }",
-						expiration : (obj.expiration?obj.expiration:100)
-						}
-					});
-				
+				_grandma.GSSWebSocketSchedule(obj.user, (obj.broadcast?obj.key:""), {servermsg: obj.code, message : obj.message}, 100);
+				return { success : true }
 				},
 			push : function*(obj){
+		
+				if(obj.add) yield self.upsert(obj)
 
-				var arn = yield _s_req.sellyx({
-					path : 'notification/fetch',
-					method : 'GET',
-					params : {
-						user_id : obj.entity
-						}
-					})
+				obj.data.target = obj.entity
 
-				if(!arn.success) return { failure :  { msg : 'A push notification was not sent to the end entity.' , code : 300 } }
-				var endpoint = arn.success.data;
-				if(endpoint.length == 0) return { failure : { msg : 'There were no registered devices for thie endpoint.' , code : 300 } }
-
-				return yield self.helpers.request({
-					data : {
-						type : 102,
-						endpoint : endpoint,
-						message : "\\\" " + obj.message + "\\\"",
-						expiration : (obj.expiration?obj.expiration:100)
-						}
-					})
-			
+				_grandma.GSSPushGCMSchedule(obj.entity, obj.type, obj.title, obj.body, obj.data, 100);
+				return { success : true }
 				},
 			email : function*(obj){
 
@@ -98,9 +121,7 @@ Notifications.prototype = {
 
 	}
 
-module.exports = function(){
-  	if(!(this instanceof Notifications)) { return new Notifications(); }
-	}
+module.exports = function(){ return new Notifications(); }
 
 
 

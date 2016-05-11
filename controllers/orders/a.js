@@ -1,13 +1,13 @@
-var _orders = _s_load.library('orders');
+var _orders = this._s.library('orders');
 
 module.exports = {
 	// 'get/selling' : function*(){
 		
 	// 	var c = _orders.helpers.filters();
-	// 	var data = _s_req.validate(c);
+	// 	var data = this._s.req.validate(c);
 	// 	if(data.failure) return data;
 
-	// 	data.selling = _s_entity.object.profile.id();
+	// 	data.selling = this._s.entity.object.profile.id();
 	// 	data.exclude = 'transactions';
 	// 	data.endpoint = true;
 	// 	data.type = 2
@@ -16,10 +16,10 @@ module.exports = {
 	// 	},
 	// 'get/buying' : function*(){
 	// 	var c = _orders.helpers.filters();
-	// 	var data = _s_req.validate(c);
+	// 	var data = this._s.req.validate(c);
 	// 	if(data.failure) return data;
 
-	// 	data.buying = _s_entity.object.profile.id();
+	// 	data.buying = this._s.entity.object.profile.id();
 	// 	data.exclude = 'transactions';
 	// 	data.endpoint = true;
 	// 	data.type = 2

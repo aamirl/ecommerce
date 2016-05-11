@@ -7,17 +7,17 @@
 // 	});
 
 
-function Locales(){
-	this.data = {};
-	var set = _s_req.headers('language');
-	if( set && set == 'en' ){ this.active.set(set); }
-	else{ this.active.set('en'); }
-
-	!this.active.get() ? this.active.set('en') : null;
-	}
-
+function Locales(){}
 
 Locales.prototype = {
+	init : function(){
+		this.data = {};
+		var set = this._s.req.headers('language');
+		if( set && set == 'en' ){ this.active.set(set); }
+		else{ this.active.set('en'); }
+
+		!this.active.get() ? this.active.set('en') : null;
+		},
 	error: function(code){
 		switch(code){
 			case 101 :
@@ -46,15 +46,14 @@ Locales.prototype = {
 	// 		return i18n.__(str, arr);
 	// 	},
 	info : function(parameter, value, context, type){
-		// var locale = _s_load.locale(library);
-
+		
 		if(context && context.indexOf('.') != -1) {
 			var r = context.split('.');
 			context = r[0];
 			type = r[1];
 			}
 
-		var locale = (context == undefined || context == false ? _s_load.locale() : _s_load.locale(context));
+		var locale = (context == undefined || context == false ? this._s.locale() : this._s.locale(context));
 	
 		if(type && locale[type][parameter] &&  locale[type][parameter][value]){
 			return locale[type][parameter][value]
@@ -70,7 +69,7 @@ Locales.prototype = {
 	convert : function(obj){
 		var arr = obj.array ? obj.array : obj;
 		var library = obj.library ? obj.library : false;
-		var locale = _s_load.locale(library);
+		var locale = this._s.locale(library);
 
 		_s_u.each(arr, function(v,k){
 
@@ -86,5 +85,5 @@ Locales.prototype = {
 	}
 
 module.exports = function(){
-  	if(!(this instanceof Locales)) { return new Locales(); }
+  	return new Locales();
 	}
