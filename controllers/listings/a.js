@@ -173,14 +173,18 @@ Controller.prototype = {
 		if(listing.quantity_mpo < data.quantity) return { failure : { msg : 'This seller does not allow for the purchase of more than ' + listing.quantity_mpo + ' item(s) in one order.' , code : 300 } }
 
 		// now let's see what the price needs to be
-		// if(listing.p_type == 1 && data.price != listing.price) return { failure : { msg : 'This is not a negotiable item, therefore there can not be an offer amount.' , code : 300 } }
-		var price = ((listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) : (data.price?data.price:listing.price) * parseInt(data.quantity)).toFixed("2"))/1
+		// var final_price =  parseFloat(listing.price) + /
 
+
+		var price = ((listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) : (data.price?data.price:listing.price) * parseInt(data.quantity)).toFixed("2"))/1
+		var fee = (data.transactions[0].type == "stripe" ? 1.03 : 1)
+
+		price = fee + price
 		// data.transactions 
 
 		// data.transactions[1].amount = pricepz
 
-		var charge_now = (listing.p_type == 1 ? true : (  data.price >= listing.price ? true : false  ) )
+		var charge_now = (listing.p_type == 1 ? true : (  data.price >= listing.price * fee ? true : false  ) )
 		var func = (charge_now?'charge':'authorize')
 		var charge = yield this._s.engine('financials')[func].new({
 			amount : price,

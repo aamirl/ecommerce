@@ -316,7 +316,7 @@ Request.prototype = {
 							}
 						else send[i] = all_data[i];
 						}
-					else errors[i] = { msg : 'The submitted data is not an allowed value for this property.' , data : all_data[i] , accepted : Object.keys(i_data.dependency) } ;
+					else errors[i] = { msg : 'The submitted data is not an allowed value for this property.' , data : all_data[i] } ;
 					}
 				}
 			else{
