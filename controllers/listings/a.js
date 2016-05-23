@@ -196,7 +196,7 @@ Controller.prototype = {
 
 		if(charge.failure) return charge;
 		else charge = charge.success.data
-		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. ( Error: '+ charge.transactions[0].failure + ' )' , code : 300 } }
+		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. ( Error: '+ JSON.stringify(charge.transactions[0].failure) + ' )' , code : 300 } }
 
 		var order = {
 			buying : this._s.entity.object.helpers.data.document(),
