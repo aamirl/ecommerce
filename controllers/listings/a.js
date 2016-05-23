@@ -187,14 +187,14 @@ Controller.prototype = {
 
 		// data.transactions[1].amount = pricepz
 
-		var charge_now = (listing.p_type == 1 ? true : (  data.price >= listing.price * fee ? true : false  ) )
+		var charge_now = (listing.p_type == 1 ? true : (  data.price >= (this._s.util.roundup(listing.price * fee, 2)/1) ? true : false  ) )
 		var func = (charge_now?'charge':'authorize')
 		var charge = yield this._s.engine('financials')[func].new({
 			amount : price,
 			transactions : data.transactions
 			})
 
-		if(charge.failure) return charge;
+		if(charge.failure) return { failure : { charge : charge, price : price, fee : fee, 'data.price' : data.price, rounded : (this._s.util.roundup(listing.price * fee, 2)/1) } }
 		else charge = charge.success.data
 		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. ( Error: '+ JSON.stringify(charge.transactions[0].failure) + ' )' , code : 300 } }
 
