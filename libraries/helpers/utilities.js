@@ -333,7 +333,7 @@ Utilities.prototype = {
 
                 
                 // load validator strings
-                var amounts = ['total','amount','price','subtotal','msrp','sale','standard1','standard2','sale1','sale2','return1','return2','sreturn1','sreturn2','local','requested','processed','refunded','authorized'];
+                var amounts = ['total','amount','price','price_shown','subtotal','msrp','sale','standard1','standard2','sale1','sale2','return1','return2','sreturn1','sreturn2','local','requested','processed','refunded','authorized'];
                 var csvs = 'restricted|categories';
                 var dates = ["added","deleted","modified","submitted","start","end","expiration","rejected","requested","approved","denied","withdrawn","on"]
                 // var dates = 'added|deleted|modified|submitted|start|end|expiration|rejected|requested|approved|denied|withdrawn|on';

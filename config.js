@@ -4,6 +4,7 @@ module.exports = {
 	// root : 'http://10.0.1.3:10000/',
 	oAuth : 'https://auth.sellyx.com/',
 	// financials : 'http://localhost:8000/',
+	// financials : 'http://10.0.1.3:8090/',
 	financials : 'https://ec.sellyx.com/payments/',
 	// dashboard : 'http://localhost:8090/',
 	dashboard : 'http://dashboard.sellyx.com/#/',
