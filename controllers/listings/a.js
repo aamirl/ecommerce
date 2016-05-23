@@ -60,7 +60,7 @@ Controller.prototype = {
 		data.endpoint = true;
 		data.type = 1
 
-		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location,setup.status,setup.active,followers' , convert : 'true' } }];
+		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,price_shown,images,type,location,setup.status,setup.active,followers' , convert : 'true' } }];
 
 		return yield _orders.get(data);
 		},
@@ -76,7 +76,7 @@ Controller.prototype = {
 		data.endpoint = true;
 		data.type = 1
 
-		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location,setup.status,setup.active,followers' , convert : 'true' } }];
+		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,price_shown,images,type,location,setup.status,setup.active,followers' , convert : 'true' } }];
 
 		var t = yield _orders.get(data);
 		if(t.failure) return t.failure
@@ -110,7 +110,7 @@ Controller.prototype = {
 		data.endpoint = true;
 		data.type = 1;
 	
-		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location,setup.status,setup.active' , convert : 'true' } }];
+		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,price_shown,images,type,location,setup.status,setup.active' , convert : 'true' } }];
 
 		return yield _orders.get(data);
 		},
@@ -125,7 +125,7 @@ Controller.prototype = {
 		data.endpoint = true;
 		data.type = 1
 
-		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,images,type,location,setup.status,setup.active' , convert : 'true' } }];
+		if(data.full && data.full == 'true') data.full = [{ key : 'listing', index : 'listings' , get : 'common' , obj : { include : 'title,price,price_shown,images,type,location,setup.status,setup.active' , convert : 'true' } }];
 
 		var t = yield _orders.get(data);
 		if(t.failure) return t.failure
@@ -647,7 +647,7 @@ Controller.prototype = {
 
 		var order = yield _orders.get({
 			key : data.key,
-			include : 'buying,type,listing,price,quantity,setup,location,receipt,process_history'
+			include : 'buying,type,listing,price,price_shown,quantity,setup,location,receipt,process_history'
 			});
 		if(!order || order.counter != 1) return { failure : { msg : 'There is not a valid order matching that key.' , code : 300 } }
 		else {
