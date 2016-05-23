@@ -73,7 +73,7 @@ Currency.prototype = {
 				},
 			back : function(amt){
 	            var c = self.data.currencies[self.active.get()];
-	            return parseFloat((parseFloat(amt) / c.rate).toFixed(2));
+	            return parseFloat( this._s.util.roundup(parseFloat(amt) / c.rate, 2) );
 				},
 			array : {
 				front : function(obj){

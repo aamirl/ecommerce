@@ -177,7 +177,7 @@ Controller.prototype = {
 
 
 		var fee = (data.transactions[0].type == "stripe" ? 1.03 : 1)
-		var price = ((listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) * fee : (data.price?data.price:listing.price*fee) * parseInt(data.quantity)).toFixed("2"))/1
+		var price = (this._s.util.roundup((listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) * fee : (data.price?data.price:listing.price*fee) * parseInt(data.quantity)), 2))/1
 
 		// price = fee * price
 
@@ -205,7 +205,7 @@ Controller.prototype = {
 			type : 1,
 			listing : data.id,
 			price : price,
-			price_shown : (price/fee.toFixed("2"))/1,
+			price_shown : (this._s.util.roundup(price/fee, 2))/1,
 			quantity : data.quantity,
 			transactions : [charge.id],
 			setup : {

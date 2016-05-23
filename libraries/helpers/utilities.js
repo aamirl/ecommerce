@@ -33,6 +33,9 @@ Object.prototype.sum = function() {
 
 
 Utilities.prototype = {
+    roundup : function(value, decimals) {
+        return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+        },
     round : function(value,exp){
         if (typeof exp === 'undefined' || +exp === 0)
         return Math.round(value);
