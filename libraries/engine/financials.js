@@ -37,7 +37,7 @@ module.exports = {
 				console.log(total)
 				console.log(obj.amount)
 
-				if(obj.amount != total) return {  failure : { msg : 'The total of the transactions was not valid for the total amount.' } }
+				if(obj.amount != total) return {  failure : { msg : 'The total of the transactions was not valid for the total amount. Total: ' + total + " Charged: " + obj.amount  } }
 
 				// let's charge the payment information
 				return yield self._s.req.http({
@@ -107,7 +107,8 @@ module.exports = {
 				console.log(total)
 				console.log(obj.amount)
 
-				if(obj.amount != total) return {  failure : { msg : 'The total of the transactions was not valid for the total amount.' } }
+				if(obj.amount != total) return {  failure : { msg : 'The total of the transactions was not valid for the total amount. Total: ' + total + " Charged: " + obj.amount  } }
+				// if(obj.amount != total) return {  failure : { msg : 'The total of the transactions was not valid for the total amount.' } }
 
 
 				// let's charge the payment information
