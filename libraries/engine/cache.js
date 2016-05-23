@@ -1,6 +1,7 @@
  
 function Cache(){
 
+	// this.client =  require('co-redis')(require('redis').createClient('6379' , 'localhost',{}));
 	this.client =  require('co-redis')(require('redis').createClient('9979' , 'authdb.sellyx.com',{}));
 	}
 module.exports = function(){ return new Cache(); }

@@ -176,10 +176,13 @@ Controller.prototype = {
 		// var final_price =  parseFloat(listing.price) + /
 
 
-		var price = ((listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) : (data.price?data.price:listing.price) * parseInt(data.quantity)).toFixed("2"))/1
 		var fee = (data.transactions[0].type == "stripe" ? 1.03 : 1)
+		var price = ((listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) * fee : (data.price?data.price:listing.price*fee) * parseInt(data.quantity)).toFixed("2"))/1
 
-		price = fee * price
+		// price = fee * price
+
+		console.log("the price is " + price)
+
 		// data.transactions 
 
 		// data.transactions[1].amount = pricepz
