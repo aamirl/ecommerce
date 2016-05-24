@@ -1,7 +1,8 @@
  
 function Cache(){
 
-	this.client =  require('co-redis')(require('redis').createClient('18703' , 'pub-redis-18703.us-central1-1-1.gce.garantiadata.com',{}));
+	this.client = require('co-redis')(require('redis').createClient('6379' , 'localhost',{}));
+	// this.client =  require('co-redis')(require('redis').createClient('18703' , 'pub-redis-18703.us-central1-1-1.gce.garantiadata.com',{}));
 	}
 module.exports = function(){ return new Cache(); }
 

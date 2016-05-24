@@ -155,7 +155,7 @@ Controller.prototype = {
 		var _orders = this._s.library('orders');
 		var data = this._s.req.validate({
 			id : { v:['isListing'] },
-			price : { v:['isPrice'] , b:true },						// this is the offer, only accepted if its negotiable
+			amount : { v:['isPrice'] },
 			quantity : { v:['isInt'] , default : 1, b:true},
 			transactions : { v:['isArrayOfObjects'] }
 			})
@@ -173,28 +173,27 @@ Controller.prototype = {
 		if(listing.quantity_mpo < data.quantity) return { failure : { msg : 'This seller does not allow for the purchase of more than ' + listing.quantity_mpo + ' item(s) in one order.' , code : 300 } }
 
 		// now let's see what the price needs to be
-		// var final_price =  parseFloat(listing.price) + /
-
+		if(!data.transactions[0].type || !data.transactions[0].amount) return { failure :  { msg : 'The transaction data was not submitting correctly.' , code : 300 } }
 
 		var fee = (data.transactions[0].type == "stripe" ? 1.03 : 1)
-		var price = (this._s.util.roundup((listing.p_type == 1 ? parseFloat(listing.price) * parseInt(data.quantity) * fee : (data.price?data.price:listing.price*fee) * parseInt(data.quantity)), 2))/1
+		var expected = (this._s.util.roundup(listing.price * fee * parseInt(data.quantity), 2))/1
 
-		// price = fee * price
+		if(listing.p_type == 1 ){
+			if(data.transactions[0].amount != expected) return { failure : { failure : { msg : 'The transaction data is not accurate.' ,code : 300 } } }
+			else var charge_now = true
+			}
+		else{
+			if(data.transactions[0].amount < expected) var charge_now = false
+			else var charge_now = true
+			}
 
-		console.log("the price is " + price)
-
-		// data.transactions 
-
-		// data.transactions[1].amount = pricepz
-
-		var charge_now = (listing.p_type == 1 ? true : (  data.price >= (this._s.util.roundup(listing.price * fee, 2)/1) ? true : false  ) )
 		var func = (charge_now?'charge':'authorize')
 		var charge = yield this._s.engine('financials')[func].new({
-			amount : price,
+			amount : data.amount,
 			transactions : data.transactions
 			})
 
-		if(charge.failure) return { failure : { charge : charge, price : price, fee : fee, 'data.price' : data.price, rounded : (this._s.util.roundup(listing.price * fee, 2)/1) } }
+		if(charge.failure) return charge
 		else charge = charge.success.data
 		if(charge.setup.status != 1) return { failure : { msg : 'The transaction failed. ( Error: '+ JSON.stringify(charge.transactions[0].failure) + ' )' , code : 300 } }
 
@@ -204,8 +203,8 @@ Controller.prototype = {
 			location : this._s.loc.active.get(),
 			type : 1,
 			listing : data.id,
-			price : price,
-			price_shown : (this._s.util.roundup(price/fee, 2))/1,
+			price : data.amount,
+			price_shown :  (this._s.util.roundup(data.amount/fee, 2)/1),
 			quantity : data.quantity,
 			transactions : [charge.id],
 			setup : {
