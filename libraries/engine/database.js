@@ -321,6 +321,25 @@ Database.prototype = {
 					}
 				return false;
 				},
+			delete : {
+				index : function*(obj){
+					var deferred = _s_q.defer();
+				
+					esearch.indices.delete(obj, deferred.makeNodeResolver());
+					var data = yield deferred.promise.then(function(data){
+						return data;
+						}, function(error){
+							console.log(error)
+							return error;
+							})
+
+					if(data.status && (data.status == '404' || data.status == '400')){
+						return false
+						}
+
+					return true
+					}
+				},
 			search : function*(obj, meta){
 				console.log("getting es query")
 				if(meta){
