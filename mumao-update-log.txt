@@ -6,3 +6,7 @@ Mon. May 23, 2016
 - Files updated : controllers/listings/a.js
 - Integration test : failed - Unknown File - grandma.tar.gz
 -Report time : 21:24:18
+Tue. May 24, 2016
+- Files updated : controllers/listings/a.js
+- Integration test : failed - Unknown File - grandma.tar.gz
+-Report time : 11:03:02
