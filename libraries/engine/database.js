@@ -338,7 +338,7 @@ Database.prototype = {
 						}
 
 					return true
-					}
+					}	
 				},
 			search : function*(obj, meta){
 				console.log("getting es query")

@@ -534,7 +534,7 @@ Controller.prototype = {
 
 		var transfer = yield _financials.transfer.new({
 			to : order.selling.id,
-			amount: charge.amounts.processed * 0.97			//  this amount because of the fee
+			amount: charge.amounts.processed / 1.03		//  this amount because of the fee
 			})
 
 		if(transfer.failure){
