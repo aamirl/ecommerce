@@ -834,7 +834,8 @@ Controller.prototype = {
 		var _listings = this._s.library('listings');
 		var data = this._s.req.validate({
 			id : {v:['isListing']},
-			add : { in:[true,false] , b:true }
+			add : { in:[true,false] , b:true },
+			push : { in : [true,false] , b:true }
 			});
 		if(data.failure) return data;
 
@@ -853,25 +854,27 @@ Controller.prototype = {
 		if(!t && data.add){
 			listing.favorites.push(this._s.entity.object.helpers.data.document())
 
-			yield _notifications.new.push({
-				entity : listing.entity.id,
-				type : "602",
-				title : self._s.entity.object.profile.name()  + " favorited your item!",
-				body : self._s.entity.object.profile.name() + " favorited your listing for "+ listing.title+ ". Go live to show them a demo of the product!",
-				data : {
-					id : data.id,
-					title : listing.title,
-					quantity : listing.quantity,
-					price : listing.price,
-					image : {
-						data : listing.images[0],
-						type : 'listing'
+			if(data.push){
+				yield _notifications.new.push({
+					entity : listing.entity.id,
+					type : "602",
+					title : self._s.entity.object.profile.name()  + " favorited your item!",
+					body : self._s.entity.object.profile.name() + " favorited your listing for "+ listing.title+ ". Go live to show them a demo of the product!",
+					data : {
+						id : data.id,
+						title : listing.title,
+						quantity : listing.quantity,
+						price : listing.price,
+						image : {
+							data : listing.images[0],
+							type : 'listing'
+							},
+						lat : listing.location.coordinates.lat,
+						lon : listing.location.coordinates.lon
 						},
-					lat : listing.location.coordinates.lat,
-					lon : listing.location.coordinates.lon
-					},
-				add : true
-				})
+					add : true
+					})
+				}
 			}
 		else if(t && !data.add){
 			listing.favorites.splice(t.index, 1)
@@ -884,6 +887,7 @@ Controller.prototype = {
 		var _listings = this._s.library('listings');
 		var data = this._s.req.validate({
 			id : {v:['isListing']},
+			push : { in : [true,false] , b:true }
 			});
 		if(data.failure) return data;
 
@@ -906,21 +910,23 @@ Controller.prototype = {
 		var self = this
 		var _notifications = self._s.engine('notifications')
 
-		yield _notifications.new.push({
-			entity : listing.entity.id,
-			type : "220",
-			title : "Your listing was flagged!",
-			body : "Your listing titled " + listing.title + " was flagged. It seems someone found the content inappropriate or not conducive to our policies. Please make any changes that you feel are relevant - we will be reviewing this listing soon. If the listing is found to be inappropriate, it may be disabled.",
-			data : {
-				id : data.id,
-				title : listing.title,
-				image : {
-					data : listing.images[0],
-					type : 'listing'
-					}
-				},
-			add : true
-			})
+		if(data.push){
+			yield _notifications.new.push({
+				entity : listing.entity.id,
+				type : "220",
+				title : "Your listing was flagged!",
+				body : "Your listing titled " + listing.title + " was flagged. It seems someone found the content inappropriate or not conducive to our policies. Please make any changes that you feel are relevant - we will be reviewing this listing soon. If the listing is found to be inappropriate, it may be disabled.",
+				data : {
+					id : data.id,
+					title : listing.title,
+					image : {
+						data : listing.images[0],
+						type : 'listing'
+						}
+					},
+				add : true
+				})
+			}
 
 		return { success : { data : true } }
 

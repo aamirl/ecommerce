@@ -233,7 +233,8 @@ Controller.prototype = {
 		var data = this._s.req.validate({
 			id : { v:['isAlphaOrNumeric'] },
 			type : { in:['t1','t2'] , b:true, default:'t1'},
-			add : { in:[true,false], b:true }
+			add : { in:[true,false], b:true },
+			push : { in : [true,false] , b:true }
 			})
 		if(data.failure) return data;
 
@@ -249,20 +250,22 @@ Controller.prototype = {
 		if(!t && data.add){
 			result.follows.push(this._s.entity.object.helpers.data.document())
 
-			yield _notifications.new.push({
-				entity : data.id,
-				type : "603",
-				title : self._s.entity.object.profile.name()  + " just followed you!",
-				body : self._s.entity.object.profile.name() + " has followed you. Anytime you go live with a listing, they will be able to watch. So go live now!",
-				data : {
-					id : this._s.entity.object.profile.id(),
-					image : {
-						data : this._s.entity.object.profile.id(),
-						type : 'entity'
-						}
-					},
-				add : true
-				})
+			if(data.push){
+				yield _notifications.new.push({
+					entity : data.id,
+					type : "603",
+					title : self._s.entity.object.profile.name()  + " just followed you!",
+					body : self._s.entity.object.profile.name() + " has followed you. Anytime you go live with a listing, they will be able to watch. So go live now!",
+					data : {
+						id : this._s.entity.object.profile.id(),
+						image : {
+							data : this._s.entity.object.profile.id(),
+							type : 'entity'
+							}
+						},
+					add : true
+					})
+				}
 			var msg = "You were added to the follow list for this entity."
 			}
 		else if(t && !data.add){
