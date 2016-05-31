@@ -234,7 +234,7 @@ Controller.prototype = {
 			id : { v:['isAlphaOrNumeric'] },
 			type : { in:['t1','t2'] , b:true, default:'t1'},
 			add : { in:[true,false], b:true },
-			push : { in : [true,false] , b:true }
+			push : { in : [true,false] , b:true , default:true }
 			})
 		if(data.failure) return data;
 

@@ -835,7 +835,7 @@ Controller.prototype = {
 		var data = this._s.req.validate({
 			id : {v:['isListing']},
 			add : { in:[true,false] , b:true },
-			push : { in : [true,false] , b:true }
+			push : { in : [true,false] , b:true , default:true }
 			});
 		if(data.failure) return data;
 
@@ -887,7 +887,7 @@ Controller.prototype = {
 		var _listings = this._s.library('listings');
 		var data = this._s.req.validate({
 			id : {v:['isListing']},
-			push : { in : [true,false] , b:true }
+			push : { in : [true,false] , b:true , default:true }
 			});
 		if(data.failure) return data;
 
