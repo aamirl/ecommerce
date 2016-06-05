@@ -392,7 +392,8 @@ Listings.prototype = {
 
 				var data = self._s.req.validate({
 					id : {v:['isLocalListing']},
-					status : obj.corporate?{ in:[0,1,2,3,'0','1','2','3'] }:{ in:[1,2,3,'1','2','3'] }
+					status : { in:[1,2,3,'1','2','3'] },
+					// status : obj.corporate?{ in:[0,1,2,3,'0','1','2','3'] }:{ in:[1,2,3,'1','2','3'] }
 					});
 				if(data.failure) return data;
 
