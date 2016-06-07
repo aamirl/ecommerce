@@ -17,6 +17,18 @@ Controller.prototype = {
 		data.endpoint = true;
 		return yield _entities.get(data);
 		},
+	'get/followers' : function*(){
+		var _entities = this._s.library('entities');
+		// this is the api endpoint for getting a user by id
+		var data = this._s.req.validate(_entities.helpers.filters());
+		if(data.failure) return data;
+
+		data.include = "follows"
+		delete data.exclude
+
+		data.endpoint = true;
+		return yield _entities.get(data);
+		},
 	'get/addable' : function*(){
 		var _entities = this._s.library('entities');
 		// this is the api endpoint for getting a user by id
