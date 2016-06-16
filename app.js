@@ -12,7 +12,6 @@ var ssl = require('koa-ssl');
 app.use(ssl());
 
 var http = require('http');
-//var https = require('https');
 
 app.use(function*(next){
 	app.keys = _s_config.app.keys;

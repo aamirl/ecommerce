@@ -10,7 +10,7 @@
 
 var esearch = require('elasticsearch').Client({
 	// host : 'http://localhost:9200/',
-	host : 'http://10.128.0.2:9200'
+	host : 'http://localthost:9200'
 	// host : 'http://45.55.72.242:9980',
 	// log : 'trace'
 	})
