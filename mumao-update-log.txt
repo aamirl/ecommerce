@@ -18,3 +18,7 @@ Tue. May 28, 2016
 - Files updated : controllers/listings/a.js, controllers/entities/a.js
 - Integration test : passed
 -Report time : 21:53:29
+Mon. Jun 6, 2016
+- Files updated : controllers/entities/p.js, libraries/listings.js
+- Integration test : failed - Econn Refused
+-Report time : 21:23:41
