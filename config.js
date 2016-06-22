@@ -33,5 +33,21 @@ module.exports = {
 		api : __dirname + '/libraries/api',
 		locales : __dirname + '/assets/locales/',
 		models : __dirname + '/models/'
+		},
+	services : {
+		redis : {
+			// production
+			host : 'pub-redis-18703.us-central1-1-1.gce.garantiadata.com',
+			port : '18703'
+			},
+		// redis : {
+		// 	// test
+		// 	host : 'pub-redis-19853.us-central1-1-1.gce.garantiadata.com',
+		// 	port : '19853'
+		// 	},
+		db : {
+			host : 'http://10.128.0.2/',
+			port : '9200'
+			}
 		}
 	}
