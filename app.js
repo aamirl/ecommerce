@@ -1,6 +1,6 @@
 'use strict'
 
-var production = true
+var production = false
 
 if(production){
 	GLOBAL._s_config = require('./config_production');
