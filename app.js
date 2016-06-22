@@ -1,5 +1,15 @@
 'use strict'
-GLOBAL._s_config = require('./config');
+
+var production = true
+
+if(production){
+	GLOBAL._s_config = require('./config_production');
+	}
+else{
+	GLOBAL._s_config = require('./config_development');
+	}
+
+
 GLOBAL._s_q = require('q');	
 GLOBAL._s_u = require('underscore');
 
